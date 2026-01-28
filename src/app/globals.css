@@ -1,26 +1,79 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-blue: #0A1E3B;
+  --color-brand-pink: #E91E63;
+  --color-brand-cyan: #00BCD4;
+  --color-brand-orange: #FF7043;
+  --color-brand-white: #FFFFFF;
+
+  --background: var(--brand-blue);
+  --foreground: var(--brand-white);
+
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --brand-blue: #0A1E3B;
+  --brand-pink: #E91E63;
+  --brand-cyan: #00BCD4;
+  --brand-orange: #FF7043;
+  --brand-white: #FFFFFF;
+  
+  --background: var(--brand-blue);
+  --foreground: var(--brand-white);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism Utilities */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-dark {
+  background: rgba(10, 30, 59, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transform: translateY(-5px);
+}
+
+/* Transitions */
+.page-transition {
+  transition: opacity 0.5s ease-in-out;
+}
+
+/* Scroll Animations */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s ease-out;
+}
+
+.reveal.active {
+  opacity: 1;
+  transform: translateY(0);
 }
