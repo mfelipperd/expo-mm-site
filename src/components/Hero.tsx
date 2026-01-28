@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
 
 interface HeroProps {
   onVisitClick: () => void;
@@ -9,10 +10,19 @@ interface HeroProps {
 }
 
 export default function Hero({ onVisitClick, onExposeClick }: HeroProps) {
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end start"],
+  });
+
+  const y = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
+  const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+
   return (
-    <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
+    <section ref={ref} className="relative h-screen w-full flex items-center justify-center overflow-hidden">
       {/* Background with Overlay */}
-      <div className="absolute inset-0 z-0">
+      <motion.div style={{ y }} className="absolute inset-0 z-0">
         <Image
           src="/assets/hero-bg.jpg"
           alt="Feira Expo MultiMix"
@@ -21,7 +31,7 @@ export default function Hero({ onVisitClick, onExposeClick }: HeroProps) {
           priority
         />
         <div className="absolute inset-0 bg-linear-to-b from-brand-blue/80 via-brand-blue/40 to-brand-blue" />
-      </div>
+      </motion.div>
 
       {/* Content */}
       <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">

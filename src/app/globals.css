@@ -77,3 +77,28 @@ body {
   opacity: 1;
   transform: translateY(0);
 }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, var(--brand-cyan), var(--brand-pink));
+  border-radius: 20px;
+  border: 2px solid var(--brand-blue);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, var(--brand-orange), var(--brand-pink));
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--brand-cyan) transparent;
+}

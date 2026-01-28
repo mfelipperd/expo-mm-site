@@ -1,8 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { useRef } from "react";
 
 interface CTASectionProps {
   title?: string;
@@ -19,6 +19,15 @@ export default function CTASection({
   variant = "orange",
   onClick,
 }: CTASectionProps) {
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+
+  const y1 = useTransform(scrollYProgress, [0, 1], ["-20%", "20%"]);
+  const y2 = useTransform(scrollYProgress, [0, 1], ["20%", "-20%"]);
+
   const variants = {
     pink: "bg-brand-pink shadow-[0_0_30px_rgba(233,30,99,0.4)]",
     cyan: "bg-brand-cyan shadow-[0_0_30px_rgba(0,188,212,0.4)]",
@@ -26,7 +35,7 @@ export default function CTASection({
   };
 
   return (
-    <section className="py-20">
+    <section ref={ref} className="py-20">
       <div className="max-w-5xl mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -35,8 +44,14 @@ export default function CTASection({
           className="glass-dark border-2 border-white/10 rounded-[3rem] p-8 md:p-20 text-center relative overflow-hidden"
         >
           {/* Decorative glows */}
-          <div className={`absolute -top-24 -left-24 w-64 h-64 rounded-full blur-[100px] opacity-20 ${variants[variant].split(' ')[0]}`} />
-          <div className={`absolute -bottom-24 -right-24 w-64 h-64 rounded-full blur-[100px] opacity-20 ${variants[variant].split(' ')[0]}`} />
+          <motion.div 
+            style={{ y: y1 }}
+            className={`absolute -top-24 -left-24 w-64 h-64 rounded-full blur-[100px] opacity-20 ${variants[variant].split(' ')[0]}`} 
+          />
+          <motion.div 
+            style={{ y: y2 }}
+            className={`absolute -bottom-24 -right-24 w-64 h-64 rounded-full blur-[100px] opacity-20 ${variants[variant].split(' ')[0]}`} 
+          />
 
           <div className="relative z-10">
             <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 tracking-tighter">

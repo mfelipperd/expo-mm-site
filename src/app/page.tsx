@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import InfoSection from "@/components/InfoSection";
@@ -24,6 +25,14 @@ export default function Home() {
   const openWhatsAppModal = () => setActiveModal("whatsapp");
   const openBypassModal = () => setActiveModal("bypass");
   const closeModal = () => setActiveModal("none");
+
+  const sobreRef = useRef(null);
+  const { scrollYProgress: sobreScroll } = useScroll({
+    target: sobreRef,
+    offset: ["start end", "end start"],
+  });
+
+  const sobreY = useTransform(sobreScroll, [0, 1], ["-10%", "10%"]);
 
   return (
     <main className="min-h-screen bg-brand-blue selection:bg-brand-cyan/30 selection:text-white">
@@ -51,9 +60,12 @@ export default function Home() {
       <Features />
 
       {/* About the Event & Visitor Info */}
-      <section id="sobre" className="py-24 bg-brand-blue relative overflow-hidden">
+      <section ref={sobreRef} id="sobre" className="py-24 bg-brand-blue relative overflow-hidden">
         {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-brand-pink/5 rounded-full blur-[100px]" />
+        <motion.div 
+          style={{ y: sobreY }}
+          className="absolute top-0 right-0 w-96 h-96 bg-brand-pink/5 rounded-full blur-[100px]" 
+        />
         
         <div className="max-w-6xl mx-auto px-6 relative z-10">
           <div className="text-center mb-16">

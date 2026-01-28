@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Modal from "@/components/Modal";
@@ -8,7 +8,7 @@ import WhatsAppModalContent from "@/components/WhatsAppModal";
 import ExhibitorBypassModalContent from "@/components/ExhibitorBypassModal";
 import VisitModalContent from "@/components/VisitModal";
 import WhatsAppFloating from "@/components/WhatsAppFloating";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { CheckCircle2, TrendingUp, Users, Package, ArrowRight, Rocket } from "lucide-react";
 
 export default function QueroExpor() {
@@ -19,6 +19,14 @@ export default function QueroExpor() {
   const openVisitModal = () => setActiveModal("visit");
   const closeModal = () => setActiveModal("none");
 
+  const heroRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+
+  const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
+
   return (
     <main className="min-h-screen bg-brand-blue selection:bg-brand-cyan/30 selection:text-white">
       <Navbar 
@@ -28,8 +36,11 @@ export default function QueroExpor() {
       />
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-linear-to-b from-brand-orange/10 to-transparent blur-[120px] pointer-events-none" />
+      <section ref={heroRef} className="relative pt-32 pb-20 overflow-hidden">
+        <motion.div 
+          style={{ y }}
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-linear-to-b from-brand-orange/10 to-transparent blur-[120px] pointer-events-none" 
+        />
         
         <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
           <motion.h1 
