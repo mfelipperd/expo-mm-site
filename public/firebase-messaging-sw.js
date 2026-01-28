@@ -3,12 +3,12 @@ importScripts("https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-comp
 
 // Replace with your project's Firebase config
 const firebaseConfig = {
-  apiKey: "REPLACE_WITH_YOUR_API_KEY",
-  authDomain: "REPLACE_WITH_YOUR_AUTH_DOMAIN",
-  projectId: "REPLACE_WITH_YOUR_PROJECT_ID",
-  storageBucket: "REPLACE_WITH_YOUR_STORAGE_BUCKET",
-  messagingSenderId: "REPLACE_WITH_YOUR_MESSAGING_SENDER_ID",
-  appId: "REPLACE_WITH_YOUR_APP_ID",
+  apiKey: "AIzaSyBHaL7VDwE12rGdX0GaJhu2hp3XQPncjNE",
+  authDomain: "expo-mm-site.firebaseapp.com",
+  projectId: "expo-mm-site",
+  storageBucket: "expo-mm-site.firebasestorage.app",
+  messagingSenderId: "739233309720",
+  appId: "1:739233309720:web:6126762e641e436241cf6d",
 };
 
 firebase.initializeApp(firebaseConfig);
