@@ -120,7 +120,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
         company: data.company,
         email: data.email,
         phone: data.phone,
-        zipCode: data.zipCode,
+        zipCode: data.zipCode.replace(/\D/g, ""),
         street: data.street,
         number: data.number,
         complement: data.complement,
@@ -132,7 +132,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
         category: "Visitante",
         fair_visitor: fairId,
         // Only include CNPJ if lojista
-        cnpj: data.ingresso === 'lojista' ? data.cnpj : undefined
+        cnpj: data.ingresso === 'lojista' && data.cnpj ? data.cnpj.replace(/\D/g, "") : undefined
     };
 
     const peopleToRegister = [
@@ -144,7 +144,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
         // Sequential submission to avoid rate limits or race conditions, and track progress
         let successCount = 0;
         for (const person of peopleToRegister) {
-            const response = await fetch("https://credenciamento-api-production.up.railway.app/", {
+            const response = await fetch("https://credenciamento-api-production.up.railway.app/visitors", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(person),
