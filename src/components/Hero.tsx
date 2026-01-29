@@ -53,7 +53,7 @@ export default function Hero({ onVisitClick, onExposeClick }: HeroProps) {
           className="text-4xl sm:text-5xl md:text-7xl font-black mb-6 leading-tight"
         >
           A MAIOR FEIRA <br />
-          <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-pink via-brand-cyan to-brand-orange">
+          <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-pink to-brand-orange">
             MULTISSETORIAL
           </span>{" "}
           <br />
