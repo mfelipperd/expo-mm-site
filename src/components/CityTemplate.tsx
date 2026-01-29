@@ -23,6 +23,7 @@ interface Benefit {
 
 interface CityTemplateProps {
   cityName: string;
+  fairId: string; // Added fairId prop
   heroTitle: React.ReactNode;
   heroTagline: string;
   aboutText: string;
@@ -37,6 +38,7 @@ interface CityTemplateProps {
 
 export default function CityTemplate({
   cityName,
+  fairId, // Destructure fairId
   heroTitle,
   heroTagline,
   aboutText,
@@ -272,7 +274,12 @@ export default function CityTemplate({
         isOpen={activeModal === "registration"}
         onClose={closeModal}
       >
-        <RegistrationFormModal cityName={cityName} onClose={closeModal} />
+        <RegistrationFormModal 
+          cityName={cityName} 
+          fairId={fairId} 
+          industries={industries} 
+          onClose={closeModal} 
+          />
       </Modal>
 
     </main>

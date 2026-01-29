@@ -26,7 +26,7 @@ export default function Modal({ isOpen, onClose, children, title }: ModalProps) 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-0 md:p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -38,7 +38,7 @@ export default function Modal({ isOpen, onClose, children, title }: ModalProps) 
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative w-full max-w-lg glass-dark border border-white/10 rounded-[2.5rem] p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto"
+            className="relative w-full h-full md:h-auto md:max-h-[90vh] md:max-w-lg glass-dark border-0 md:border md:border-white/10 rounded-none md:rounded-[2.5rem] p-6 md:p-12 shadow-2xl overflow-y-auto"
           >
             <button
               onClick={onClose}

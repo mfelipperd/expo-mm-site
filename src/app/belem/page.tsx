@@ -5,6 +5,7 @@ export default function BelemPage() {
   return (
     <CityTemplate
       cityName="BELÉM"
+      fairId="BELEM_2025" // Placeholder ID
       heroTitle={
         <>
           A FEIRA MAIS <br />
