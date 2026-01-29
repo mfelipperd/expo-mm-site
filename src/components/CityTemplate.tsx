@@ -16,6 +16,7 @@ import ExhibitorBypassModalContent from "@/components/ExhibitorBypassModal";
 import RegistrationFormModal from "@/components/RegistrationFormModal";
 import WhatsAppFloating from "@/components/WhatsAppFloating";
 import CTASection from "@/components/CTASection";
+import ExhibitorsSection from "@/components/ExhibitorsSection";
 
 interface Benefit {
   title: string;
@@ -299,6 +300,8 @@ export default function CityTemplate({
              )}
         </div>
       </section>
+
+      <ExhibitorsSection />
 
       <Footer onWhatsAppClick={openWhatsAppModal} />
       <WhatsAppFloating onClick={openWhatsAppModal} />

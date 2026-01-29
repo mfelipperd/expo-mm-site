@@ -1,0 +1,169 @@
+"use client";
+
+import { useState } from "react";
+import { db, storage } from "@/lib/firebase";
+import { collection, addDoc, updateDoc, doc, Timestamp } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { Loader2, Upload, X, Save } from "lucide-react";
+
+interface ExhibitorFormProps {
+  initialData?: any;
+  onSuccess: () => void;
+  onCancel: () => void;
+}
+
+export default function ExhibitorForm({ initialData, onSuccess, onCancel }: ExhibitorFormProps) {
+  const [name, setName] = useState(initialData?.name || "");
+  const [link, setLink] = useState(initialData?.link || "");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>(initialData?.logoUrl || "");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        setError("A logo deve ter menos de 2MB.");
+        return;
+      }
+      if (!file.type.startsWith("image/")) {
+        setError("O arquivo deve ser uma imagem.");
+        return;
+      }
+      setLogoFile(file);
+      setLogoPreview(URL.createObjectURL(file));
+      setError(null);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      setError("O nome da empresa é obrigatório.");
+      return;
+    }
+    if (!initialData && !logoFile) {
+      setError("A logo é obrigatória para novos cadastros.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      let logoUrl = initialData?.logoUrl || "";
+
+      if (logoFile) {
+        const storageRef = ref(storage, `exhibitors/${Date.now()}_${logoFile.name}`);
+        const snapshot = await uploadBytes(storageRef, logoFile);
+        logoUrl = await getDownloadURL(snapshot.ref);
+      }
+
+      const exhibitorData = {
+        name,
+        link: link.trim() || null,
+        logoUrl,
+        updatedAt: Timestamp.now(),
+      };
+
+      if (initialData?.id) {
+        await updateDoc(doc(db, "exhibitors", initialData.id), exhibitorData);
+      } else {
+        await addDoc(collection(db, "exhibitors"), {
+          ...exhibitorData,
+          createdAt: Timestamp.now(),
+        });
+      }
+
+      onSuccess();
+    } catch (err: any) {
+      console.error("Error saving exhibitor:", err);
+      setError("Erro ao salvar expositor. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="glass p-8 rounded-3xl border border-white/10 max-w-2xl mx-auto">
+      <h2 className="text-2xl font-black text-white mb-6">
+        {initialData ? "EDITAR EXPOSITOR" : "NOVO EXPOSITOR"}
+      </h2>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label className="block text-sm font-bold text-gray-400 uppercase mb-2">Nome da Fábrica / Empresa *</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-cyan transition-colors"
+            placeholder="Ex: Fábrica de Cadeiras EMM"
+          />
+        </div>
+
+        <div>
+           <label className="block text-sm font-bold text-gray-400 uppercase mb-2">Link Opcional (URL)</label>
+           <input
+            type="url"
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-cyan transition-colors"
+            placeholder="https://suaempresa.com.br"
+          />
+          <p className="text-xs text-gray-500 mt-2">Se deixado em branco, o card não será clicável.</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-gray-400 uppercase mb-2">Logo da Empresa *</label>
+          <div className="flex items-center gap-6">
+            <div className="w-32 h-32 bg-white/5 rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center p-2 relative overflow-hidden group">
+              {logoPreview ? (
+                <img src={logoPreview} alt="Preview" className="w-full h-full object-contain" />
+              ) : (
+                <Upload className="text-gray-600" />
+              )}
+              <input
+                type="file"
+                onChange={handleFileChange}
+                accept="image/*"
+                className="absolute inset-0 opacity-0 cursor-pointer"
+              />
+            </div>
+            <div className="text-sm text-gray-400">
+              <p>Formatos: PNG, JPG ou WEBP</p>
+              <p>Tamanho máximo: 2MB</p>
+              <p className="mt-2 text-brand-cyan font-medium">Clique no quadrado para selecionar</p>
+            </div>
+          </div>
+        </div>
+
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-xl text-sm font-bold">
+            {error}
+          </div>
+        )}
+
+        <div className="flex gap-4 pt-4">
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex-1 bg-brand-cyan text-brand-blue font-black py-4 rounded-xl hover:scale-105 transition-transform flex items-center justify-center gap-2 disabled:opacity-50 disabled:scale-100"
+          >
+            {loading ? <Loader2 className="animate-spin" /> : <Save size={20} />}
+            {initialData ? "ATUALIZAR" : "SALVAR EXPOSITOR"}
+          </button>
+          
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-6 bg-white/5 text-white font-bold rounded-xl hover:bg-white/10 transition-colors"
+          >
+            CANCELAR
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}

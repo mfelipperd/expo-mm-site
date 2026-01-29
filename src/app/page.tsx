@@ -19,6 +19,7 @@ import DevGeoControls from "@/components/DevGeoControls";
 import { useGeoLocation } from "@/hooks/useGeoLocation";
 import { useRouter } from "next/navigation";
 import CrossCityWarningModalContent from "@/components/CrossCityWarningModalContent";
+import ExhibitorsSection from "@/components/ExhibitorsSection";
 
 export default function Home() {
   const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit" | "whatsapp" | "bypass" | "crossCity">("none");
@@ -111,6 +112,8 @@ export default function Home() {
         variant="pink"
         onClick={openVisitModal}
       />
+
+      <ExhibitorsSection />
 
       <Footer onWhatsAppClick={openWhatsAppModal} />
       
