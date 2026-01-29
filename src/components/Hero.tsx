@@ -42,7 +42,7 @@ export default function Hero({ onVisitClick, onExposeClick }: HeroProps) {
           className="text-brand-cyan font-bold tracking-widest mb-4 flex items-center justify-center gap-4"
         >
           <span className="h-px w-8 bg-brand-cyan block"></span>
-          BELÉM | MANAUS 2026
+          MANAUS 09-11 JUN | BELÉM 18-20 AGO
           <span className="h-px w-8 bg-brand-cyan block"></span>
         </motion.p>
 

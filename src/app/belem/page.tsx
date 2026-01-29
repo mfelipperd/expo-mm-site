@@ -34,7 +34,7 @@ export default function BelemPage() {
           icon: <BadgeDollarSign className="text-brand-orange" />
         }
       ]}
-      dates="05, 06 e 07 DE AGOSTO"
+      dates="18, 19 E 20 DE AGOSTO DE 2026"
       schedule="13H ÀS 21H"
       location="ESTAÇÃO DAS DOCAS"
       locationDescription="Um dos mais famosos pontos turísticos de Belém, com localização central, estacionamento, infraestrutura completa e um pôr-do-sol espetacular!"

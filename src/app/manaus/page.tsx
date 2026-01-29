@@ -33,7 +33,7 @@ export default function ManausPage() {
           icon: <BadgeDollarSign className="text-brand-orange" />
         }
       ]}
-      dates="01, 02 E 03 DE JULHO"
+      dates="09, 10 E 11 DE JUNHO"
       schedule="13H ÀS 20H"
       location="CENTRO DE CONVENÇÕES VASCO VASQUES"
       locationDescription="O maior e mais moderno espaço do gênero da Região Norte, com boa localização e estacionamento gratuito."
