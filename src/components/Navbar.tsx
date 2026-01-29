@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
@@ -18,6 +19,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export default function Navbar({ onVisitClick, onExposeClick, onContactClick }: NavbarProps) {
+  const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -70,7 +72,10 @@ export default function Navbar({ onVisitClick, onExposeClick, onContactClick }: 
               <Link
                 key={link.name}
                 href={link.href}
-                className="text-sm font-medium hover:text-brand-cyan transition-colors"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-brand-cyan",
+                  pathname === link.href ? "text-brand-cyan font-bold" : "text-gray-300"
+                )}
               >
                 {link.name}
               </Link>

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle, Zap, Shield, TrendingUp } from "lucide-react";
+import { CheckCircle, CheckCircle2, Zap, Shield, TrendingUp } from "lucide-react";
 import Image from "next/image";
 
 export default function Features() {
@@ -50,14 +50,21 @@ export default function Features() {
               A Expo MultiMix reúne as maiores marcas do Brasil, oferecendo uma diversidade incomparável de produtos para o seu negócio.
             </p>
             
-            <div className="flex flex-wrap gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {categories.map((cat, i) => (
-                <span 
-                  key={cat} 
-                  className="px-4 py-2 bg-white/5 border border-white/10 rounded-full text-sm font-medium hover:bg-white/10 transition-colors"
+                <motion.div 
+                  key={cat}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.05 }}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
                 >
-                  {cat}
-                </span>
+                  <div className="w-8 h-8 rounded-full bg-brand-cyan/20 flex items-center justify-center text-brand-cyan shrink-0">
+                    <CheckCircle2 size={16} />
+                  </div>
+                  <span className="font-bold text-sm">{cat}</span>
+                </motion.div>
               ))}
             </div>
           </motion.div>

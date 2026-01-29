@@ -11,13 +11,13 @@ export default function VisitModalContent() {
   const options = [
     {
       city: "MANAUS",
-      link: "https://www.expomultimix.com/c%C3%B3pia-emm-manaus",
+      link: "/manaus",
       color: "text-brand-pink",
       bg: "bg-brand-pink/10",
     },
     {
       city: "BELÉM",
-      link: "https://credenciamento-frontend.vercel.app/public-form/0299a14d-10f1-4799-bf18-a0ecfec99d62",
+      link: "/belem",
       color: "text-brand-cyan",
       bg: "bg-brand-cyan/10",
     },
@@ -29,11 +29,9 @@ export default function VisitModalContent() {
         Selecione a edição da feira que deseja visitar para acessar o formulário de inscrição.
       </p>
       {options.map((opt) => (
-        <a
+    <a
           key={opt.city}
           href={opt.link}
-          target="_blank"
-          rel="noopener noreferrer"
           className="group p-6 rounded-2xl glass hover:bg-white/10 border border-white/5 transition-all flex items-center justify-between"
         >
           <div className="flex items-center gap-4">
