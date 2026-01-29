@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["https://expo-mm-site.vercel.app", "https://www.expomultimix.com", "http://localhost:3000"],
+    "method": ["GET", "POST", "PUT", "DELETE", "HEAD"],
+    "responseHeader": ["Content-Type"],
+    "maxAgeSeconds": 3600
+  }
+]
