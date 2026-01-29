@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 import { MapPin, Calendar, CheckCircle2, Star } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -59,6 +60,15 @@ export default function CityTemplate({
   const openRegistrationModal = () => setActiveModal("registration");
   const closeModal = () => setActiveModal("none");
 
+  const handleNavbarVisit = () => {
+    const section = document.getElementById("registration-cta");
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
+    } else {
+      setActiveModal("registration");
+    }
+  };
+
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -70,7 +80,7 @@ export default function CityTemplate({
   return (
     <main className="min-h-screen bg-brand-blue selection:bg-brand-cyan/30 selection:text-white">
       <Navbar 
-        onVisitClick={openVisitModal} 
+        onVisitClick={handleNavbarVisit} 
         onExposeClick={openBypassModal} 
         onContactClick={openWhatsAppModal}
       />
@@ -221,11 +231,20 @@ export default function CityTemplate({
       </section>
 
       <CTASection 
+        id="registration-cta"
         title="NÃO FIQUE DE FORA"
         subtitle="Garanta sua participação no maior evento multissetorial da região."
+        buttonText="FAZER CREDENCIAMENTO"
         variant="cyan"
         onClick={openRegistrationModal}
-      />
+      >
+        <Link 
+          href="/quero-expor" 
+          className="inline-block border-b border-white/30 pb-1 text-sm text-gray-300 hover:text-white hover:border-white transition-colors"
+        >
+          Quero comprar um stand
+        </Link>
+      </CTASection>
 
       <Footer onWhatsAppClick={openWhatsAppModal} />
       <WhatsAppFloating onClick={openWhatsAppModal} />

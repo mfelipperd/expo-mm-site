@@ -14,18 +14,54 @@ import VisitModalContent from "@/components/VisitModal";
 import WhatsAppModalContent from "@/components/WhatsAppModal";
 import ExhibitorBypassModalContent from "@/components/ExhibitorBypassModal";
 import AboutSection from "@/components/AboutSection";
-
 import WhatsAppFloating from "@/components/WhatsAppFloating";
-import { Sparkles, Handshake, BadgeDollarSign } from "lucide-react";
+import DevGeoControls from "@/components/DevGeoControls";
+import { useGeoLocation } from "@/hooks/useGeoLocation";
+import { useRouter } from "next/navigation";
+import CrossCityWarningModalContent from "@/components/CrossCityWarningModalContent";
 
 export default function Home() {
-  const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit" | "whatsapp" | "bypass">("none");
+  const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit" | "whatsapp" | "bypass" | "crossCity">("none");
+  const [pendingTargetCity, setPendingTargetCity] = useState<string | null>(null);
+  const { city: detectedCity, loading } = useGeoLocation();
+  const router = useRouter();
 
-  const openVisitModal = () => setActiveModal("visit");
+  const openVisitModal = () => {
+    if (detectedCity) {
+      router.push(`/${detectedCity}`);
+    } else {
+      setActiveModal("visit");
+    }
+  };
   const openLeadModal = () => setActiveModal("lead");
   const openWhatsAppModal = () => setActiveModal("whatsapp");
   const openBypassModal = () => setActiveModal("bypass");
   const closeModal = () => setActiveModal("none");
+
+  const handleEventClick = (slug: string) => {
+    // If we have a detected city and the user is trying to go to a different city
+    if (detectedCity && slug !== detectedCity) {
+      setPendingTargetCity(slug);
+      setActiveModal("crossCity");
+    } else {
+      // Otherwise, just go there
+      router.push(`/${slug}`);
+    }
+  };
+
+  const handleCrossCityProceed = () => {
+    if (pendingTargetCity) {
+      router.push(`/${pendingTargetCity}`);
+    }
+    setActiveModal("none");
+  };
+
+  const handleCrossCityRedirect = () => {
+    if (detectedCity) {
+      router.push(`/${detectedCity}`);
+    }
+    setActiveModal("none");
+  };
 
   return (
     <main className="min-h-screen bg-brand-blue selection:bg-brand-cyan/30 selection:text-white">
@@ -36,13 +72,20 @@ export default function Home() {
       />
       
       {/* Hero Section */}
-      <Hero onVisitClick={openVisitModal} onExposeClick={openBypassModal} />
+      <Hero 
+        onVisitClick={openVisitModal} 
+        onExposeClick={openBypassModal} 
+        detectedCity={detectedCity}
+      />
 
       {/* About the Event & Visitor Info (Moved Up) */}
       <AboutSection onVisitClick={openVisitModal} />
 
       {/* Primary Event Info (Events) */}
-      <InfoSection />
+      <InfoSection 
+        detectedCity={detectedCity} 
+        onEventClick={handleEventClick}
+      />
 
       {/* Recurring CTA for Stand Sales */}
       <CTASection 
@@ -84,9 +127,9 @@ export default function Home() {
       <Modal 
         isOpen={activeModal === "visit"} 
         onClose={closeModal} 
-        title="QUERO VISITAR"
+        title={detectedCity ? `QUERO VISITAR (${detectedCity.toUpperCase()})` : "QUERO VISITAR"}
       >
-        <VisitModalContent />
+        <VisitModalContent detectedCity={detectedCity} />
       </Modal>
 
       <Modal 
@@ -107,6 +150,23 @@ export default function Home() {
       >
         <WhatsAppModalContent />
       </Modal>
+
+      <Modal 
+        isOpen={activeModal === "crossCity"} 
+        onClose={closeModal} 
+        title="CONFIRMAR LOCALIZAÇÃO"
+      >
+        {detectedCity && pendingTargetCity && (
+          <CrossCityWarningModalContent
+            userCity={detectedCity}
+            targetCity={pendingTargetCity}
+            onProceed={handleCrossCityProceed}
+            onRedirect={handleCrossCityRedirect}
+          />
+        )}
+      </Modal>
+
+      <DevGeoControls />
     </main>
   );
 }

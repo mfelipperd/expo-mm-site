@@ -45,6 +45,15 @@ export function useNotifications({ listen = true }: { listen?: boolean } = {}) {
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       setPermission(Notification.permission);
+      
+      // If already granted, fetch the token immediately to ensure we see it in console
+      if (Notification.permission === 'granted' && messaging) {
+        getToken(messaging, {
+          vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+        }).then(token => {
+           if (token) console.log('✅ Notification token generated:', token);
+        }).catch(err => console.error('Error fetching token:', err));
+      }
     }
 
     if (!listen) return; // Skip listeners if listen is false

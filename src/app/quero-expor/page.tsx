@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform, useInView } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Modal from "@/components/Modal";
@@ -9,7 +9,8 @@ import ExhibitorBypassModalContent from "@/components/ExhibitorBypassModal";
 import VisitModalContent from "@/components/VisitModal";
 import WhatsAppFloating from "@/components/WhatsAppFloating";
 import { useState, useRef } from "react";
-import { CheckCircle2, TrendingUp, Users, Package, ArrowRight, Rocket } from "lucide-react";
+import { CheckCircle2, TrendingUp, Users, Package, ArrowRight, Rocket, ShieldCheck, Handshake } from "lucide-react";
+import Image from "next/image";
 
 export default function QueroExpor() {
   const [activeModal, setActiveModal] = useState<"none" | "whatsapp" | "bypass" | "visit">("none");
@@ -128,6 +129,9 @@ export default function QueroExpor() {
         </div>
       </section>
 
+      {/* SCROLLTELLING SECTION (New) */}
+      <FairScrollTelling />
+
       {/* Stand Info */}
       <section className="py-24">
         <div className="max-w-4xl mx-auto px-6 text-center">
@@ -199,5 +203,97 @@ export default function QueroExpor() {
         <WhatsAppModalContent />
       </Modal>
     </main>
+  );
+}
+
+// Sub-component for Scrolltelling
+function FairScrollTelling() {
+  const steps = [
+    {
+      title: "CONFIABILIDADE",
+      desc: "Mais de 15 anos de história conectando grandes marcas a lojistas qualificados. Um evento consolidado no calendário do varejo.",
+      img: "/assets/gallery-1.jpg",
+      icon: <ShieldCheck size={32} className="text-brand-cyan" />
+    },
+    {
+      title: "NETWORKING REAL",
+      desc: "Corredores movimentados, aperto de mão e olho no olho. O ambiente perfeito para fechar negócios que duram o ano todo.",
+      img: "/assets/gallery-2.jpg",
+      icon: <Handshake size={32} className="text-brand-pink" />
+    },
+    {
+      title: "ESTRUTURA DE PONTA",
+      desc: "Pavilhões climatizados, segurança completa e organização impecável para você receber seus clientes com conforto.",
+      img: "/assets/gallery-3.jpg",
+      icon: <Rocket size={32} className="text-brand-orange" />
+    }
+  ];
+
+  return (
+    <div className="py-24 bg-brand-blue relative">
+       <div className="text-center mb-20 px-6">
+          <p className="text-brand-cyan font-bold tracking-widest mb-4">A FEIRA NA PRÁTICA</p>
+          <h2 className="text-3xl md:text-5xl font-black text-white">VEJA COMO É <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-cyan to-brand-pink">PARTICIPAR</span></h2>
+       </div>
+
+       <div className="max-w-7xl mx-auto px-6">
+          {steps.map((step, i) => (
+             <ScrollStep key={i} step={step} index={i} />
+          ))}
+       </div>
+    </div>
+  );
+}
+
+function ScrollStep({ step, index }: { step: any, index: number }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { margin: "-50% 0px -50% 0px" });
+
+  return (
+    <div ref={ref} className={`flex flex-col md:flex-row items-center gap-12 py-24 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''}`}>
+       {/* Text Side */}
+       <div className="flex-1 space-y-6">
+          <motion.div 
+             initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
+             whileInView={{ opacity: 1, x: 0 }}
+             transition={{ duration: 0.8 }}
+             className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center border border-white/10"
+          >
+             {step.icon}
+          </motion.div>
+          <motion.h3 
+             initial={{ opacity: 0 }}
+             whileInView={{ opacity: 1 }}
+             className="text-3xl font-black text-white"
+          >
+             {step.title}
+          </motion.h3>
+          <motion.p 
+             initial={{ opacity: 0 }}
+             whileInView={{ opacity: 1 }}
+             className="text-xl text-gray-400 leading-relaxed"
+          >
+             {step.desc}
+          </motion.p>
+       </div>
+
+       {/* Image Side - Simple parallax/reveal */}
+       <div className="flex-1 w-full">
+          <motion.div
+             className="relative aspect-video rounded-3xl overflow-hidden border-4 border-white/5 shadow-2xl bg-black"
+             initial={{ opacity: 0, scale: 0.9 }}
+             animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0.5, scale: 0.95 }}
+             transition={{ duration: 0.8 }}
+          >
+             <Image 
+                src={step.img}
+                alt={step.title}
+                fill
+                className="object-cover hover:scale-105 transition-transform duration-700"
+             />
+             <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent opacity-60" />
+          </motion.div>
+       </div>
+    </div>
   );
 }

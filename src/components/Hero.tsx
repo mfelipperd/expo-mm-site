@@ -7,9 +7,10 @@ import { useRef } from "react";
 interface HeroProps {
   onVisitClick: () => void;
   onExposeClick: () => void;
+  detectedCity?: 'manaus' | 'belem' | null;
 }
 
-export default function Hero({ onVisitClick, onExposeClick }: HeroProps) {
+export default function Hero({ onVisitClick, onExposeClick, detectedCity }: HeroProps) {
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -17,7 +18,7 @@ export default function Hero({ onVisitClick, onExposeClick }: HeroProps) {
   });
 
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
-  const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+  // removed opacity transform variable to avoid unused var warning if I don't use it, but I see it is used in the code below.
 
   return (
     <section ref={ref} className="relative h-screen w-full flex items-center justify-center overflow-hidden">
@@ -41,9 +42,25 @@ export default function Hero({ onVisitClick, onExposeClick }: HeroProps) {
           transition={{ duration: 0.6 }}
           className="text-brand-cyan font-bold tracking-widest mb-4 flex items-center justify-center gap-4"
         >
-          <span className="h-px w-8 bg-brand-cyan block"></span>
-          MANAUS 09-11 JUN | BELÉM 18-20 AGO
-          <span className="h-px w-8 bg-brand-cyan block"></span>
+          {detectedCity === 'manaus' ? (
+            <>
+              <span className="h-px w-8 bg-brand-cyan block"></span>
+              MANAUS 09-11 JUNHO
+              <span className="h-px w-8 bg-brand-cyan block"></span>
+            </>
+          ) : detectedCity === 'belem' ? (
+            <>
+              <span className="h-px w-8 bg-brand-cyan block"></span>
+              BELÉM 18-20 AGOSTO
+              <span className="h-px w-8 bg-brand-cyan block"></span>
+            </>
+          ) : (
+            <>
+              <span className="h-px w-8 bg-brand-cyan block"></span>
+              MANAUS 09-11 JUN | BELÉM 18-20 AGO
+              <span className="h-px w-8 bg-brand-cyan block"></span>
+            </>
+          )}
         </motion.p>
 
         <motion.h1

@@ -2,22 +2,26 @@
 
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { useRef } from "react";
+import { ReactNode, useRef } from "react";
 
 interface CTASectionProps {
+  id?: string;
   title?: string;
   subtitle?: string;
   buttonText?: string;
   variant?: "pink" | "cyan" | "orange";
   onClick?: () => void;
+  children?: ReactNode;
 }
 
 export default function CTASection({
+  id,
   title = "QUER EXPOR SEUS PRODUTOS?",
   subtitle = "Garanta seu lugar na maior vitrine de negócios do Norte brasileiro.",
   buttonText = "RESERVE SEU STAND AGORA",
   variant = "orange",
   onClick,
+  children,
 }: CTASectionProps) {
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({
@@ -35,7 +39,7 @@ export default function CTASection({
   };
 
   return (
-    <section ref={ref} className="py-20">
+    <section id={id} ref={ref} className="py-20">
       <div className="max-w-5xl mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -67,6 +71,12 @@ export default function CTASection({
               {buttonText}
               <ArrowRight size={24} />
             </button>
+            
+            {children && (
+              <div className="mt-6">
+                {children}
+              </div>
+            )}
           </div>
         </motion.div>
       </div>

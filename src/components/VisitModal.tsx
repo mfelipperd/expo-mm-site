@@ -7,8 +7,12 @@ interface VisitModalProps {
   onSelect: (city: string) => void;
 }
 
-export default function VisitModalContent() {
-  const options = [
+interface VisitModalContentProps {
+  detectedCity?: 'manaus' | 'belem' | null;
+}
+
+export default function VisitModalContent({ detectedCity }: VisitModalContentProps) {
+  const allOptions = [
     {
       city: "MANAUS",
       link: "/manaus",
@@ -22,6 +26,10 @@ export default function VisitModalContent() {
       bg: "bg-brand-cyan/10",
     },
   ];
+
+  const options = detectedCity
+    ? allOptions.filter(opt => opt.link === `/${detectedCity}`)
+    : allOptions;
 
   return (
     <div className="space-y-4">

@@ -4,8 +4,13 @@ import { motion } from "framer-motion";
 import { MapPin, Calendar, Clock } from "lucide-react";
 import Link from "next/link";
 
-export default function InfoSection() {
-  const events = [
+interface InfoSectionProps {
+  detectedCity?: 'manaus' | 'belem' | null;
+  onEventClick?: (slug: string) => void;
+}
+
+export default function InfoSection({ detectedCity, onEventClick }: InfoSectionProps) {
+  const allEvents = [
     {
       city: "MANAUS",
       date: "09 a 11 de Junho de 2026",
@@ -23,6 +28,12 @@ export default function InfoSection() {
       slug: "belem",
     },
   ];
+
+  /* 
+     User requested to keeping details visible for all cities ("ver que temos eventos em belém e em manaus"), 
+     so we disabled the strict filtering here. 
+  */
+  const events = allEvents;
 
   return (
     <section className="py-24 relative overflow-hidden bg-brand-blue">
@@ -85,11 +96,14 @@ export default function InfoSection() {
                 </div>
               </div>
 
-              <Link href={`/${event.slug}`} className="block mt-10 w-full">
-                <button className="w-full py-4 glass hover:bg-white/10 rounded-xl font-bold transition-all">
+              <div className="mt-10 w-full">
+                <button 
+                  onClick={() => onEventClick?.(event.slug)}
+                  className="w-full py-4 glass hover:bg-white/10 rounded-xl font-bold transition-all"
+                >
                   VER MAIS DETALHES
                 </button>
-              </Link>
+              </div>
             </motion.div>
           ))}
         </div>
