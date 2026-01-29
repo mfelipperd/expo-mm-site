@@ -17,6 +17,11 @@ import NotificationProvider from "@/components/NotificationProvider";
 export const metadata: Metadata = {
   title: "Expo MultiMix 2026 | A Maior Feira Multissetorial do Norte",
   description: "O ponto de encontro estratégico para lojistas e indústrias em Belém e Manaus. Renove seu estoque e fortaleça parcerias.",
+  icons: {
+    icon: "/assets/logo EMM_Prancheta 1.png",
+    shortcut: "/assets/logo EMM_Prancheta 1.png",
+    apple: "/assets/logo EMM_Prancheta 1.png",
+  },
 };
 
 export default function RootLayout({
