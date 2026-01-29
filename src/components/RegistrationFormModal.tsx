@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { X, CheckCircle, Loader2, AlertCircle, Plus, Trash2 } from "lucide-react";
+import { X, CheckCircle, Loader2, AlertCircle, Plus, Trash2, MapPin } from "lucide-react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useGeoLocation } from "@/hooks/useGeoLocation";
 
 interface RegistrationFormModalProps {
   cityName: string;
@@ -249,7 +250,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
         <div className="flex justify-between items-start mb-4">
              <div>
                 <p className="text-brand-cyan font-bold tracking-widest text-xs uppercase mb-1">
-                {cityName} 2025
+                {cityName} 2026
                 </p>
                 <h3 className="text-xl md:text-2xl font-black text-white leading-tight">
                 GARANTA SUA VAGA
@@ -537,6 +538,28 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                  {submitError}
              </div>
         )}
+
+        {/* Geo Location Warning */}
+        {(() => {
+            const { city: detectedCity } = useGeoLocation();
+            const currentFormCity = cityName.toLowerCase();
+            
+            if (detectedCity && detectedCity !== currentFormCity) {
+                return (
+                    <div className="bg-amber-500/10 border border-amber-500/20 text-amber-200 p-3 rounded-lg text-xs flex items-start gap-3 animate-fade-in mt-2">
+                        <MapPin className="shrink-0 mt-0.5" size={16} />
+                        <div>
+                            <p className="font-bold uppercase mb-1">Atenção à Localidade</p>
+                            <p>
+                                Identificamos que você está em <strong className="text-white capitalize">{detectedCity}</strong>, 
+                                mas está se credenciando para a feira de <strong className="text-white uppercase">{cityName}</strong>.
+                            </p>
+                        </div>
+                    </div>
+                )
+            }
+            return null;
+        })()}
 
         {/* FOOTER ACTIONS */}
         <div className="pt-4 flex gap-3">

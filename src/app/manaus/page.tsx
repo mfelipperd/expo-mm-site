@@ -9,9 +9,7 @@ export default function ManausPage() {
       heroTitle={
         <>
           CONHEÇA A <br />
-          <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-pink to-brand-orange">
-            EXPO MULTIMIX 2025
-          </span>
+            EXPO MULTIMIX 2026
         </>
       }
       heroTagline="É o momento perfeito para renovar seus estoques."

@@ -9,7 +9,7 @@ import ExhibitorBypassModalContent from "@/components/ExhibitorBypassModal";
 import VisitModalContent from "@/components/VisitModal";
 import WhatsAppFloating from "@/components/WhatsAppFloating";
 import { useState, useRef } from "react";
-import { CheckCircle2, TrendingUp, Users, Package, ArrowRight, Rocket, ShieldCheck, Handshake } from "lucide-react";
+import { CheckCircle2, TrendingUp, Users, Package, ArrowRight, Rocket, ShieldCheck, Handshake, Calendar, MapPin } from "lucide-react";
 import Image from "next/image";
 
 export default function QueroExpor() {
@@ -72,7 +72,85 @@ export default function QueroExpor() {
         </div>
       </section>
 
-      {/* Why Exhibit Section */}
+      {/* Event Calendar / Dates for Exhibitors */}
+      <section className="py-20 bg-brand-blue border-b border-white/5 relative z-10">
+        <div className="max-w-6xl mx-auto px-6">
+            <div className="text-center mb-12">
+                <span className="text-brand-cyan font-bold tracking-widest text-sm uppercase">Calendário 2026</span>
+                <h2 className="text-3xl md:text-4xl font-black text-white mt-2">NOSSAS EDIÇÕES</h2>
+            </div>
+            
+            <div className="grid md:grid-cols-2 gap-8">
+                {/* Manaus Card */}
+                <div className="glass p-8 rounded-3xl border-l-4 border-brand-pink hover:bg-white/5 transition-all group">
+                    <div className="flex justify-between items-start mb-6">
+                        <div>
+                            <span className="bg-brand-pink/20 text-brand-pink text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Amazonas</span>
+                            <h3 className="text-3xl font-black text-white mt-2">MANAUS</h3>
+                        </div>
+                        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Rocket className="text-brand-pink" size={24} />
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-3 text-gray-300">
+                             <div className="w-8 h-8 rounded-lg bg-brand-pink/10 flex items-center justify-center text-brand-pink">
+                                <Calendar size={16} />
+                             </div>
+                             <div>
+                                <p className="text-xs font-bold text-gray-500 uppercase">Data</p>
+                                <p className="font-bold text-white">09, 10 e 11 de Junho</p>
+                             </div>
+                        </div>
+                        <div className="flex items-center gap-3 text-gray-300">
+                             <div className="w-8 h-8 rounded-lg bg-brand-pink/10 flex items-center justify-center text-brand-pink">
+                                <MapPin size={16} />
+                             </div>
+                             <div>
+                                <p className="text-xs font-bold text-gray-500 uppercase">Local</p>
+                                <p className="font-bold text-white">Centro de Convenções Vasco Vasques</p>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Belém Card */}
+                 <div className="glass p-8 rounded-3xl border-l-4 border-brand-cyan hover:bg-white/5 transition-all group">
+                    <div className="flex justify-between items-start mb-6">
+                        <div>
+                            <span className="bg-brand-cyan/20 text-brand-cyan text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Pará</span>
+                            <h3 className="text-3xl font-black text-white mt-2">BELÉM</h3>
+                        </div>
+                        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Rocket className="text-brand-cyan" size={24} />
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-3 text-gray-300">
+                             <div className="w-8 h-8 rounded-lg bg-brand-cyan/10 flex items-center justify-center text-brand-cyan">
+                                <Calendar size={16} />
+                             </div>
+                             <div>
+                                <p className="text-xs font-bold text-gray-500 uppercase">Data</p>
+                                <p className="font-bold text-white">18, 19 e 20 de Agosto</p>
+                             </div>
+                        </div>
+                        <div className="flex items-center gap-3 text-gray-300">
+                             <div className="w-8 h-8 rounded-lg bg-brand-cyan/10 flex items-center justify-center text-brand-cyan">
+                                <MapPin size={16} />
+                             </div>
+                             <div>
+                                <p className="text-xs font-bold text-gray-500 uppercase">Local</p>
+                                <p className="font-bold text-white">Estação das Docas - Pavilhão de Feiras</p>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </section>
       <section className="py-24 bg-black/20">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -141,7 +219,7 @@ export default function QueroExpor() {
           </p>
           <div className="grid md:grid-cols-2 gap-4 text-left max-w-2xl mx-auto">
             {[
-              "Estrutura metálica completa",
+              "Estrutura completa com prateleiras, mesa e cadeiras",
               "Iluminação embutida",
               "Identificação da marca",
               "Pisos acarpetados",
@@ -280,7 +358,7 @@ function ScrollStep({ step, index }: { step: any, index: number }) {
        {/* Image Side - Simple parallax/reveal */}
        <div className="flex-1 w-full">
           <motion.div
-             className="relative aspect-video rounded-3xl overflow-hidden border-4 border-white/5 shadow-2xl bg-black"
+             className="relative aspect-video rounded-3xl overflow-hidden shadow-2xl"
              initial={{ opacity: 0, scale: 0.9 }}
              animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0.5, scale: 0.95 }}
              transition={{ duration: 0.8 }}

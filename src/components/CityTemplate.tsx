@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, Calendar, CheckCircle2, Star } from "lucide-react";
+import { MapPin, Calendar, CheckCircle2, Star, ArrowRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Modal from "@/components/Modal";
@@ -137,6 +137,8 @@ export default function CityTemplate({
               FAZER CREDENCIAMENTO
             </button>
           </div>
+
+
         </div>
       </section>
 
@@ -245,6 +247,46 @@ export default function CityTemplate({
           Quero comprar um stand
         </Link>
       </CTASection>
+
+      {/* Cross-City Promotion Section - Bottom of Page */}
+      <section className="py-20 relative overflow-hidden mt-10">
+        <div className="absolute inset-0 bg-brand-blue/80 backdrop-blur-sm z-0" />
+        <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
+             {cityName.toLowerCase() === 'manaus' ? (
+                <div className="space-y-6">
+                    <p className="text-brand-cyan font-bold tracking-widest text-sm uppercase">EXPANDA SEUS HORIZONTES</p>
+                    <h2 className="text-3xl md:text-5xl font-black text-white">
+                        VAI ESTAR EM <span className="text-brand-cyan">BELÉM?</span>
+                    </h2>
+                    <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+                        A Expo MultiMix também acontece no Pará! Conheça as datas, local e oportunidades da nossa edição em Belém.
+                    </p>
+                    <Link 
+                        href="/belem"
+                        className="inline-flex items-center gap-2 bg-brand-cyan text-brand-blue px-8 py-4 rounded-full font-bold hover:scale-105 transition-transform shadow-[0_0_20px_rgba(34,211,238,0.3)]"
+                    >
+                        CONHECER EDIÇÃO BELÉM <ArrowRight size={20} />
+                    </Link>
+                </div>
+             ) : (
+                <div className="space-y-6">
+                    <p className="text-brand-pink font-bold tracking-widest text-sm uppercase">EXPANDA SEUS HORIZONTES</p>
+                    <h2 className="text-3xl md:text-5xl font-black text-white">
+                        VAI ESTAR EM <span className="text-brand-pink">MANAUS?</span>
+                    </h2>
+                    <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+                        A Expo MultiMix também acontece no Amazonas! Conheça as datas, local e oportunidades da nossa edição em Manaus.
+                    </p>
+                    <Link 
+                        href="/manaus"
+                        className="inline-flex items-center gap-2 bg-brand-pink text-white px-8 py-4 rounded-full font-bold hover:scale-105 transition-transform shadow-[0_0_20px_rgba(233,30,99,0.3)]"
+                    >
+                        CONHECER EDIÇÃO MANAUS <ArrowRight size={20} />
+                    </Link>
+                </div>
+             )}
+        </div>
+      </section>
 
       <Footer onWhatsAppClick={openWhatsAppModal} />
       <WhatsAppFloating onClick={openWhatsAppModal} />

@@ -32,9 +32,11 @@ export default function Navbar({ onVisitClick, onExposeClick, onContactClick }: 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  /* 
+    Standard Navigation Links
+  */
   const navLinks = [
     { name: "Home", href: "/" },
-
     { name: "Quero Expor", href: "/quero-expor" },
     { name: "Contato", href: "#", onClick: onContactClick },
   ];

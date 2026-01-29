@@ -38,23 +38,31 @@ export default function Modal({ isOpen, onClose, children, title }: ModalProps) 
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative w-full h-full md:h-auto md:max-h-[90vh] md:max-w-lg glass-dark border-0 md:border md:border-white/10 rounded-none md:rounded-[2.5rem] p-6 md:p-12 shadow-2xl overflow-y-auto"
+            className="relative w-full h-full md:h-auto md:max-h-[90vh] md:max-w-lg glass-dark border-0 md:border md:border-white/10 rounded-none md:rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden"
           >
-            <button
-              onClick={onClose}
-              className="absolute top-6 right-6 text-gray-400 hover:text-white transition-colors"
-            >
-              <X size={24} />
-            </button>
+            {/* Header / Fixed Actions */}
+            <div className="flex-none p-6 md:p-8 md:pb-0 flex justify-end absolute top-0 right-0 z-50 w-full pointer-events-none">
+                <button
+                  onClick={onClose}
+                  className="pointer-events-auto bg-black/20 hover:bg-black/40 text-gray-400 hover:text-white p-2 rounded-full transition-colors backdrop-blur-sm"
+                >
+                  <X size={24} />
+                </button>
+            </div>
 
-            {title && (
-              <h3 className="text-2xl md:text-3xl font-black mb-8 pr-8 leading-tight">
-                {title}
-              </h3>
-            )}
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6 md:p-12 pt-12 md:pt-12 custom-scrollbar">
+                {title && (
+                <h3 className="text-2xl md:text-3xl font-black mb-8 pr-8 leading-tight">
+                    {title}
+                </h3>
+                )}
 
-            <div className="relative z-10">{children}</div>
+                <div className="relative z-10">{children}</div>
+            </div>
           </motion.div>
+
+
         </div>
       )}
     </AnimatePresence>

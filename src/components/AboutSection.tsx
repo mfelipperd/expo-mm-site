@@ -31,7 +31,7 @@ export default function AboutSection({ onVisitClick }: AboutSectionProps) {
                         COMO FUNCIONA PARA <br className="md:hidden" /> <span className="text-brand-cyan">LOJISTAS</span>
                     </h2>
                     <p className="text-xl text-gray-300 leading-relaxed max-w-3xl mx-auto mb-6">
-                        A Expo MultiMix é o ponto de encontro estratégico para quem busca renovar estoques com qualidade e prazos imbatíveis.
+                        A Expo MultiMix é o ponto de encontro estratégico para quem busca renovar estoques com qualidade e preços imbatíveis.
                     </p>
                     
                     {/* B2C Warning */}

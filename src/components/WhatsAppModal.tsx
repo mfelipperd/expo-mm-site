@@ -1,45 +1,73 @@
 "use client";
 
 import { Phone, ExternalLink } from "lucide-react";
+import { useGeoLocation } from "@/hooks/useGeoLocation";
 
 export default function WhatsAppModalContent() {
+  const { city } = useGeoLocation();
+
+  const getMessage = (role: string) => {
+    const cityText = city === 'manaus' ? "em Manaus" : city === 'belem' ? "em Belém" : "";
+    const cityContext = cityText ? `estou ${cityText} e` : "";
+    
+    if (role.includes("Comercial")) {
+       if (city) return `Olá, ${cityContext} tenho interesse em saber mais sobre vendas e stands na Expo MultiMix.`;
+       return "Olá, tenho interesse em saber mais sobre vendas e stands na Expo MultiMix.";
+    }
+    
+    if (role.includes("Desenvolvimento")) {
+        if (city) return `Olá, ${cityContext} gostaria de tratar sobre o site/sistema da Expo MultiMix.`;
+        return "Olá, gostaria de tratar sobre assuntos de programação e sistema da Expo MultiMix.";
+    }
+
+    if (role.includes("Design")) {
+        if (city) return `Olá, ${cityContext} gostaria de falar sobre artes e design da Expo MultiMix.`;
+        return "Olá, gostaria de falar sobre design e artes da Expo MultiMix.";
+    }
+
+    return "Olá, tenho interesse na Expo MultiMix.";
+  };
+
+  const getLink = (phone: string, role: string) => {
+      const cleanPhone = phone.replace(/\D/g, "");
+      const message = getMessage(role);
+      return `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`;
+  };
+
   const contacts = [
     {
       name: "Ana Paula",
       role: "Comercial",
       phone: "(91) 98130-6900",
-      link: "https://wa.me/5591981306900?text=Olá,%20tenho%20interesse%20em%20ser%20um%20expositor%20na%20Expo%20MultiMix.",
     },
     {
       name: "Marcos Felippe",
       role: "Desenvolvimento",
       phone: "(91) 99119-5755",
-      link: "https://wa.me/5591991195755?text=Olá,%20tenho%20interesse%20em%20ser%20um%20expositor%20na%20Expo%20MultiMix.",
     },
     {
       name: "Ana Raquel",
       role: "Design & Social Media",
       phone: "(91) 98283-6424",
-      link: "https://wa.me/5591982836424?text=Olá,%20tenho%20interesse%20em%20ser%20um%20expositor%20na%20Expo%20MultiMix.",
     },
     {
       name: "Gabriel",
       role: "Comercial",
       phone: "(91) 98267-3273",
-      link: "https://wa.me/5591982673273?text=Olá,%20tenho%20interesse%20em%20ser%20um%20expositor%20na%20Expo%20MultiMix.",
     },
   ];
 
   return (
     <div className="space-y-3 pb-4">
       <p className="text-gray-400 mb-6 text-sm">
-        Fale diretamente com nossa equipe comercial via WhatsApp para garantir seu stand.
+        Fale diretamente com nossa equipe via WhatsApp.
+        {city && <span className="block mt-1 text-brand-cyan text-xs">Localização identificada: {city === 'manaus' ? 'Manaus' : 'Belém'}</span>}
       </p>
 
       {contacts.map((contact) => (
         <a
           key={contact.phone}
-          href={contact.link}
+          href={getLink(contact.phone, contact.role)}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-brand-orange/30 transition-all group"
