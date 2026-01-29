@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { db, storage } from "@/lib/firebase";
 import { collection, addDoc, updateDoc, doc, Timestamp } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Loader2, Upload, X, Save } from "lucide-react";
 
 interface ExhibitorFormProps {
@@ -20,6 +20,7 @@ export default function ExhibitorForm({ initialData, onSuccess, onCancel }: Exhi
   const [logoPreview, setLogoPreview] = useState<string>(initialData?.logoUrl || "");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [progress, setProgress] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,19 +59,42 @@ export default function ExhibitorForm({ initialData, onSuccess, onCancel }: Exhi
     setError(null);
 
     try {
+      console.log("Submit started. Name:", name);
       let logoUrl = initialData?.logoUrl || "";
 
       if (logoFile) {
-        setStatus("Enviando logo...");
+        setStatus("Iniciando upload...");
+        console.log("Preparing storage ref for:", logoFile.name);
         const storageRef = ref(storage, `exhibitors/${Date.now()}_${logoFile.name}`);
-        const snapshot = await uploadBytes(storageRef, logoFile);
-        logoUrl = await getDownloadURL(snapshot.ref);
+        const uploadTask = uploadBytesResumable(storageRef, logoFile);
+
+        await new Promise<void>((resolve, reject) => {
+          uploadTask.on(
+            "state_changed",
+            (snapshot) => {
+              const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              setProgress(Math.round(p));
+              setStatus(`Enviando logo: ${Math.round(p)}%`);
+              console.log(`Upload progress: ${p}%`);
+            },
+            (err) => {
+              console.error("Upload error:", err);
+              reject(err);
+            },
+            async () => {
+              console.log("Upload completed, getting URL...");
+              logoUrl = await getDownloadURL(uploadTask.snapshot.ref);
+              resolve();
+            }
+          );
+        });
       }
 
-      setStatus("Salvando dados no banco...");
+      setStatus("Salvando no banco...");
+      console.log("Saving to Firestore with logoUrl:", logoUrl);
 
       const exhibitorData = {
-        name,
+        name: name.trim(),
         link: link.trim() || null,
         cities,
         logoUrl,
@@ -78,14 +102,17 @@ export default function ExhibitorForm({ initialData, onSuccess, onCancel }: Exhi
       };
 
       if (initialData?.id) {
+        console.log("Updating document:", initialData.id);
         await updateDoc(doc(db, "exhibitors", initialData.id), exhibitorData);
       } else {
+        console.log("Adding new document");
         await addDoc(collection(db, "exhibitors"), {
           ...exhibitorData,
           createdAt: Timestamp.now(),
         });
       }
 
+      console.log("Save successful!");
       onSuccess();
     } catch (err: any) {
       console.error("Error saving exhibitor full log:", err);
