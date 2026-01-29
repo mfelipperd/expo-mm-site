@@ -34,7 +34,7 @@ export default function Navbar({ onVisitClick, onExposeClick, onContactClick }: 
 
   const navLinks = [
     { name: "Home", href: "/" },
-    { name: "Para Lojistas", href: "/#sobre" },
+
     { name: "Quero Expor", href: "/quero-expor" },
     { name: "Contato", href: "#", onClick: onContactClick },
   ];

@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { MapPin, Calendar, Clock } from "lucide-react";
+import Link from "next/link";
 
 export default function InfoSection() {
   const events = [
@@ -11,6 +12,7 @@ export default function InfoSection() {
       time: "13h - 20h",
       location: "Centro de Convenções Vasco Vasques",
       color: "border-brand-pink",
+      slug: "manaus",
     },
     {
       city: "BELÉM",
@@ -18,6 +20,7 @@ export default function InfoSection() {
       time: "13h - 20h",
       location: "Pavilhão de Feiras da Estação das Docas",
       color: "border-brand-cyan",
+      slug: "belem",
     },
   ];
 
@@ -82,9 +85,11 @@ export default function InfoSection() {
                 </div>
               </div>
 
-              <button className="mt-10 w-full py-4 glass hover:bg-white/10 rounded-xl font-bold transition-all">
-                VER MAIS DETALHES
-              </button>
+              <Link href={`/${event.slug}`} className="block mt-10 w-full">
+                <button className="w-full py-4 glass hover:bg-white/10 rounded-xl font-bold transition-all">
+                  VER MAIS DETALHES
+                </button>
+              </Link>
             </motion.div>
           ))}
         </div>
