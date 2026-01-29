@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle, CheckCircle2, Zap, Shield, TrendingUp } from "lucide-react";
+import { CheckCircle, CheckCircle2, Zap, Shield, TrendingUp, Plane, Phone, Mail } from "lucide-react";
 import Image from "next/image";
 
 export default function Features() {
@@ -73,19 +73,79 @@ export default function Features() {
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="relative h-[400px] rounded-2xl overflow-hidden glass"
+            className="relative rounded-2xl overflow-hidden shadow-2xl flex flex-col"
           >
-            <Image 
-              src="/assets/info-bg.jpg" 
-              alt="Expo Background" 
-              fill 
-              className="object-cover opacity-60"
-            />
-            <div className="absolute inset-0 flex items-center justify-center p-8">
-              <div className="text-center p-8 glass-dark rounded-2xl border border-white/20">
-                <h4 className="text-2xl font-bold mb-2">PONTO DE ENCONTRO</h4>
-                <p className="text-brand-cyan font-bold tracking-widest">ESTOQUE & PARCERIAS</p>
+            {/* Top Section - Contact & Info */}
+            <div className="relative p-8 bg-slate-900 flex flex-col items-center justify-center text-center">
+              <Image 
+                src="/assets/info-bg.jpg" 
+                alt="Barolo Background" 
+                fill 
+                className="object-cover opacity-20"
+              />
+              <div className="relative z-10 flex flex-col items-center w-full">
+                <div className="mb-6">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <Plane className="text-[#dcb469] w-8 h-8 -rotate-45" />
+                    <h3 className="text-3xl font-bold text-[#dcb469]">Barolo</h3>
+                  </div>
+                  <h3 className="text-3xl font-bold text-[#dcb469] leading-none">Viagens</h3>
+                  <p className="text-xs text-gray-300 mt-1 uppercase tracking-widest">Viajando mais perto de você</p>
+                </div>
+
+                <p className="text-white font-medium text-lg leading-snug mb-6 max-w-xs">
+                  Garanta já suas passagens para a Expo MultiMix 2026 Manaus e Belém com o melhor preço!
+                </p>
+
+                <p className="text-gray-300 text-sm mb-6 max-w-xs">
+                   Entre em contato com um de nossos consultores para que seja dado todo o suporte e direcionamento que você precisa.
+                </p>
+
+                <div className="bg-[#dcb469] text-slate-900 py-3 px-6 rounded-lg font-bold text-center w-full max-w-[280px]">
+                    <div className="text-lg flex items-center justify-center gap-2">
+                      <Phone size={18} /> 11 5199-3957
+                    </div>
+                    <div className="text-sm flex items-center justify-center gap-2">
+                       <Mail size={14} /> lazer@barolo.tur.br
+                    </div>
+                </div>
               </div>
+            </div>
+
+            {/* Bottom Section - Promo & Action */}
+            <div className="bg-[#0B1426] p-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
+               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-brand-blue/20 rounded-full blur-[60px]" />
+               
+               <div className="relative z-10 w-full flex flex-col items-center">
+                  <h3 className="text-xl md:text-2xl font-black text-white uppercase leading-tight mb-4">
+                      Passagens Aéreas com <br/> <span className="text-brand-cyan">Desconto Promocional</span>
+                  </h3>
+
+                  <Plane className="text-white/10 w-16 h-16 mx-auto mb-4 -rotate-45" strokeWidth={1} />
+
+                  <p className="text-[#dcb469] text-sm mb-6 max-w-xs mx-auto">
+                      Desconto especial exclusivo para expositores e visitantes da Expo Multimix durante o período da feira.
+                  </p>
+
+                  <div className="space-y-3 w-full max-w-[280px] mx-auto">
+                      <a 
+                          href="https://wa.me/551151993957"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block w-full bg-[#dcb469] hover:bg-[#c9a255] text-slate-900 font-bold py-3 rounded-lg transition-colors text-sm uppercase"
+                      >
+                          Reserve para Manaus
+                      </a>
+                      <a 
+                          href="https://wa.me/551151993957"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block w-full bg-[#dcb469] hover:bg-[#c9a255] text-slate-900 font-bold py-3 rounded-lg transition-colors text-sm uppercase"
+                      >
+                           Reserve para Belém
+                      </a>
+                  </div>
+               </div>
             </div>
           </motion.div>
         </div>

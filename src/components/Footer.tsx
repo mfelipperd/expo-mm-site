@@ -91,7 +91,7 @@ export default function Footer({ onWhatsAppClick }: FooterProps) {
       </div>
       
       <div className="max-w-7xl mx-auto px-6 mt-20 pt-8 border-t border-white/5 text-center text-xs text-gray-600">
-        <p>© {new Date().getFullYear()} Expo MultiMix. Todos os direitos reservados. Desenvolvido com Antigravity.</p>
+        <p>© {new Date().getFullYear()} Expo MultiMix. Todos os direitos reservados. Criado com ❤️ por <a href="https://portfolio-marcos-three.vercel.app/" target="_blank" rel="noopener noreferrer" className="hover:text-brand-cyan transition-colors">Marcos Felippe</a></p>
       </div>
     </footer>
   );
