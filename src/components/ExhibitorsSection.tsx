@@ -6,7 +6,11 @@ import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 
-export default function ExhibitorsSection() {
+interface ExhibitorsSectionProps {
+  city?: "manaus" | "belem";
+}
+
+export default function ExhibitorsSection({ city }: ExhibitorsSectionProps) {
   const [exhibitors, setExhibitors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,12 +21,18 @@ export default function ExhibitorsSection() {
         id: doc.id,
         ...doc.data()
       }));
-      setExhibitors(docs);
+
+      // Filter by city if provided
+      const filtered = city 
+        ? docs.filter((ex: any) => ex.cities?.includes(city))
+        : docs;
+
+      setExhibitors(filtered);
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [city]);
 
   if (loading) return null;
   if (exhibitors.length === 0) return null;

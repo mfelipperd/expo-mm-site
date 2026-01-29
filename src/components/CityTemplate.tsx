@@ -301,7 +301,7 @@ export default function CityTemplate({
         </div>
       </section>
 
-      <ExhibitorsSection />
+      <ExhibitorsSection city={cityName.toLowerCase().includes("manaus") ? "manaus" : "belem"} />
 
       <Footer onWhatsAppClick={openWhatsAppModal} />
       <WhatsAppFloating onClick={openWhatsAppModal} />

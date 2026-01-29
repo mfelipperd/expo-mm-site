@@ -119,6 +119,15 @@ export default function AdminDashboard() {
                       
                       <h3 className="text-xl font-bold text-white mb-2">{exhibitor.name}</h3>
                       
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {exhibitor.cities?.includes("manaus") && (
+                          <span className="text-[10px] font-black bg-brand-pink/20 text-brand-pink px-2 py-0.5 rounded-full uppercase tracking-tighter">Manaus</span>
+                        )}
+                        {exhibitor.cities?.includes("belem") && (
+                          <span className="text-[10px] font-black bg-brand-cyan/20 text-brand-cyan px-2 py-0.5 rounded-full uppercase tracking-tighter">Belém</span>
+                        )}
+                      </div>
+
                       <div className="flex items-center gap-2 text-sm text-gray-400">
                         <Globe size={14} className={exhibitor.link ? "text-brand-cyan" : "text-gray-700"} />
                         {exhibitor.link ? (

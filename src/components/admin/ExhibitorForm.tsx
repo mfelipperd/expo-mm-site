@@ -15,6 +15,7 @@ interface ExhibitorFormProps {
 export default function ExhibitorForm({ initialData, onSuccess, onCancel }: ExhibitorFormProps) {
   const [name, setName] = useState(initialData?.name || "");
   const [link, setLink] = useState(initialData?.link || "");
+  const [cities, setCities] = useState<string[]>(initialData?.cities || []);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>(initialData?.logoUrl || "");
   const [loading, setLoading] = useState(false);
@@ -47,6 +48,10 @@ export default function ExhibitorForm({ initialData, onSuccess, onCancel }: Exhi
       setError("A logo é obrigatória para novos cadastros.");
       return;
     }
+    if (cities.length === 0) {
+      setError("Selecione pelo menos uma cidade para o expositor.");
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -63,6 +68,7 @@ export default function ExhibitorForm({ initialData, onSuccess, onCancel }: Exhi
       const exhibitorData = {
         name,
         link: link.trim() || null,
+        cities,
         logoUrl,
         updatedAt: Timestamp.now(),
       };
@@ -113,6 +119,36 @@ export default function ExhibitorForm({ initialData, onSuccess, onCancel }: Exhi
             placeholder="https://suaempresa.com.br"
           />
           <p className="text-xs text-gray-500 mt-2">Se deixado em branco, o card não será clicável.</p>
+        </div>
+
+        <div>
+           <label className="block text-sm font-bold text-gray-400 uppercase mb-3">Participação nas Feiras *</label>
+           <div className="flex gap-6">
+              <label className="flex items-center gap-3 cursor-pointer group">
+                  <input 
+                    type="checkbox"
+                    checked={cities.includes("manaus")}
+                    onChange={(e) => {
+                      if (e.target.checked) setCities([...cities, "manaus"]);
+                      else setCities(cities.filter(c => c !== "manaus"));
+                    }}
+                    className="w-5 h-5 rounded border-white/10 bg-white/5 checked:bg-brand-pink accent-brand-pink"
+                  />
+                  <span className="text-white font-bold group-hover:text-brand-pink transition-colors">MANAUS</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer group">
+                  <input 
+                    type="checkbox"
+                    checked={cities.includes("belem")}
+                    onChange={(e) => {
+                      if (e.target.checked) setCities([...cities, "belem"]);
+                      else setCities(cities.filter(c => c !== "belem"));
+                    }}
+                    className="w-5 h-5 rounded border-white/10 bg-white/5 checked:bg-brand-cyan accent-brand-cyan"
+                  />
+                  <span className="text-white font-bold group-hover:text-brand-cyan transition-colors">BELÉM</span>
+              </label>
+           </div>
         </div>
 
         <div>
