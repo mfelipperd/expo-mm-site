@@ -293,10 +293,12 @@ export default function QueroExpor() {
                {/* Stand 2x3 */}
                <div className="glass p-8 rounded-3xl border border-white/10 hover:border-brand-orange/50 transition-all flex flex-col group">
                   <div className="aspect-video bg-white/5 rounded-2xl mb-6 relative overflow-hidden">
-                     {/* Placeholder Image until provided */}
-                     <div className="absolute inset-0 flex items-center justify-center text-gray-500 font-bold bg-black/20 border-2 border-dashed border-white/10 rounded-2xl m-2">
-                        IMAGEM STAND 2x3
-                     </div>
+                     <Image 
+                        src="/assets/Stand-2-3.jpeg"
+                        alt="Stand Standard 2x3m"
+                        fill
+                        className="object-cover group-hover:scale-110 transition-transform duration-500"
+                     />
                   </div>
                   <h3 className="text-2xl font-black text-white mb-2">STAND STANDARD 2x3m</h3>
                   <p className="text-gray-400 mb-6 text-sm">Ideal para pequenas exposições e ativação de marca.</p>
@@ -322,10 +324,12 @@ export default function QueroExpor() {
                {/* Stand 3x3 */}
                <div className="glass p-8 rounded-3xl border border-white/10 hover:border-brand-orange/50 transition-all flex flex-col group">
                   <div className="aspect-video bg-white/5 rounded-2xl mb-6 relative overflow-hidden">
-                      {/* Placeholder Image until provided */}
-                      <div className="absolute inset-0 flex items-center justify-center text-gray-500 font-bold bg-black/20 border-2 border-dashed border-white/10 rounded-2xl m-2">
-                        IMAGEM STAND 3x3
-                     </div>
+                      <Image 
+                        src="/assets/stand-3-3.jpeg"
+                        alt="Stand Standard 3x3m"
+                        fill
+                        className="object-cover group-hover:scale-110 transition-transform duration-500"
+                     />
                   </div>
                   <h3 className="text-2xl font-black text-white mb-2">STAND STANDARD 3x3m</h3>
                   <p className="text-gray-400 mb-6 text-sm">Mais espaço para produtos e atendimento.</p>
