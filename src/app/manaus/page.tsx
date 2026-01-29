@@ -5,7 +5,7 @@ export default function ManausPage() {
   return (
     <CityTemplate
       cityName="MANAUS"
-      fairId="MANAUS_2025" // Placeholder ID
+      fairId="fa342b59-1032-434c-9658-e532a1fa79bd" // Placeholder ID
       heroTitle={
         <>
           CONHEÇA A <br />
