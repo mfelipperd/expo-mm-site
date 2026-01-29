@@ -19,6 +19,7 @@ export default function ExhibitorForm({ initialData, onSuccess, onCancel }: Exhi
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>(initialData?.logoUrl || "");
   const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,10 +61,13 @@ export default function ExhibitorForm({ initialData, onSuccess, onCancel }: Exhi
       let logoUrl = initialData?.logoUrl || "";
 
       if (logoFile) {
+        setStatus("Enviando logo...");
         const storageRef = ref(storage, `exhibitors/${Date.now()}_${logoFile.name}`);
         const snapshot = await uploadBytes(storageRef, logoFile);
         logoUrl = await getDownloadURL(snapshot.ref);
       }
+
+      setStatus("Salvando dados no banco...");
 
       const exhibitorData = {
         name,
@@ -84,10 +88,12 @@ export default function ExhibitorForm({ initialData, onSuccess, onCancel }: Exhi
 
       onSuccess();
     } catch (err: any) {
-      console.error("Error saving exhibitor:", err);
-      setError("Erro ao salvar expositor. Tente novamente.");
+      console.error("Error saving exhibitor full log:", err);
+      const errorMessage = err.message || "Erro desconhecido";
+      setError(`Erro ao salvar: ${errorMessage}. Confira o console do navegador.`);
     } finally {
       setLoading(false);
+      setStatus(null);
     }
   };
 
@@ -187,8 +193,17 @@ export default function ExhibitorForm({ initialData, onSuccess, onCancel }: Exhi
             disabled={loading}
             className="flex-1 bg-brand-cyan text-brand-blue font-black py-4 rounded-xl hover:scale-105 transition-transform flex items-center justify-center gap-2 disabled:opacity-50 disabled:scale-100"
           >
-            {loading ? <Loader2 className="animate-spin" /> : <Save size={20} />}
-            {initialData ? "ATUALIZAR" : "SALVAR EXPOSITOR"}
+            {loading ? (
+              <>
+                <Loader2 className="animate-spin" />
+                <span>{status || "CARREGANDO..."}</span>
+              </>
+            ) : (
+              <>
+                <Save size={20} />
+                <span>{initialData ? "ATUALIZAR" : "SALVAR EXPOSITOR"}</span>
+              </>
+            )}
           </button>
           
           <button
