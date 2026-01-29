@@ -8,17 +8,43 @@ import WhatsAppModalContent from "@/components/WhatsAppModal";
 import ExhibitorBypassModalContent from "@/components/ExhibitorBypassModal";
 import VisitModalContent from "@/components/VisitModal";
 import WhatsAppFloating from "@/components/WhatsAppFloating";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { CheckCircle2, TrendingUp, Users, Package, ArrowRight, Rocket, ShieldCheck, Handshake, Calendar, MapPin } from "lucide-react";
 import Image from "next/image";
 
 export default function QueroExpor() {
   const [activeModal, setActiveModal] = useState<"none" | "whatsapp" | "bypass" | "visit">("none");
+  const [whatsAppFilter, setWhatsAppFilter] = useState<string | undefined>(undefined);
 
-  const openWhatsAppModal = () => setActiveModal("whatsapp");
+  const openWhatsAppModal = () => {
+      setWhatsAppFilter(undefined);
+      setActiveModal("whatsapp");
+  };
   const openBypassModal = () => setActiveModal("bypass");
   const openVisitModal = () => setActiveModal("visit");
   const closeModal = () => setActiveModal("none");
+
+  const scrollToStands = () => {
+     document.getElementById("modelos-stands")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    // Check for query param 'target=stands' to trigger smooth scroll
+    if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("target") === "stands") {
+            // Timeout ensures page is rendered before scrolling
+            setTimeout(() => {
+                scrollToStands();
+            }, 600); 
+        }
+    }
+  }, []);
+
+  const handleBuyStand = (standModel: string) => {
+      setWhatsAppFilter("Comercial");
+      setActiveModal("whatsapp");
+  };
 
   const heroRef = useRef(null);
   const { scrollYProgress } = useScroll({
@@ -32,15 +58,25 @@ export default function QueroExpor() {
     <main className="min-h-screen bg-brand-blue selection:bg-brand-cyan/30 selection:text-white">
       <Navbar 
         onVisitClick={openVisitModal} 
-        onExposeClick={openBypassModal} 
+        onExposeClick={scrollToStands} 
         onContactClick={openWhatsAppModal}
       />
 
       {/* Hero Section */}
       <section ref={heroRef} className="relative pt-32 pb-20 overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="/assets/fachada-manaus-2.jpeg"
+            alt="Expo MultiMix Manaus"
+            fill
+            className="object-cover opacity-60"
+          />
+          <div className="absolute inset-0 bg-linear-to-b from-brand-blue/70 via-brand-blue/60 to-brand-blue" />
+        </div>
+        
         <motion.div 
           style={{ y }}
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-linear-to-b from-brand-orange/10 to-transparent blur-[120px] pointer-events-none" 
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-linear-to-b from-brand-orange/10 to-transparent blur-[120px] pointer-events-none z-0" 
         />
         
         <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
@@ -64,7 +100,7 @@ export default function QueroExpor() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
-            onClick={openBypassModal}
+            onClick={scrollToStands}
             className="bg-brand-orange text-white px-10 py-5 rounded-full font-black text-lg shadow-2xl hover:scale-105 transition-transform"
           >
             RESERVAR MEU STAND AGORA
@@ -189,15 +225,25 @@ export default function QueroExpor() {
                 ))}
               </div>
             </div>
-            <div className="relative">
-              <div className="aspect-square glass rounded-[3rem] border border-white/10 flex items-center justify-center p-12 text-center overflow-hidden">
-                <div className="absolute inset-0 bg-linear-to-br from-brand-orange/20 via-transparent to-brand-pink/20" />
+            <div className="relative h-full">
+              <div className="h-full aspect-square md:aspect-auto glass rounded-3xl border border-white/10 flex items-center justify-center p-12 text-center overflow-hidden relative group">
+                
+                {/* Background Images Collage */}
+                <div className="absolute inset-0 z-0">
+                    <div className="absolute top-0 left-0 w-full h-1/2 bg-[url('/assets/fachada-belem-emm.jpeg')] bg-cover bg-center opacity-40 mix-blend-overlay transition-transform duration-1000 group-hover:scale-110" />
+                    <div className="absolute bottom-0 left-0 w-full h-1/2 bg-[url('/assets/fachada-manaus-emm.jpeg')] bg-cover bg-center opacity-40 mix-blend-overlay transition-transform duration-1000 group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-brand-blue/80 backdrop-blur-[2px]" />
+                </div>
+
+                <div className="absolute inset-0 bg-linear-to-br from-brand-orange/20 via-transparent to-brand-pink/20 z-0 pointer-events-none" />
+                
                 <div className="relative z-10">
-                  <div className="mb-6">
-                    <Rocket size={64} className="text-brand-orange mx-auto" />
+                  <div className="mb-8 relative">
+                    <div className="absolute inset-0 bg-brand-orange/20 blur-xl rounded-full" />
+                    <Rocket size={64} className="text-brand-orange mx-auto relative z-10" />
                   </div>
-                  <h3 className="text-3xl font-black mb-4">SUCESSO REGIONAL</h3>
-                  <p className="text-gray-400 text-lg">
+                  <h3 className="text-3xl font-black mb-6 text-white drop-shadow-md">SUCESSO REGIONAL</h3>
+                  <p className="text-gray-200 text-lg leading-relaxed font-medium">
                     "Chegando à sua 17ª edição em Belém e consolidando a 3ª edição em Manaus como referência para o setor."
                   </p>
                 </div>
@@ -235,6 +281,76 @@ export default function QueroExpor() {
         </div>
       </section>
 
+      {/* Stand Models Section */}
+      <section id="modelos-stands" className="py-20 bg-brand-blue/30 border-t border-white/5">
+         <div className="max-w-6xl mx-auto px-6">
+            <div className="text-center mb-16">
+               <span className="text-brand-orange font-bold tracking-widest text-sm uppercase">ESCOLHA O SEU</span>
+               <h2 className="text-3xl md:text-5xl font-black text-white mt-2">MODELOS DISPONÍVEIS</h2>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+               {/* Stand 2x3 */}
+               <div className="glass p-8 rounded-3xl border border-white/10 hover:border-brand-orange/50 transition-all flex flex-col group">
+                  <div className="aspect-video bg-white/5 rounded-2xl mb-6 relative overflow-hidden">
+                     {/* Placeholder Image until provided */}
+                     <div className="absolute inset-0 flex items-center justify-center text-gray-500 font-bold bg-black/20 border-2 border-dashed border-white/10 rounded-2xl m-2">
+                        IMAGEM STAND 2x3
+                     </div>
+                  </div>
+                  <h3 className="text-2xl font-black text-white mb-2">STAND STANDARD 2x3m</h3>
+                  <p className="text-gray-400 mb-6 text-sm">Ideal para pequenas exposições e ativação de marca.</p>
+                  <ul className="space-y-3 mb-8 flex-1">
+                     <li className="flex items-center gap-2 text-sm text-gray-300">
+                        <CheckCircle2 size={16} className="text-brand-cyan" /> 6m² de área total
+                     </li>
+                     <li className="flex items-center gap-2 text-sm text-gray-300">
+                        <CheckCircle2 size={16} className="text-brand-cyan" /> Montagem básica inclusa
+                     </li>
+                     <li className="flex items-center gap-2 text-sm text-gray-300">
+                        <CheckCircle2 size={16} className="text-brand-cyan" /> Iluminação e Tomada
+                     </li>
+                  </ul>
+                  <button 
+                    onClick={() => handleBuyStand('2x3m')}
+                    className="w-full bg-white/5 hover:bg-brand-orange hover:text-white text-brand-orange font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 border border-brand-orange/30 hover:border-brand-orange"
+                  >
+                     SABER MAIS <ArrowRight size={18} />
+                  </button>
+               </div>
+
+               {/* Stand 3x3 */}
+               <div className="glass p-8 rounded-3xl border border-white/10 hover:border-brand-orange/50 transition-all flex flex-col group">
+                  <div className="aspect-video bg-white/5 rounded-2xl mb-6 relative overflow-hidden">
+                      {/* Placeholder Image until provided */}
+                      <div className="absolute inset-0 flex items-center justify-center text-gray-500 font-bold bg-black/20 border-2 border-dashed border-white/10 rounded-2xl m-2">
+                        IMAGEM STAND 3x3
+                     </div>
+                  </div>
+                  <h3 className="text-2xl font-black text-white mb-2">STAND STANDARD 3x3m</h3>
+                  <p className="text-gray-400 mb-6 text-sm">Mais espaço para produtos e atendimento.</p>
+                   <ul className="space-y-3 mb-8 flex-1">
+                     <li className="flex items-center gap-2 text-sm text-gray-300">
+                        <CheckCircle2 size={16} className="text-brand-cyan" /> 9m² de área total
+                     </li>
+                     <li className="flex items-center gap-2 text-sm text-gray-300">
+                        <CheckCircle2 size={16} className="text-brand-cyan" /> Montagem básica inclusa
+                     </li>
+                     <li className="flex items-center gap-2 text-sm text-gray-300">
+                        <CheckCircle2 size={16} className="text-brand-cyan" /> Iluminação e Tomada
+                     </li>
+                  </ul>
+                  <button 
+                     onClick={() => handleBuyStand('3x3m')}
+                     className="w-full bg-brand-orange text-white font-bold py-4 rounded-xl hover:scale-105 transition-transform flex items-center justify-center gap-2 shadow-lg shadow-brand-orange/20"
+                  >
+                     SABER MAIS <ArrowRight size={18} />
+                  </button>
+               </div>
+            </div>
+         </div>
+      </section>
+
       {/* Contact Section */}
       <section className="py-24 bg-brand-orange">
         <div className="max-w-5xl mx-auto px-6 text-center">
@@ -243,7 +359,7 @@ export default function QueroExpor() {
             As vagas para expositores são limitadas. Fale agora com nossa equipe comercial e escolha sua localização na planta.
           </p>
           <button 
-            onClick={openBypassModal}
+            onClick={scrollToStands}
             className="bg-white text-brand-orange px-12 py-6 rounded-full font-black text-xl shadow-2xl hover:scale-105 transition-transform inline-flex items-center gap-4"
           >
             FALAR COM CONSULTOR <ArrowRight size={24} />
@@ -278,7 +394,7 @@ export default function QueroExpor() {
         onClose={closeModal} 
         title="FALE COM UM CONSULTOR"
       >
-        <WhatsAppModalContent />
+        <WhatsAppModalContent filterRole={whatsAppFilter} />
       </Modal>
     </main>
   );

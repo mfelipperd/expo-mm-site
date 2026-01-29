@@ -13,6 +13,7 @@ export default function ManausPage() {
         </>
       }
       heroTagline="É o momento perfeito para renovar seus estoques."
+      heroImage="/assets/fachada-manaus-emm.jpeg"
       aboutText="A Expo MultiMix chegou em Manaus! Com as maiores marcas e indústrias de todo o Brasil, a EMM 2025 está repleta de novidades para os lojistas e empreendedores do Amazonas. É uma oportunidade única de ver e testar os produtos em primeira mão e descobrir novas possibilidades."
       benefits={[
         {

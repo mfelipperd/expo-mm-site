@@ -13,13 +13,14 @@ interface NavbarProps {
   onVisitClick: () => void;
   onExposeClick: () => void;
   onContactClick: () => void;
+  visitButtonColor?: "cyan" | "pink";
 }
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export default function Navbar({ onVisitClick, onExposeClick, onContactClick }: NavbarProps) {
+export default function Navbar({ onVisitClick, onExposeClick, onContactClick, visitButtonColor }: NavbarProps) {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -86,7 +87,12 @@ export default function Navbar({ onVisitClick, onExposeClick, onContactClick }: 
           ))}
           <button
             onClick={onVisitClick}
-            className="text-white px-6 py-2 rounded-full text-sm font-bold border border-white/20 hover:bg-white/10 transition-all transform hover:scale-105"
+            className={cn(
+              "px-6 py-2 rounded-full text-sm font-bold transition-all transform hover:scale-105",
+              visitButtonColor === "cyan" ? "bg-brand-cyan text-brand-blue shadow-[0_0_15px_rgba(34,211,238,0.4)]" :
+              visitButtonColor === "pink" ? "bg-brand-pink text-white shadow-[0_0_15px_rgba(233,30,99,0.4)]" :
+              "text-white border border-white/20 hover:bg-white/10"
+            )}
           >
             QUERO VISITAR
           </button>
@@ -139,7 +145,12 @@ export default function Navbar({ onVisitClick, onExposeClick, onContactClick }: 
             ))}
             <button
               onClick={() => { onVisitClick(); setIsMobileMenuOpen(false); }}
-              className="border border-white/20 text-white px-6 py-3 rounded-full text-center font-bold"
+              className={cn(
+                "px-6 py-3 rounded-full text-center font-bold",
+                visitButtonColor === "cyan" ? "bg-brand-cyan text-brand-blue" :
+                visitButtonColor === "pink" ? "bg-brand-pink text-white" :
+                "border border-white/20 text-white"
+              )}
             >
               QUERO VISITAR
             </button>

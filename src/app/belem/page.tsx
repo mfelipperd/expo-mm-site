@@ -16,6 +16,7 @@ export default function BelemPage() {
         </>
       }
       heroTagline="O maior encontro de negócios da região Norte."
+      heroImage="/assets/fachada-belem-emm.jpeg"
       aboutText="A Estação das Docas receberá milhares de lojistas para o maior encontro de negócios da região. A Expo MultiMix é o ponto de encontro estratégico para quem busca renovar estoques com qualidade e prazos imbatíveis. Prepare-se para renovar seu estoque e fortalecer sua marca."
       benefits={[
         {

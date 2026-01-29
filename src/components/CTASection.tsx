@@ -45,7 +45,7 @@ export default function CTASection({
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          className="glass-dark border-2 border-white/10 rounded-[3rem] p-8 md:p-20 text-center relative overflow-hidden"
+          className="glass-dark border-2 border-white/10 rounded-3xl p-8 md:p-20 text-center relative overflow-hidden"
         >
           {/* Decorative glows */}
           <motion.div 

@@ -63,18 +63,23 @@ export default function Home() {
     setActiveModal("none");
   };
 
+  const handleExposeClick = () => {
+    router.push("/quero-expor?target=stands");
+  };
+
   return (
     <main className="min-h-screen bg-brand-blue selection:bg-brand-cyan/30 selection:text-white">
       <Navbar 
         onVisitClick={openVisitModal} 
-        onExposeClick={openBypassModal} 
+        onExposeClick={openLeadModal} 
         onContactClick={openWhatsAppModal}
+        visitButtonColor={detectedCity === "manaus" ? "pink" : detectedCity === "belem" ? "cyan" : undefined}
       />
       
       {/* Hero Section */}
       <Hero 
         onVisitClick={openVisitModal} 
-        onExposeClick={openBypassModal} 
+        onExposeClick={openLeadModal} 
         detectedCity={detectedCity}
       />
 
@@ -91,8 +96,8 @@ export default function Home() {
       <CTASection 
         title="O SUCESSO DO SEU NEGÓCIO"
         subtitle="Seja um expositor e apresente suas novidades para milhares de lojistas da região Norte."
-        variant="cyan"
-        onClick={openBypassModal}
+        variant="orange"
+        onClick={openLeadModal}
       />
 
       {/* Categories and Benefits */}
@@ -120,7 +125,7 @@ export default function Home() {
       >
         <LeadModalContent 
           onSelectLojista={openVisitModal}
-          onSelectExpositor={openBypassModal}
+          onSelectExpositor={handleExposeClick}
         />
       </Modal>
 

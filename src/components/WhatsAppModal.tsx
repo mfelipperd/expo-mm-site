@@ -3,7 +3,11 @@
 import { Phone, ExternalLink } from "lucide-react";
 import { useGeoLocation } from "@/hooks/useGeoLocation";
 
-export default function WhatsAppModalContent() {
+interface WhatsAppModalContentProps {
+  filterRole?: string;
+}
+
+export default function WhatsAppModalContent({ filterRole }: WhatsAppModalContentProps) {
   const { city } = useGeoLocation();
 
   const getMessage = (role: string) => {
@@ -57,6 +61,10 @@ export default function WhatsAppModalContent() {
     },
   ];
 
+  const filteredContacts = filterRole 
+    ? contacts.filter(c => c.role.includes(filterRole))
+    : contacts;
+
   return (
     <div className="space-y-3 pb-4">
       <p className="text-gray-400 mb-6 text-sm">
@@ -64,7 +72,7 @@ export default function WhatsAppModalContent() {
         {city && <span className="block mt-1 text-brand-cyan text-xs">Localização identificada: {city === 'manaus' ? 'Manaus' : 'Belém'}</span>}
       </p>
 
-      {contacts.map((contact) => (
+      {filteredContacts.map((contact) => (
         <a
           key={contact.phone}
           href={getLink(contact.phone, contact.role)}

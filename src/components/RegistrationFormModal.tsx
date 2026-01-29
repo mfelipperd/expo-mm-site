@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, CheckCircle, Loader2, AlertCircle, Plus, Trash2, MapPin } from "lucide-react";
+import { X, CheckCircle, Loader2, AlertCircle, Plus, Trash2, MapPin, ArrowRight } from "lucide-react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -59,6 +59,16 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
   const [isSuccess, setIsSuccess] = useState(false);
   const [submitSuccessCount, setSubmitSuccessCount] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [locationWarningConfirmed, setLocationWarningConfirmed] = useState(false);
+  
+  // Normalization helper to handle accents (Belém vs belem)
+  const normalizeCity = (city: string) => 
+    city.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  // Calculate Location Warning Logic
+  const { city: detectedCity } = useGeoLocation();
+  const currentFormCity = normalizeCity(cityName);
+  const isLocationMismatch = !!(detectedCity && normalizeCity(detectedCity) !== currentFormCity);
   
   // 1 = Visitor Type, 2 = Personal, 3 = Address, 4 = Details/Guests
   const [currentStep, setCurrentStep] = useState(1);
@@ -540,62 +550,81 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
         )}
 
         {/* Geo Location Warning */}
-        {(() => {
-            const { city: detectedCity } = useGeoLocation();
-            const currentFormCity = cityName.toLowerCase();
-            
-            if (detectedCity && detectedCity !== currentFormCity) {
-                return (
-                    <div className="bg-amber-500/10 border border-amber-500/20 text-amber-200 p-3 rounded-lg text-xs flex items-start gap-3 animate-fade-in mt-2">
-                        <MapPin className="shrink-0 mt-0.5" size={16} />
-                        <div>
-                            <p className="font-bold uppercase mb-1">Atenção à Localidade</p>
-                            <p>
-                                Identificamos que você está em <strong className="text-white capitalize">{detectedCity}</strong>, 
-                                mas está se credenciando para a feira de <strong className="text-white uppercase">{cityName}</strong>.
-                            </p>
-                        </div>
+        {/* Geo Location Warning */}
+        {isLocationMismatch && (
+            <div className="bg-amber-500/10 border border-amber-500/20 text-amber-200 p-3 rounded-lg text-xs animate-fade-in mt-2">
+                <div className="flex items-start gap-3">
+                    <MapPin className="shrink-0 mt-0.5" size={16} />
+                    <div>
+                        <p className="font-bold uppercase mb-1">Atenção à Localidade</p>
+                        <p>
+                            Identificamos que você está em <strong className="text-white capitalize">{detectedCity}</strong>, 
+                            mas está se credenciando para a feira de <strong className="text-white uppercase">{cityName}</strong>.
+                        </p>
                     </div>
-                )
-            }
-            return null;
-        })()}
+                </div>
+                
+                {/* Confirmation Checkbox */}
+                <div className="mt-3 pl-7 flex items-center gap-2">
+                    <input 
+                        type="checkbox" 
+                        id="location-confirm"
+                        checked={locationWarningConfirmed} 
+                        onChange={(e) => setLocationWarningConfirmed(e.target.checked)}
+                        className="w-4 h-4 rounded border-amber-500/50 bg-amber-900/20 text-brand-orange focus:ring-amber-500/50 cursor-pointer"
+                    />
+                    <label htmlFor="location-confirm" className="text-amber-100/70 hover:text-amber-100 cursor-pointer select-none">
+                        Estou ciente e quero continuar a inscrição para <span className="font-bold uppercase">{cityName}</span>
+                    </label>
+                </div>
+            </div>
+        )}
 
         {/* FOOTER ACTIONS */}
         <div className="pt-4 flex gap-3">
              {currentStep > 1 && (
-                <button
-                    type="button"
-                    onClick={prevStep}
-                    disabled={isSubmitting}
-                    className="flex-1 bg-white/5 text-gray-400 font-bold py-4 rounded-xl hover:bg-white/10 transition-all border border-white/10"
-                >
-                    VOLTAR
-                </button>
+               <button
+                 type="button"
+                 onClick={prevStep}
+                 className="px-6 py-3 rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 font-bold transition-all"
+               >
+                 VOLTAR
+               </button>
              )}
 
-             {currentStep < totalSteps ? (
-                <button
-                    type="button"
-                    onClick={nextStep}
-                    className="flex-2 bg-brand-cyan text-brand-blue font-bold py-4 rounded-xl hover:bg-brand-cyan/90 transition-all shadow-lg shadow-brand-cyan/20"
-                >
-                    PRÓXIMO
-                </button>
+             {currentStep < 3 ? (
+               <button
+                 type="button"
+                 onClick={nextStep}
+                 disabled={isLocationMismatch && !locationWarningConfirmed}
+                 className={`flex-1 py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-all 
+                    ${isLocationMismatch && !locationWarningConfirmed 
+                        ? "bg-gray-600 cursor-not-allowed opacity-50" 
+                        : "bg-brand-pink hover:bg-brand-pink/90 text-white shadow-lg hover:shadow-brand-pink/20"
+                    }`}
+               >
+                 CONTINUAR <ArrowRight size={18} />
+               </button>
              ) : (
                 <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex-2 bg-linear-to-r from-brand-pink to-brand-orange text-white font-bold py-4 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-orange/20"
-                >
-                    {isSubmitting ? (
-                    <>
-                        <Loader2 className="animate-spin" /> Processando...
-                    </>
-                    ) : (
-                    `FINALIZAR CADASTRO`
-                    )}
-                </button>
+                 type="submit"
+                 disabled={isSubmitting || (isLocationMismatch && !locationWarningConfirmed)}
+                 className={`flex-1 py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-all
+                   ${isSubmitting || (isLocationMismatch && !locationWarningConfirmed)
+                     ? "bg-brand-cyan/50 cursor-not-allowed text-white/50" 
+                     : "bg-brand-cyan hover:bg-brand-cyan/90 text-brand-blue shadow-lg hover:shadow-brand-cyan/20"
+                   }`}
+               >
+                 {isSubmitting ? (
+                   <>
+                     <Loader2 className="animate-spin" /> ENVIANDO...
+                   </>
+                 ) : (
+                   <>
+                     FINALIZAR INSCRIÇÃO <CheckCircle size={18} />
+                   </>
+                 )}
+               </button>
              )}
         </div>
       </form>

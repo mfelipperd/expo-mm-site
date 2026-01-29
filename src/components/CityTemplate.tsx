@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { MapPin, Calendar, CheckCircle2, Star, ArrowRight } from "lucide-react";
@@ -24,9 +25,10 @@ interface Benefit {
 
 interface CityTemplateProps {
   cityName: string;
-  fairId: string; // Added fairId prop
+  fairId: string;
   heroTitle: React.ReactNode;
   heroTagline: string;
+  heroImage?: string; // New optional prop
   aboutText: string;
   benefits: Benefit[];
   dates: string;
@@ -39,9 +41,10 @@ interface CityTemplateProps {
 
 export default function CityTemplate({
   cityName,
-  fairId, // Destructure fairId
+  fairId,
   heroTitle,
   heroTagline,
+  heroImage, // Destructure
   aboutText,
   benefits,
   dates,
@@ -51,6 +54,7 @@ export default function CityTemplate({
   industries,
   schedule,
 }: CityTemplateProps) {
+  const router = useRouter();
   const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit" | "whatsapp" | "bypass" | "registration">("none");
 
   const openVisitModal = () => setActiveModal("visit");
@@ -59,6 +63,10 @@ export default function CityTemplate({
   const openBypassModal = () => setActiveModal("bypass");
   const openRegistrationModal = () => setActiveModal("registration");
   const closeModal = () => setActiveModal("none");
+
+  const handleExposeClick = () => {
+    router.push("/quero-expor?target=stands");
+  };
 
   const handleNavbarVisit = () => {
     const section = document.getElementById("registration-cta");
@@ -76,20 +84,24 @@ export default function CityTemplate({
   });
 
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
+  
+  const colorVariant = cityName.toLowerCase().includes("manaus") ? "pink" : "cyan";
+  const buttonColorClass = colorVariant === "pink" ? "bg-brand-pink hover:bg-brand-pink/90 shadow-[0_0_20px_rgba(233,30,99,0.3)]" : "bg-brand-cyan hover:bg-brand-cyan/90 text-brand-blue shadow-[0_0_20px_rgba(34,211,238,0.3)]";
 
   return (
     <main className="min-h-screen bg-brand-blue selection:bg-brand-cyan/30 selection:text-white">
       <Navbar 
         onVisitClick={handleNavbarVisit} 
-        onExposeClick={openBypassModal} 
+        onExposeClick={openLeadModal} 
         onContactClick={openWhatsAppModal}
+        visitButtonColor={colorVariant as "cyan" | "pink"}
       />
 
       {/* Hero Section */}
       <section ref={ref} className="relative h-[85vh] min-h-[600px] w-full flex items-center justify-center overflow-hidden pt-24">
         <motion.div style={{ y }} className="absolute inset-0 z-0">
           <Image
-            src="/assets/hero-bg.jpg"
+            src={heroImage || "/assets/hero-bg.jpg"} // Use prop or default
             alt={`Expo MultiMix ${cityName}`}
             fill
             className="object-cover"
@@ -132,7 +144,7 @@ export default function CityTemplate({
           <div className="flex flex-col md:flex-row gap-4 justify-center">
              <button 
               onClick={openRegistrationModal}
-              className="bg-brand-pink hover:bg-brand-pink/90 text-white px-8 py-4 rounded-full font-bold transition-all hover:scale-105 shadow-[0_0_20px_rgba(233,30,99,0.3)]"
+              className={`${buttonColorClass} px-8 py-4 rounded-full font-bold transition-all hover:scale-105`}
             >
               FAZER CREDENCIAMENTO
             </button>
@@ -237,7 +249,7 @@ export default function CityTemplate({
         title="NÃO FIQUE DE FORA"
         subtitle="Garanta sua participação no maior evento multissetorial da região."
         buttonText="FAZER CREDENCIAMENTO"
-        variant="cyan"
+        variant={colorVariant as any}
         onClick={openRegistrationModal}
       >
         <Link 
@@ -299,7 +311,7 @@ export default function CityTemplate({
       >
         <LeadModalContent 
           onSelectLojista={openVisitModal}
-          onSelectExpositor={openBypassModal}
+          onSelectExpositor={handleExposeClick}
         />
       </Modal>
 
