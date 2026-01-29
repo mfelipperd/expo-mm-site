@@ -555,7 +555,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                 <button
                     type="button"
                     onClick={nextStep}
-                    className="flex-[2] bg-brand-cyan text-brand-blue font-bold py-4 rounded-xl hover:bg-brand-cyan/90 transition-all shadow-lg shadow-brand-cyan/20"
+                    className="flex-2 bg-brand-cyan text-brand-blue font-bold py-4 rounded-xl hover:bg-brand-cyan/90 transition-all shadow-lg shadow-brand-cyan/20"
                 >
                     PRÓXIMO
                 </button>
@@ -563,7 +563,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                 <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-[2] bg-linear-to-r from-brand-pink to-brand-orange text-white font-bold py-4 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-orange/20"
+                    className="flex-2 bg-linear-to-r from-brand-pink to-brand-orange text-white font-bold py-4 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-brand-orange/20"
                 >
                     {isSubmitting ? (
                     <>
