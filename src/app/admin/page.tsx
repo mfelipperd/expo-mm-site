@@ -16,12 +16,17 @@ export default function AdminDashboard() {
   useEffect(() => {
     const q = query(collection(db, "exhibitors"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      console.log(`Firestore Sync: Received ${snapshot.docs.length} documents.`);
       const docs = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
       setExhibitors(docs);
       setLoading(false);
+    }, (err) => {
+      console.error("Firestore Sync Error:", err);
+      setLoading(false);
+      alert(`Erro na sincronização de dados: ${err.message}`);
     });
 
     return () => unsubscribe();
