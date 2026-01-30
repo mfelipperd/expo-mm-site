@@ -88,6 +88,10 @@ export default function AdminDashboard() {
                 <span className="text-gray-500 font-bold uppercase tracking-widest">Total no Banco:</span>
                 <span className="text-white font-black">{exhibitors.length} Itens</span>
              </div>
+             <div className="flex items-center gap-2">
+                <span className="text-gray-500 font-bold uppercase tracking-widest">Projeto ID:</span>
+                <span className="text-white font-black">{db.app.options.projectId}</span>
+             </div>
              {syncError && (
                <div className="w-full text-red-400 font-medium bg-red-500/5 p-2 rounded-lg mt-2">
                   Erro técnico: {syncError}
