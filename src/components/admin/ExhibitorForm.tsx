@@ -90,9 +90,6 @@ export default function ExhibitorForm({ initialData, onSuccess, onCancel }: Exhi
         });
       }
 
-      setStatus("Salvando no banco...");
-      console.log("Saving to Firestore with logoUrl:", logoUrl);
-
       const exhibitorData = {
         name: name.trim(),
         link: link.trim() || null,
@@ -101,15 +98,27 @@ export default function ExhibitorForm({ initialData, onSuccess, onCancel }: Exhi
         updatedAt: Timestamp.now(),
       };
 
-      if (initialData?.id) {
-        console.log("Updating document:", initialData.id);
-        await updateDoc(doc(db, "exhibitors", initialData.id), exhibitorData);
-      } else {
-        console.log("Adding new document");
-        await addDoc(collection(db, "exhibitors"), {
-          ...exhibitorData,
-          createdAt: Timestamp.now(),
-        });
+      setStatus("Salvando no banco...");
+      console.log("Saving to Firestore. Collection: exhibitors. Data:", JSON.stringify(exhibitorData, null, 2));
+
+      // Adding a small delay to see if it helps with freshly initialized DBs
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      try {
+        if (initialData?.id) {
+          console.log("Attempting updateDoc for ID:", initialData.id);
+          await updateDoc(doc(db, "exhibitors", initialData.id), exhibitorData);
+        } else {
+          console.log("Attempting addDoc...");
+          const docRef = await addDoc(collection(db, "exhibitors"), {
+            ...exhibitorData,
+            createdAt: Timestamp.now(),
+          });
+          console.log("Document added with ID:", docRef.id);
+        }
+      } catch (dbErr: any) {
+        console.error("CRITICAL Firestore Write Error:", dbErr);
+        throw dbErr;
       }
 
       console.log("Save successful!");
