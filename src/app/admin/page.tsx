@@ -12,21 +12,27 @@ export default function AdminDashboard() {
   const [isAdding, setIsAdding] = useState(false);
   const [editingExhibitor, setEditingExhibitor] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [syncStatus, setSyncStatus] = useState<"connecting" | "connected" | "error">("connecting");
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log("AdminDashboard: Starting sync...");
     const q = query(collection(db, "exhibitors"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      console.log(`Firestore Sync: Received ${snapshot.docs.length} documents.`);
+      console.log(`AdminDashboard: Received ${snapshot.docs.length} docs`);
       const docs = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
       setExhibitors(docs);
       setLoading(false);
+      setSyncStatus("connected");
+      setSyncError(null);
     }, (err) => {
-      console.error("Firestore Sync Error:", err);
+      console.error("AdminDashboard: Sync Error:", err);
+      setSyncStatus("error");
+      setSyncError(err.message);
       setLoading(false);
-      alert(`Erro na sincronização de dados: ${err.message}`);
     });
 
     return () => unsubscribe();
@@ -48,7 +54,7 @@ export default function AdminDashboard() {
       <main className="min-h-screen bg-brand-blue pb-20">
         <div className="max-w-7xl mx-auto px-6 pt-10">
           
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
              <div>
                 <h1 className="text-4xl font-black text-white mb-2 tracking-tight">GESTÃO DE EXPOSITORES</h1>
                 <p className="text-gray-400">Gerencie as fábricas que aparecerão na Home e nas páginas das Cidades.</p>
@@ -61,6 +67,29 @@ export default function AdminDashboard() {
                   <Plus size={20} />
                   NOVO EXPOSITOR
                 </button>
+             )}
+          </div>
+
+          {/* Painel de Diagnóstico */}
+          <div className="mb-12 p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-wrap gap-6 items-center text-xs">
+             <div className="flex items-center gap-2">
+                <span className="text-gray-500 font-bold uppercase tracking-widest">Status da Conexão:</span>
+                <span className={`px-2 py-0.5 rounded-full font-black uppercase ${
+                  syncStatus === "connected" ? "bg-green-500/20 text-green-500" :
+                  syncStatus === "error" ? "bg-red-500/20 text-red-500" :
+                  "bg-orange-500/20 text-orange-500"
+                }`}>
+                  {syncStatus === "connected" ? "Conectado" : syncStatus === "error" ? "Erro de Permissão" : "Conectando..."}
+                </span>
+             </div>
+             <div className="flex items-center gap-2">
+                <span className="text-gray-500 font-bold uppercase tracking-widest">Total no Banco:</span>
+                <span className="text-white font-black">{exhibitors.length} Itens</span>
+             </div>
+             {syncError && (
+               <div className="w-full text-red-400 font-medium bg-red-500/5 p-2 rounded-lg mt-2">
+                  Erro técnico: {syncError}
+               </div>
              )}
           </div>
 
