@@ -17,9 +17,11 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     console.log("AdminDashboard: Starting sync...");
-    const q = query(collection(db, "exhibitors"), orderBy("createdAt", "desc"));
+    // Removing orderBy temporarily as documents manually created in Firestore might lack 'createdAt'
+    const q = query(collection(db, "exhibitors"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      console.log(`AdminDashboard: Received ${snapshot.docs.length} docs`);
+      console.log(`AdminDashboard: Received snapshot with ${snapshot.docs.length} docs`);
+      snapshot.docs.forEach(d => console.log("Doc ID:", d.id, "Data:", d.data()));
       const docs = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
