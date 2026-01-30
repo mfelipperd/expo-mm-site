@@ -105,17 +105,26 @@ export default function ExhibitorForm({ initialData, onSuccess, onCancel }: Exhi
       await new Promise(resolve => setTimeout(resolve, 500));
 
       try {
-        if (initialData?.id) {
-          console.log("Attempting updateDoc for ID:", initialData.id);
-          await updateDoc(doc(db, "exhibitors", initialData.id), exhibitorData);
-        } else {
-          console.log("Attempting addDoc...");
-          const docRef = await addDoc(collection(db, "exhibitors"), {
-            ...exhibitorData,
-            createdAt: Timestamp.now(),
-          });
-          console.log("Document added with ID:", docRef.id);
-        }
+        const dbPromise = (async () => {
+          if (initialData?.id) {
+            console.log("Attempting updateDoc for ID:", initialData.id);
+            await updateDoc(doc(db, "exhibitors", initialData.id), exhibitorData);
+          } else {
+            console.log("Attempting addDoc...");
+            const docRef = await addDoc(collection(db, "exhibitors"), {
+              ...exhibitorData,
+              createdAt: Timestamp.now(),
+            });
+            console.log("Document added with ID:", docRef.id);
+          }
+        })();
+
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Timeout: O banco de dados não respondeu em 15 segundos.")), 15000)
+        );
+
+        await Promise.race([dbPromise, timeoutPromise]);
+
       } catch (dbErr: any) {
         console.error("CRITICAL Firestore Write Error:", dbErr);
         throw dbErr;
