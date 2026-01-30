@@ -74,7 +74,7 @@ function ExhibitorCard({ exhibitor, index }: { exhibitor: any, index: number }) 
 
   const CardContent = (
     <>
-      <div className="aspect-square bg-white rounded-2xl flex items-center justify-center p-4 md:p-6 mb-4 relative group-hover:shadow-[0_0_30px_rgba(34,211,238,0.2)] transition-all duration-500">
+      <div className="aspect-square flex items-center justify-center p-2 md:p-4 mb-4 relative transition-all duration-500 group-hover:drop-shadow-[0_0_15px_rgba(34,211,238,0.4)]">
          <img 
             src={exhibitor.logoUrl} 
             alt={exhibitor.name} 

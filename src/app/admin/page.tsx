@@ -138,7 +138,7 @@ export default function AdminDashboard() {
                   {exhibitors.map((exhibitor) => (
                     <div key={exhibitor.id} className="glass p-6 rounded-3xl border border-white/10 flex flex-col group hover:border-brand-cyan/30 transition-all">
                       <div className="flex justify-between items-start mb-6">
-                        <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center p-2 shadow-inner">
+                        <div className="w-20 h-20 flex items-center justify-center p-2">
                           <img src={exhibitor.logoUrl} alt={exhibitor.name} className="max-w-full max-h-full object-contain" />
                         </div>
                         <div className="flex gap-2">
