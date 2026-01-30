@@ -18,6 +18,7 @@ export default function ExhibitorForm({ initialData, onSuccess, onCancel }: Exhi
   const [cities, setCities] = useState<string[]>(initialData?.cities || []);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>(initialData?.logoUrl || "");
+  const [bgColor, setBgColor] = useState<string>(initialData?.bgColor || "transparent");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [progress, setProgress] = useState<number>(0);
@@ -95,6 +96,7 @@ export default function ExhibitorForm({ initialData, onSuccess, onCancel }: Exhi
         link: link.trim() || null,
         cities,
         logoUrl,
+        bgColor,
         updatedAt: Timestamp.now(),
       };
 
@@ -203,9 +205,41 @@ export default function ExhibitorForm({ initialData, onSuccess, onCancel }: Exhi
         </div>
 
         <div>
+          <label className="block text-sm font-bold text-gray-400 uppercase mb-3">Cor de Fundo da Logo</label>
+          <div className="flex flex-wrap gap-4">
+            {[
+              { id: "transparent", label: "Sem Fundo", class: "bg-white/5 border-white/10" },
+              { id: "white", label: "Branco", class: "bg-white text-black" },
+              { id: "brand-blue", label: "Azul", class: "bg-brand-blue border-white/20" },
+              { id: "brand-pink", label: "Rosa", class: "bg-brand-pink text-white" },
+              { id: "brand-orange", label: "Laranja", class: "bg-brand-orange text-white" },
+            ].map((color) => (
+              <button
+                key={color.id}
+                type="button"
+                onClick={() => setBgColor(color.id)}
+                className={`px-4 py-2 rounded-xl text-xs font-black uppercase transition-all border-2 ${
+                  bgColor === color.id 
+                    ? "border-brand-cyan scale-105 shadow-lg shadow-brand-cyan/20" 
+                    : "border-transparent opacity-60 hover:opacity-100"
+                } ${color.class}`}
+              >
+                {color.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
           <label className="block text-sm font-bold text-gray-400 uppercase mb-2">Logo da Empresa *</label>
           <div className="flex items-center gap-6">
-            <div className="w-32 h-32 bg-white/5 rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center p-2 relative overflow-hidden group">
+            <div className={`w-32 h-32 rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center p-2 relative overflow-hidden group transition-colors ${
+              bgColor === "transparent" ? "bg-white/5" :
+              bgColor === "white" ? "bg-white" :
+              bgColor === "brand-blue" ? "bg-brand-blue" :
+              bgColor === "brand-pink" ? "bg-brand-pink" :
+              "bg-brand-orange"
+            }`}>
               {logoPreview ? (
                 <img src={logoPreview} alt="Preview" className="w-full h-full object-contain" />
               ) : (

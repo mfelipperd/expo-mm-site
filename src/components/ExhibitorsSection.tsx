@@ -74,7 +74,13 @@ function ExhibitorCard({ exhibitor, index }: { exhibitor: any, index: number }) 
 
   const CardContent = (
     <>
-      <div className="aspect-square flex items-center justify-center p-2 md:p-4 mb-4 relative transition-all duration-500 group-hover:drop-shadow-[0_0_15px_rgba(34,211,238,0.4)]">
+      <div className={`aspect-square flex items-center justify-center p-2 md:p-4 mb-4 relative transition-all duration-500 group-hover:drop-shadow-[0_0_15px_rgba(34,211,238,0.4)] ${
+        exhibitor.bgColor === "white" ? "bg-white rounded-2xl" :
+        exhibitor.bgColor === "brand-blue" ? "bg-brand-blue rounded-2xl" :
+        exhibitor.bgColor === "brand-pink" ? "bg-brand-pink rounded-2xl" :
+        exhibitor.bgColor === "brand-orange" ? "bg-brand-orange rounded-2xl" :
+        "bg-transparent"
+      }`}>
          <img 
             src={exhibitor.logoUrl} 
             alt={exhibitor.name} 
