@@ -1,6 +1,7 @@
 export const AUTHORIZED_EMAILS = [
   "anaraquelrsf13@gmail.com",
   "felipperabelodurans2@gmail.com",
+  "expomultimix@gmail.com",
 ];
 
 export const isAuthorized = (email: string | null | undefined) => {

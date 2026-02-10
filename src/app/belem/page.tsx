@@ -1,8 +1,24 @@
 import CityTemplate from "@/components/CityTemplate";
 import { Sparkles, Handshake, BadgeDollarSign } from "lucide-react";
 
+import { Metadata } from "next";
+import JsonLd from "@/components/JsonLd";
+
+export const metadata: Metadata = {
+  title: "Feira de Negócios em Belém - Comprar direto da fábrica",
+  description: "Melhores feiras de negócios no Pará. Encontre fornecedores de atacado, utilidades domésticas e variedades. Credenciamento lojista aberto.",
+  keywords: [
+    "Comprar direto da fábrica em Belém", 
+    "Feira B2B Belém 2026", 
+    "Melhores feiras de negócios no Pará", 
+    "Atacado de utilidades domésticas em Belém", 
+    "Distribuidora de variedades e decoração Belém"
+  ],
+};
+
 export default function BelemPage() {
   return (
+    <>
     <CityTemplate
       cityName="BELÉM"
       fairId={process.env.NEXT_PUBLIC_FAIR_ID_BELEM || ""} // Using Env Var
@@ -50,5 +66,26 @@ export default function BelemPage() {
         "Descartáveis"
       ]}
     />
+    <JsonLd 
+      data={{
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://www.expomultimix.co"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Belém",
+            "item": "https://www.expomultimix.co/belem"
+          }
+        ]
+      }}
+    />
+    </>
   );
 }

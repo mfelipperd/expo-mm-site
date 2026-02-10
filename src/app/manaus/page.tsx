@@ -1,8 +1,23 @@
 import CityTemplate from "@/components/CityTemplate";
 import { Sparkles, Handshake, BadgeDollarSign } from "lucide-react";
 
+import { Metadata } from "next";
+import JsonLd from "@/components/JsonLd";
+
+export const metadata: Metadata = {
+  title: "Feira de Negócios em Manaus - Fornecedores e Atacado",
+  description: "Encontre fornecedores de brinquedos, puericultura e utilidades no Amazonas. A maior feira de negócios da região Norte em Manaus.",
+  keywords: [
+    "Fornecedor de brinquedos e puericultura Norte", 
+    "Onde comprar artigos de festa no atacado", 
+    "Lançamentos setor pet atacado 2026", 
+    "Novidades para o Dia das Crianças atacado"
+  ],
+};
+
 export default function ManausPage() {
   return (
+    <>
     <CityTemplate
       cityName="MANAUS"
       fairId={process.env.NEXT_PUBLIC_FAIR_ID_MANAUS || ""} // Using Env Var
@@ -48,5 +63,26 @@ export default function ManausPage() {
         "Pet"
       ]}
     />
+    <JsonLd 
+      data={{
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://www.expomultimix.co"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Manaus",
+            "item": "https://www.expomultimix.co/manaus"
+          }
+        ]
+      }}
+    />
+    </>
   );
 }

@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'www.expomultimix.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.expomultimix.com.br',
       }
     ],
   },
