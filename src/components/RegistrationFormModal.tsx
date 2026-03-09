@@ -127,28 +127,28 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
     
     // Prepare base payload
     const basePayload = {
-        name: data.name,
-        company: data.company,
-        email: data.email,
+        name: data.name.toLowerCase(),
+        company: data.company.toLowerCase(),
+        email: data.email.toLowerCase(),
         phone: data.phone,
         zipCode: data.zipCode.replace(/\D/g, ""),
-        street: data.street,
-        number: data.number,
-        complement: data.complement,
-        neighborhood: data.neighborhood,
-        city: data.city,
-        state: data.state,
-        sectors: data.sectors,
-        howDidYouKnow: data.howDidYouKnow,
-        category: "Visitante",
+        street: data.street.toLowerCase(),
+        number: data.number.toLowerCase(),
+        complement: data.complement?.toLowerCase(),
+        neighborhood: data.neighborhood.toLowerCase(),
+        city: data.city.toLowerCase(),
+        state: data.state.toLowerCase(),
+        sectors: data.sectors?.map(s => s.toLowerCase()),
+        howDidYouKnow: data.howDidYouKnow.toLowerCase(),
+        category: "visitante",
         fair_visitor: fairId,
-        // Only include CNPJ if lojista
-        cnpj: data.ingresso === 'lojista' && data.cnpj ? data.cnpj.replace(/\D/g, "") : undefined
+        // Backend currently requires a 14-character CNPJ for all categories
+        cnpj: data.ingresso === 'lojista' && data.cnpj ? data.cnpj.replace(/\D/g, "") : "00000000000000"
     };
 
     const peopleToRegister = [
         { ...basePayload }, // Main user
-        ...(data.guests?.map(g => ({ ...basePayload, name: g.name })) || []) // Guests
+        ...(data.guests?.map(g => ({ ...basePayload, name: g.name.toLowerCase() })) || []) // Guests
     ];
 
     try {
@@ -281,7 +281,20 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 relative overflow-hidden min-h-[400px] p-1">
+      <form 
+        onSubmit={handleSubmit(onSubmit)} 
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && e.target instanceof HTMLInputElement) {
+            e.preventDefault();
+            if (currentStep < 4) {
+              nextStep();
+            } else {
+              handleSubmit(onSubmit)();
+            }
+          }
+        }}
+        className="space-y-6 relative overflow-hidden min-h-[400px] p-1"
+      >
         <AnimatePresence mode="wait">
         
         {/* STEP 1: VISITOR TYPE */}
@@ -592,7 +605,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                </button>
              )}
 
-             {currentStep < 3 ? (
+             {currentStep < 4 ? (
                <button
                  type="button"
                  onClick={nextStep}
