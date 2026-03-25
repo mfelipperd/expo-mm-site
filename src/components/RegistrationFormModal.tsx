@@ -130,7 +130,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
         name: data.name.toLowerCase(),
         company: data.company.toLowerCase(),
         email: data.email.toLowerCase(),
-        phone: data.phone,
+        phone: data.phone.replace(/\D/g, ""),
         zipCode: data.zipCode.replace(/\D/g, ""),
         street: data.street.toLowerCase(),
         number: data.number.toLowerCase(),
