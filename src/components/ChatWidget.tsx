@@ -30,6 +30,8 @@ export default function ChatWidget() {
   const [pendingRegistrationPayload, setPendingRegistrationPayload] = useState<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const isAIEnabled = process.env.NEXT_PUBLIC_ENABLE_AI_CHAT !== "false";
+
   useEffect(() => {
     const handleOpenChat = () => setIsOpen(true);
     window.addEventListener("open-chat", handleOpenChat);
@@ -450,17 +452,25 @@ export default function ChatWidget() {
         animate={{ scale: 1, opacity: 1 }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          if (!isAIEnabled) {
+            window.open("https://wa.me/5591981306900?text=Olá, gostaria de informações sobre a Expo MultiMix.", "_blank");
+            return;
+          }
+          setIsOpen(!isOpen);
+        }}
         className={cn(
           "w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300",
           isOpen 
             ? "bg-white/10 text-white backdrop-blur-md" 
-            : "bg-brand-blue border-2 border-brand-cyan text-brand-cyan"
+            : !isAIEnabled 
+              ? "bg-[#25D366] text-white"
+              : "bg-brand-blue border-2 border-brand-cyan text-brand-cyan"
         )}
-        aria-label="Falar conosco"
+        aria-label={isAIEnabled ? "Falar conosco" : "WhatsApp"}
       >
         {isOpen ? <X size={32} /> : <MessageSquare size={32} />}
-        {!isOpen && (
+        {(!isOpen && isAIEnabled) && (
           <span className="absolute -top-1 -right-1 flex h-4 w-4">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-pink opacity-75"></span>
             <span className="relative inline-flex rounded-full h-4 w-4 bg-brand-pink"></span>
