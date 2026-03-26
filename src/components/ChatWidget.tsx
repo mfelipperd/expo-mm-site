@@ -20,9 +20,6 @@ export default function ChatWidget() {
 
   const isAIEnabled = process.env.NEXT_PUBLIC_ENABLE_AI_CHAT !== "false";
 
-  // Hide widget on the dedicated chat page
-  if (pathname === "/chat") return null;
-
   const handleToggle = () => {
     const isMobile = typeof window !== "undefined" && window.innerWidth < 1024;
     
@@ -46,6 +43,9 @@ export default function ChatWidget() {
     window.addEventListener("open-chat", handleOpenChat);
     return () => window.removeEventListener("open-chat", handleOpenChat);
   }, [router]);
+
+  // Hide widget on the dedicated chat page
+  if (pathname === "/chat") return null;
 
   return (
     <>

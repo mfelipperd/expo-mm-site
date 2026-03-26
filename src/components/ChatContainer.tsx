@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare, Send, X, Bot, User, Loader2, ArrowLeft } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { usePathname } from "next/navigation";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -35,6 +36,7 @@ export default function ChatContainer({ onClose, isFullPage = false }: ChatConta
   const scrollRef = useRef<HTMLDivElement>(null);
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
   const [viewportTop, setViewportTop] = useState<number>(0);
+  const pathname = usePathname();
 
   const updateViewport = useCallback(() => {
     if (window.visualViewport) {
@@ -45,9 +47,8 @@ export default function ChatContainer({ onClose, isFullPage = false }: ChatConta
 
   useEffect(() => {
     // Detect city from URL
-    const path = window.location.pathname;
-    if (path.includes("belem")) setCurrentCity("belem");
-    else if (path.includes("manaus")) setCurrentCity("manaus");
+    if (pathname.includes("belem")) setCurrentCity("belem");
+    else if (pathname.includes("manaus")) setCurrentCity("manaus");
 
     if (window.visualViewport) {
       window.visualViewport.addEventListener("resize", updateViewport);
