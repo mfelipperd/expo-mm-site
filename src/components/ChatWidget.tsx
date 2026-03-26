@@ -52,35 +52,37 @@ export default function ChatWidget() {
   }, [messages, isOpen, isTyping]);
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
-
     const userMsg = input.trim();
-    setInput("");
-    
-    let currentAttendant = attendantName;
-    const newMessages: Message[] = [];
+    if (!userMsg || isLoading) return;
 
-    // First message logic: pick an attendant
+    const userMessage: Message = { role: "user", content: userMsg };
+    
+    // 1. Show user message immediately
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setIsLoading(true);
+
+    let currentAttendant = attendantName;
+
+    // 2. First message logic: pick an attendant AFTER user speaks
     if (!currentAttendant) {
       const randomName = ATTENDANTS[Math.floor(Math.random() * ATTENDANTS.length)];
       currentAttendant = randomName;
       setAttendantName(randomName);
       
-      // Delay slightly for the "entered the chat" message
+      // Delay for "human" reaction to notice the new message
+      await new Promise(r => setTimeout(r, 1000));
+      setMessages(prev => [...prev, { role: "system", content: `${randomName} entrou no chat.` }]);
+      await new Promise(r => setTimeout(r, 800));
+    } else {
+      // Normal message delay before typing starts
       await new Promise(r => setTimeout(r, 600));
-      setMessages([{ role: "system", content: `${randomName} entrou no chat.` }]);
-      await new Promise(r => setTimeout(r, 400));
     }
 
-    const userMessage: Message = { role: "user", content: userMsg };
-    setMessages((prev) => [...prev, userMessage]);
-    
-    setIsLoading(true);
-    // Natural delay before showing the "typing..." indicator
-    await new Promise(r => setTimeout(r, 800));
+    // 3. Show dots
     setIsTyping(true);
 
-    // Artificial delay to simulate human typing
+    // 4. Thinking/Typing time
     await new Promise(r => setTimeout(r, 1000 + Math.random() * 800));
 
     try {
@@ -239,14 +241,14 @@ export default function ChatWidget() {
   };
 
   return (
-    <div className="fixed bottom-8 right-8 z-90 flex flex-col items-end gap-4">
+    <div className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-90 flex flex-col items-end gap-3 sm:gap-4">
       <AnimatePresence>
         {isHovered && !isOpen && (
           <motion.div
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 10 }}
-            className="bg-brand-blue/80 backdrop-blur-md border border-brand-cyan/30 text-brand-cyan text-xs font-bold py-2 px-4 rounded-full shadow-lg pointer-events-none mb-1 mr-2"
+            className="hidden sm:block bg-brand-blue/80 backdrop-blur-md border border-brand-cyan/30 text-brand-cyan text-xs font-bold py-2 px-4 rounded-full shadow-lg pointer-events-none mb-1 mr-2"
           >
             Falar com Atendente
           </motion.div>
