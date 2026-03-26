@@ -29,6 +29,7 @@ export default function ChatWidget() {
   const [lgpdAccepted, setLgpdAccepted] = useState(false);
   const [pendingRegistrationPayload, setPendingRegistrationPayload] = useState<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
 
   const isAIEnabled = process.env.NEXT_PUBLIC_ENABLE_AI_CHAT !== "false";
 
@@ -236,7 +237,20 @@ export default function ChatWidget() {
   };
 
   return (
-    <div className="fixed bottom-28 right-8 z-90 flex flex-col items-end">
+    <div className="fixed bottom-8 right-8 z-90 flex flex-col items-end gap-4">
+      <AnimatePresence>
+        {isHovered && !isOpen && (
+          <motion.div
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 10 }}
+            className="bg-brand-blue/80 backdrop-blur-md border border-brand-cyan/30 text-brand-cyan text-xs font-bold py-2 px-4 rounded-full shadow-lg pointer-events-none mb-1 mr-2"
+          >
+            Falar com Atendente
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* LGPD Modal Overlay */}
       <AnimatePresence>
         {showLGPDModal && (
@@ -452,6 +466,8 @@ export default function ChatWidget() {
         animate={{ scale: 1, opacity: 1 }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         onClick={() => {
           if (!isAIEnabled) {
             window.open("https://wa.me/5591981306900?text=Olá, gostaria de informações sobre a Expo MultiMix.", "_blank");
