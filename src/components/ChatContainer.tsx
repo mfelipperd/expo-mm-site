@@ -34,10 +34,12 @@ export default function ChatContainer({ onClose, isFullPage = false }: ChatConta
   const [pendingRegistrationPayload, setPendingRegistrationPayload] = useState<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const [viewportTop, setViewportTop] = useState<number>(0);
 
-  const updateViewportHeight = useCallback(() => {
+  const updateViewport = useCallback(() => {
     if (window.visualViewport) {
       setViewportHeight(window.visualViewport.height);
+      setViewportTop(window.visualViewport.offsetTop);
     }
   }, []);
 
@@ -48,18 +50,18 @@ export default function ChatContainer({ onClose, isFullPage = false }: ChatConta
     else if (path.includes("manaus")) setCurrentCity("manaus");
 
     if (window.visualViewport) {
-      window.visualViewport.addEventListener("resize", updateViewportHeight);
-      window.visualViewport.addEventListener("scroll", updateViewportHeight);
-      updateViewportHeight();
+      window.visualViewport.addEventListener("resize", updateViewport);
+      window.visualViewport.addEventListener("scroll", updateViewport);
+      updateViewport();
     }
 
     return () => {
       if (window.visualViewport) {
-        window.visualViewport.removeEventListener("resize", updateViewportHeight);
-        window.visualViewport.removeEventListener("scroll", updateViewportHeight);
+        window.visualViewport.removeEventListener("resize", updateViewport);
+        window.visualViewport.removeEventListener("scroll", updateViewport);
       }
     };
-  }, [updateViewportHeight]);
+  }, [updateViewport]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -187,10 +189,15 @@ export default function ChatContainer({ onClose, isFullPage = false }: ChatConta
     <div 
       className={cn(
         "bg-brand-blue flex flex-col overflow-hidden",
-        isFullPage ? "fixed inset-0 z-100 w-screen h-screen" : "w-full h-full"
+        isFullPage 
+          ? (typeof window !== "undefined" && window.innerWidth < 1024 
+              ? "absolute inset-x-0 z-100 w-screen" // Absolute on mobile to handle Safari offset
+              : "fixed inset-0 z-100 w-screen h-screen")
+          : "w-full h-full"
       )}
       style={{
         height: viewportHeight && window.innerWidth < 1024 ? `${viewportHeight}px` : undefined,
+        top: viewportTop && window.innerWidth < 1024 ? `${viewportTop}px` : (isFullPage ? 0 : undefined),
       }}
     >
       <AnimatePresence>
