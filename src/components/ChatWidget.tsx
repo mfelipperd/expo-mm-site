@@ -354,7 +354,13 @@ export default function ChatWidget() {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="mb-4 w-[350px] sm:w-[400px] h-[500px] bg-brand-blue border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            className={cn(
+              "bg-brand-blue flex flex-col overflow-hidden transition-all duration-300",
+              // Fullscreen Mobile & Tablet
+              "fixed inset-0 z-[100] w-screen h-screen rounded-none",
+              // Floating Desktop (lg and up)
+              "lg:relative lg:inset-auto lg:z-auto lg:w-[400px] lg:h-[600px] lg:rounded-2xl lg:shadow-2xl lg:mb-4 lg:border lg:border-white/10"
+            )}
           >
             {/* Header */}
             <div className="p-4 bg-brand-blue/50 border-b border-white/10 flex items-center justify-between">
@@ -369,13 +375,24 @@ export default function ChatWidget() {
                   <p className="text-[10px] text-brand-cyan uppercase tracking-wider font-bold">Responde em instantes</p>
                 </div>
               </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="text-gray-400 hover:text-white transition-colors"
-                aria-label="Fechar chat"
-              >
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Mobile Minimize */}
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-lg transition-all text-xs font-bold border border-white/10"
+                >
+                  <X size={16} />
+                  Minimizar
+                </button>
+                {/* Desktop Close */}
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="hidden lg:block text-gray-400 hover:text-white transition-colors"
+                  aria-label="Fechar chat"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
             {/* Messages */}
@@ -442,7 +459,7 @@ export default function ChatWidget() {
             </div>
 
             {/* Input */}
-            <div className="p-4 bg-brand-blue/50 border-t border-white/10">
+            <div className="p-4 bg-brand-blue/50 border-t border-white/10 pb-8 lg:pb-4">
               <div className="relative flex items-center gap-2">
                 <input
                   type="text"
@@ -481,11 +498,13 @@ export default function ChatWidget() {
         }}
         className={cn(
           "w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300",
-          isOpen 
-            ? "bg-white/10 text-white backdrop-blur-md" 
-            : !isAIEnabled 
+          isOpen && "lg:bg-white/10 lg:text-white lg:backdrop-blur-md",
+          !isOpen && (
+            !isAIEnabled 
               ? "bg-[#25D366] text-white"
               : "bg-brand-blue border-2 border-brand-cyan text-brand-cyan"
+          ),
+          isOpen && "hidden lg:flex"
         )}
         aria-label={isAIEnabled ? "Falar conosco" : "WhatsApp"}
       >
