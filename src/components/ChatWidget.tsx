@@ -10,7 +10,7 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const ATTENDANTS = ["Ana Paula", "Gabriel", "Mariana", "Ricardo", "Beatriz"];
+const ATTENDANTS = ["Carla Souza", "Fabiana Oliveira", "Josefa Santos", "Andreia Lima", "Sheila Rocha"];
 
 interface Message {
   role: "user" | "assistant" | "system";
