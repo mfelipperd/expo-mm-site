@@ -75,11 +75,13 @@ export default function ChatWidget() {
     const userMessage: Message = { role: "user", content: userMsg };
     setMessages((prev) => [...prev, userMessage]);
     
-    setIsTyping(true);
     setIsLoading(true);
+    // Natural delay before showing the "typing..." indicator
+    await new Promise(r => setTimeout(r, 800));
+    setIsTyping(true);
 
     // Artificial delay to simulate human typing
-    await new Promise(r => setTimeout(r, 1500 + Math.random() * 1000));
+    await new Promise(r => setTimeout(r, 1000 + Math.random() * 800));
 
     try {
       const response = await fetch("/api/chat", {
