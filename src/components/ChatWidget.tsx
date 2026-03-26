@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, Send, X, Bot, User, Loader2 } from "lucide-react";
+import { MessageSquare, Send, X, Bot, User, Loader2, ArrowLeft } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -66,6 +66,46 @@ export default function ChatWidget() {
       }
     };
   }, [updateViewportHeight]);
+
+  // Handle Browser Navigation & Scroll Locking
+  useEffect(() => {
+    const isMobile = window.innerWidth < 1024;
+    
+    if (isOpen && isMobile) {
+      // Body scroll lock
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = "hidden";
+      
+      // Push history state so back button closes chat
+      if (window.history.state?.chat !== true) {
+        window.history.pushState({ chat: true }, "");
+      }
+
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (isOpen && window.innerWidth < 1024) {
+        // If we were in chat and user hit back, close it
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [isOpen]);
+
+  const closeChat = () => {
+    if (isOpen && window.innerWidth < 1024 && window.history.state?.chat === true) {
+      window.history.back();
+    } else {
+      setIsOpen(false);
+    }
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -374,50 +414,68 @@ export default function ChatWidget() {
         {isOpen && (
           <motion.div
             ref={chatRef}
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            initial={{ 
+              opacity: 0, 
+              y: window.innerWidth < 1024 ? 0 : 20, 
+              x: window.innerWidth < 1024 ? "100%" : 0,
+              scale: window.innerWidth < 1024 ? 1 : 0.95 
+            }}
+            animate={{ 
+              opacity: 1, 
+              y: 0, 
+              x: 0,
+              scale: 1 
+            }}
+            exit={{ 
+              opacity: 0, 
+              y: window.innerWidth < 1024 ? 0 : 20, 
+              x: window.innerWidth < 1024 ? "100%" : 0,
+              scale: window.innerWidth < 1024 ? 1 : 0.95 
+            }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
             className={cn(
-              "bg-brand-blue flex flex-col overflow-hidden transition-all duration-300",
+              "bg-brand-blue flex flex-col overflow-hidden",
               // Fullscreen Mobile & Tablet — use dvh for keyboard-aware height
-              "fixed inset-x-0 top-0 z-[100] w-screen rounded-none",
+              "fixed inset-0 z-[100] w-screen rounded-none",
               // Floating Desktop (lg and up)
               "lg:relative lg:inset-auto lg:z-auto lg:w-[400px] lg:h-[600px] lg:rounded-2xl lg:shadow-2xl lg:mb-4 lg:border lg:border-white/10"
             )}
             style={{
-              // On mobile: pin height to visual viewport (accounts for keyboard)
-              // Falls back to 100dvh which is keyboard-aware on modern browsers
               height: viewportHeight && typeof window !== "undefined" && window.innerWidth < 1024
                 ? `${viewportHeight}px`
                 : undefined,
             }}
           >
             {/* Header */}
-            <div className="p-4 bg-brand-blue/50 border-b border-white/10 flex items-center justify-between">
+            <div className="p-4 bg-brand-blue/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between sticky top-0 z-10">
               <div className="flex items-center gap-3">
+                {/* Mobile Back Button */}
+                <button
+                  onClick={closeChat}
+                  className="lg:hidden p-2 -ml-2 text-gray-400 hover:text-white transition-colors"
+                  aria-label="Voltar"
+                >
+                  <ArrowLeft size={24} />
+                </button>
+                
                 <div className="w-8 h-8 rounded-full bg-brand-cyan/20 flex items-center justify-center text-brand-cyan">
                   <User size={20} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">
-                    {attendantName ? `Atendimento: ${attendantName}` : "Atendimento Online"}
+                  <h3 className="text-sm font-bold text-white truncate max-w-[150px] sm:max-w-none">
+                    {attendantName ? attendantName : "Atendimento Online"}
                   </h3>
-                  <p className="text-[10px] text-brand-cyan uppercase tracking-wider font-bold">Responde em instantes</p>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                    <p className="text-[10px] text-brand-cyan uppercase tracking-wider font-bold">Online</p>
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {/* Mobile Minimize */}
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-lg transition-all text-xs font-bold border border-white/10"
-                >
-                  <X size={16} />
-                  Minimizar
-                </button>
                 {/* Desktop Close */}
                 <button
-                  onClick={() => setIsOpen(false)}
-                  className="hidden lg:block text-gray-400 hover:text-white transition-colors"
+                  onClick={closeChat}
+                  className="hidden lg:block text-gray-400 hover:text-white transition-colors p-1"
                   aria-label="Fechar chat"
                 >
                   <X size={20} />
