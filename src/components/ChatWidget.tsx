@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare, Send, X, Bot, User, Loader2 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
@@ -29,9 +29,18 @@ export default function ChatWidget() {
   const [lgpdAccepted, setLgpdAccepted] = useState(false);
   const [pendingRegistrationPayload, setPendingRegistrationPayload] = useState<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const chatRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
 
   const isAIEnabled = process.env.NEXT_PUBLIC_ENABLE_AI_CHAT !== "false";
+
+  // Update viewport height when virtual keyboard appears/disappears
+  const updateViewportHeight = useCallback(() => {
+    if (window.visualViewport) {
+      setViewportHeight(window.visualViewport.height);
+    }
+  }, []);
 
   useEffect(() => {
     const handleOpenChat = () => setIsOpen(true);
@@ -42,8 +51,21 @@ export default function ChatWidget() {
     if (path.includes("belem")) setCurrentCity("belem");
     else if (path.includes("manaus")) setCurrentCity("manaus");
 
-    return () => window.removeEventListener("open-chat", handleOpenChat);
-  }, []);
+    // Visual Viewport API: fires when keyboard shows/hides on mobile
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", updateViewportHeight);
+      window.visualViewport.addEventListener("scroll", updateViewportHeight);
+      updateViewportHeight();
+    }
+
+    return () => {
+      window.removeEventListener("open-chat", handleOpenChat);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener("resize", updateViewportHeight);
+        window.visualViewport.removeEventListener("scroll", updateViewportHeight);
+      }
+    };
+  }, [updateViewportHeight]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -351,16 +373,24 @@ export default function ChatWidget() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            ref={chatRef}
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             className={cn(
               "bg-brand-blue flex flex-col overflow-hidden transition-all duration-300",
-              // Fullscreen Mobile & Tablet
-              "fixed inset-0 z-[100] w-screen h-screen rounded-none",
+              // Fullscreen Mobile & Tablet — use dvh for keyboard-aware height
+              "fixed inset-x-0 top-0 z-[100] w-screen rounded-none",
               // Floating Desktop (lg and up)
               "lg:relative lg:inset-auto lg:z-auto lg:w-[400px] lg:h-[600px] lg:rounded-2xl lg:shadow-2xl lg:mb-4 lg:border lg:border-white/10"
             )}
+            style={{
+              // On mobile: pin height to visual viewport (accounts for keyboard)
+              // Falls back to 100dvh which is keyboard-aware on modern browsers
+              height: viewportHeight && typeof window !== "undefined" && window.innerWidth < 1024
+                ? `${viewportHeight}px`
+                : undefined,
+            }}
           >
             {/* Header */}
             <div className="p-4 bg-brand-blue/50 border-b border-white/10 flex items-center justify-between">
@@ -459,7 +489,10 @@ export default function ChatWidget() {
             </div>
 
             {/* Input */}
-            <div className="p-4 bg-brand-blue/50 border-t border-white/10 pb-8 lg:pb-4">
+            <div
+              className="p-4 bg-brand-blue/50 border-t border-white/10 lg:pb-4"
+              style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+            >
               <div className="relative flex items-center gap-2">
                 <input
                   type="text"
@@ -467,7 +500,9 @@ export default function ChatWidget() {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSend()}
                   placeholder="Escreva sua mensagem..."
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-5 text-sm text-white placeholder:text-gray-500 focus:outline-hidden focus:border-brand-cyan/50 focus:ring-1 focus:ring-brand-cyan/20 transition-all shadow-inner"
+                  // font-size 16px prevents iOS from zooming in on input focus
+                  style={{ fontSize: "16px" }}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-5 text-white placeholder:text-gray-500 focus:outline-hidden focus:border-brand-cyan/50 focus:ring-1 focus:ring-brand-cyan/20 transition-all shadow-inner"
                 />
                 <button
                   onClick={handleSend}
