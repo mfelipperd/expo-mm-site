@@ -8,11 +8,11 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { openChat } from "@/lib/actions";
 
 interface NavbarProps {
   onVisitClick: () => void;
   onExposeClick: () => void;
-  onContactClick: () => void;
   visitButtonColor?: "cyan" | "pink";
 }
 
@@ -20,7 +20,7 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export default function Navbar({ onVisitClick, onExposeClick, onContactClick, visitButtonColor }: NavbarProps) {
+export default function Navbar({ onVisitClick, onExposeClick, visitButtonColor }: NavbarProps) {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -39,7 +39,7 @@ export default function Navbar({ onVisitClick, onExposeClick, onContactClick, vi
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "Quero Expor", href: "/quero-expor" },
-    { name: "Contato", href: "#", onClick: onContactClick },
+    { name: "Contato", href: "#", onClick: openChat },
   ];
 
   return (

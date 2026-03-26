@@ -14,6 +14,7 @@ const geistMono = Geist_Mono({
 
 import NotificationProvider from "@/components/NotificationProvider";
 import JsonLd from "@/components/JsonLd";
+import ChatWidget from "@/components/ChatWidget";
 
 export const metadata: Metadata = {
   title: {
@@ -51,6 +52,7 @@ export default function RootLayout({
         <NotificationProvider>
           {children}
         </NotificationProvider>
+        <ChatWidget />
         <JsonLd 
           data={{
             "@context": "https://schema.org",
