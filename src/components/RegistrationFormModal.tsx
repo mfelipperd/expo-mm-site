@@ -41,15 +41,13 @@ export const credenciamentoSchema = z.object({
     name: z.string().min(1, "Nome do convidado é obrigatório")
   })).optional()
 }).superRefine((data, ctx) => {
-  // CNPJ mandatory validation for Lojista
-  if (data.ingresso === "lojista") {
-    if (!data.cnpj || data.cnpj.length < 18) {
-       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "CNPJ é obrigatório para Lojistas",
-        path: ["cnpj"],
-      });
-    }
+  // CNPJ mandatory validation
+  if (!data.cnpj || data.cnpj.length < 18) {
+     ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "CNPJ é obrigatório",
+      path: ["cnpj"],
+    });
   }
 });
 
@@ -60,6 +58,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
   const [submitSuccessCount, setSubmitSuccessCount] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [locationWarningConfirmed, setLocationWarningConfirmed] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   
   // Normalization helper to handle accents (Belém vs belem)
   const normalizeCity = (city: string) => 
@@ -143,7 +142,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
         category: "visitante",
         fair_visitor: fairId,
         // Backend currently requires a 14-character CNPJ for all categories
-        cnpj: data.ingresso === 'lojista' && data.cnpj ? data.cnpj.replace(/\D/g, "") : "00000000000000"
+        cnpj: data.cnpj ? data.cnpj.replace(/\D/g, "") : "00000000000000"
     };
 
     const peopleToRegister = [
@@ -288,7 +287,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
             e.preventDefault();
             if (currentStep < 4) {
               nextStep();
-            } else {
+            } else if (termsAccepted && !(isLocationMismatch && !locationWarningConfirmed)) {
               handleSubmit(onSubmit)();
             }
           }
@@ -339,10 +338,10 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                 <input type="hidden" {...register("ingresso")} />
                 {errors.ingresso && <span className="text-red-400 text-xs block text-center mt-2 animate-pulse">{errors.ingresso.message}</span>}
 
-                 {visitorType === "lojista" && (
+                 {visitorType && (
                     <div className="bg-brand-cyan/10 border border-brand-cyan/20 p-3 rounded-lg text-center mt-4">
                          <p className="text-[10px] text-brand-cyan font-bold uppercase tracking-wider">
-                            * CNPJ Obrigatório para Lojistas
+                            * CNPJ Obrigatório para credenciamento
                          </p>
                     </div>
                  )}
@@ -386,13 +385,11 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                         {errors.phone && <span className="text-red-400 text-xs">{errors.phone.message}</span>}
                     </div>
                     
-                    {visitorType === 'lojista' && (
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-gray-500 uppercase">CNPJ</label>
-                            <input {...register("cnpj")} onChange={handleCnpjChange} type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-cyan transition-colors" placeholder="00.000.000/0000-00" />
-                            {errors.cnpj && <span className="text-red-400 text-xs">{errors.cnpj.message}</span>}
-                        </div>
-                    )}
+                    <div className="space-y-1">
+                        <label className="text-xs font-bold text-gray-500 uppercase">CNPJ</label>
+                        <input {...register("cnpj")} onChange={handleCnpjChange} type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-cyan transition-colors" placeholder="00.000.000/0000-00" />
+                        {errors.cnpj && <span className="text-red-400 text-xs">{errors.cnpj.message}</span>}
+                    </div>
                  </div>
             </motion.div>
         )}
@@ -551,6 +548,26 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                         </div>
                      ))}
                 </div>
+
+                 {/* LGPD Terms */}
+                 <div className="pt-6 border-t border-white/10">
+                     <div className={`flex items-start gap-3 p-4 rounded-xl border transition-all ${
+                         termsAccepted 
+                         ? "bg-brand-cyan/5 border-brand-cyan/30" 
+                         : "bg-white/5 border-white/10 hover:bg-white/10"
+                     }`}>
+                         <input 
+                             type="checkbox" 
+                             id="terms-accept"
+                             checked={termsAccepted}
+                             onChange={(e) => setTermsAccepted(e.target.checked)}
+                             className="mt-0.5 w-4 h-4 rounded border-white/30 bg-transparent text-brand-cyan focus:ring-brand-cyan cursor-pointer transition-all"
+                         />
+                          <label htmlFor="terms-accept" className="text-xs text-gray-400 cursor-pointer select-none leading-relaxed">
+                              Li e concordo com os <a href="/termos-de-uso" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-white font-semibold underline hover:text-brand-cyan transition-colors">Termos de Uso</a> e com a <a href="/politica-de-privacidade" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-white font-semibold underline hover:text-brand-cyan transition-colors">Política de Privacidade</a>, autorizando a <span className="text-white font-semibold">Expo MultiMix</span> ao tratamento dos dados acima conforme a LGPD.
+                          </label>
+                     </div>
+                 </div>
             </motion.div>
         )}
         </AnimatePresence>
@@ -621,10 +638,10 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
              ) : (
                 <button
                  type="submit"
-                 disabled={isSubmitting || (isLocationMismatch && !locationWarningConfirmed)}
+                 disabled={isSubmitting || !termsAccepted || (isLocationMismatch && !locationWarningConfirmed)}
                  className={`flex-1 py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-all
-                   ${isSubmitting || (isLocationMismatch && !locationWarningConfirmed)
-                     ? "bg-brand-cyan/50 cursor-not-allowed text-white/50" 
+                   ${isSubmitting || !termsAccepted || (isLocationMismatch && !locationWarningConfirmed)
+                     ? "bg-brand-cyan/30 cursor-not-allowed text-white/30 opacity-70" 
                      : "bg-brand-cyan hover:bg-brand-cyan/90 text-brand-blue shadow-lg hover:shadow-brand-cyan/20"
                    }`}
                >
