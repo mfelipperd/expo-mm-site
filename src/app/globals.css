@@ -12,6 +12,8 @@
 
   --radius-xl: 1.5rem;
   --radius-2xl: 2rem;
+
+  --z-300: 300;
 }
 
 :root {
