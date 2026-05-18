@@ -11,18 +11,17 @@ import Footer from "@/components/Footer";
 import Modal from "@/components/Modal";
 import LeadModalContent from "@/components/LeadModal";
 import VisitModalContent from "@/components/VisitModal";
-import WhatsAppModalContent from "@/components/WhatsAppModal";
 import ExhibitorBypassModalContent from "@/components/ExhibitorBypassModal";
 import AboutSection from "@/components/AboutSection";
-import WhatsAppFloating from "@/components/WhatsAppFloating";
 import DevGeoControls from "@/components/DevGeoControls";
+import { openChat } from "@/lib/actions";
 import { useGeoLocation } from "@/hooks/useGeoLocation";
 import { useRouter } from "next/navigation";
 import CrossCityWarningModalContent from "@/components/CrossCityWarningModalContent";
 import ExhibitorsSection from "@/components/ExhibitorsSection";
 
 export default function HomeContent() {
-  const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit" | "whatsapp" | "bypass" | "crossCity">("none");
+  const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit" | "bypass" | "crossCity">("none");
   const [pendingTargetCity, setPendingTargetCity] = useState<string | null>(null);
   const { city: detectedCity, loading } = useGeoLocation();
   const router = useRouter();
@@ -35,7 +34,6 @@ export default function HomeContent() {
     }
   };
   const openLeadModal = () => setActiveModal("lead");
-  const openWhatsAppModal = () => setActiveModal("whatsapp");
   const openBypassModal = () => setActiveModal("bypass");
   const closeModal = () => setActiveModal("none");
 
@@ -73,7 +71,6 @@ export default function HomeContent() {
       <Navbar 
         onVisitClick={openVisitModal} 
         onExposeClick={openLeadModal} 
-        onContactClick={openWhatsAppModal}
         visitButtonColor={detectedCity === "manaus" ? "pink" : detectedCity === "belem" ? "cyan" : undefined}
       />
       
@@ -115,11 +112,8 @@ export default function HomeContent() {
 
       <ExhibitorsSection />
 
-      <Footer onWhatsAppClick={openWhatsAppModal} />
+      <Footer />
       
-      {/* Floating WhatsApp */}
-      <WhatsAppFloating onClick={openWhatsAppModal} />
-
       {/* Modals */}
       <Modal 
         isOpen={activeModal === "lead"} 
@@ -146,18 +140,11 @@ export default function HomeContent() {
         title="QUALIFICAÇÃO DE EXPOSITOR"
       >
         <ExhibitorBypassModalContent 
-          onConfirmExpositor={openWhatsAppModal}
+          onConfirmExpositor={openChat}
           onSelectLojista={openVisitModal}
         />
       </Modal>
 
-      <Modal 
-        isOpen={activeModal === "whatsapp"} 
-        onClose={closeModal} 
-        title="FALE COM UM CONSULTOR"
-      >
-        <WhatsAppModalContent />
-      </Modal>
 
       <Modal 
         isOpen={activeModal === "crossCity"} 

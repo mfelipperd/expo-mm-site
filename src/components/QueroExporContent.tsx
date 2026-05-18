@@ -4,22 +4,17 @@ import { motion, useScroll, useTransform, useInView } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Modal from "@/components/Modal";
-import WhatsAppModalContent from "@/components/WhatsAppModal";
 import ExhibitorBypassModalContent from "@/components/ExhibitorBypassModal";
 import VisitModalContent from "@/components/VisitModal";
-import WhatsAppFloating from "@/components/WhatsAppFloating";
+import { openChat } from "@/lib/actions";
 import { useState, useRef, useEffect } from "react";
 import { CheckCircle2, TrendingUp, Users, Package, ArrowRight, Rocket, ShieldCheck, Handshake, Calendar, MapPin } from "lucide-react";
 import Image from "next/image";
 
 export default function QueroExporContent() {
-  const [activeModal, setActiveModal] = useState<"none" | "whatsapp" | "bypass" | "visit">("none");
+  const [activeModal, setActiveModal] = useState<"none" | "bypass" | "visit">("none");
   const [whatsAppFilter, setWhatsAppFilter] = useState<string | undefined>(undefined);
 
-  const openWhatsAppModal = () => {
-      setWhatsAppFilter(undefined);
-      setActiveModal("whatsapp");
-  };
   const openBypassModal = () => setActiveModal("bypass");
   const openVisitModal = () => setActiveModal("visit");
   const closeModal = () => setActiveModal("none");
@@ -42,8 +37,7 @@ export default function QueroExporContent() {
   }, []);
 
   const handleBuyStand = (standModel: string) => {
-      setWhatsAppFilter("Comercial");
-      setActiveModal("whatsapp");
+      openChat();
   };
 
   const heroRef = useRef(null);
@@ -59,7 +53,6 @@ export default function QueroExporContent() {
       <Navbar 
         onVisitClick={openVisitModal} 
         onExposeClick={scrollToStands} 
-        onContactClick={openWhatsAppModal}
       />
 
       {/* Hero Section */}
@@ -371,8 +364,7 @@ export default function QueroExporContent() {
         </div>
       </section>
 
-      <Footer onWhatsAppClick={openWhatsAppModal} />
-      <WhatsAppFloating onClick={openWhatsAppModal} />
+      <Footer />
 
       <Modal 
         isOpen={activeModal === "bypass"} 
@@ -380,7 +372,7 @@ export default function QueroExporContent() {
         title="QUALIFICAÇÃO DE EXPOSITOR"
       >
         <ExhibitorBypassModalContent 
-          onConfirmExpositor={openWhatsAppModal}
+          onConfirmExpositor={openChat}
           onSelectLojista={openVisitModal}
         />
       </Modal>
@@ -393,13 +385,6 @@ export default function QueroExporContent() {
         <VisitModalContent />
       </Modal>
 
-      <Modal 
-        isOpen={activeModal === "whatsapp"} 
-        onClose={closeModal} 
-        title="FALE COM UM CONSULTOR"
-      >
-        <WhatsAppModalContent filterRole={whatsAppFilter} />
-      </Modal>
     </main>
   );
 }

@@ -4,11 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { Instagram, Facebook, Mail, Phone, MapPin } from "lucide-react";
 
-interface FooterProps {
-  onWhatsAppClick: () => void;
-}
+import { openChat } from "@/lib/actions";
 
-export default function Footer({ onWhatsAppClick }: FooterProps) {
+export default function Footer() {
   return (
     <footer className="bg-black text-gray-400 py-20 border-t border-white/5">
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12">
@@ -40,7 +38,7 @@ export default function Footer({ onWhatsAppClick }: FooterProps) {
           <ul className="space-y-4 text-sm">
             <li>
               <button 
-                onClick={onWhatsAppClick}
+                onClick={openChat}
                 className="flex items-center gap-3 hover:text-brand-cyan transition-colors text-left w-full group"
               >
                 <div className="p-2 bg-white/5 rounded-lg text-brand-cyan group-hover:bg-brand-cyan group-hover:text-white transition-all">
@@ -69,6 +67,16 @@ export default function Footer({ onWhatsAppClick }: FooterProps) {
                 <p className="text-xs text-gray-500 uppercase font-bold tracking-tighter">Escritório</p>
                 <p className="font-semibold text-white">Belém - PA | Manaus - AM</p>
               </div>
+            </li>
+            <li className="pt-4 border-t border-white/5 opacity-50 hover:opacity-100 transition-opacity">
+               <a 
+                href="https://wa.me/5591981306900?text=Olá,%20Ana%20Paula.%20Tenho%20interesse%20na%20Expo%20MultiMix." 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-[10px] uppercase font-bold tracking-widest hover:text-brand-orange transition-colors"
+               >
+                 Contato Direto: (91) 98130-6900
+               </a>
             </li>
           </ul>
         </div>

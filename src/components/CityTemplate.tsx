@@ -11,12 +11,11 @@ import Footer from "@/components/Footer";
 import Modal from "@/components/Modal";
 import LeadModalContent from "@/components/LeadModal";
 import VisitModalContent from "@/components/VisitModal";
-import WhatsAppModalContent from "@/components/WhatsAppModal";
 import ExhibitorBypassModalContent from "@/components/ExhibitorBypassModal";
 import RegistrationFormModal from "@/components/RegistrationFormModal";
-import WhatsAppFloating from "@/components/WhatsAppFloating";
-import CTASection from "@/components/CTASection";
 import ExhibitorsSection from "@/components/ExhibitorsSection";
+import CTASection from "@/components/CTASection";
+import { openChat } from "@/lib/actions";
 
 interface Benefit {
   title: string;
@@ -94,7 +93,6 @@ export default function CityTemplate({
       <Navbar 
         onVisitClick={handleNavbarVisit} 
         onExposeClick={openLeadModal} 
-        onContactClick={openWhatsAppModal}
         visitButtonColor={colorVariant as "cyan" | "pink"}
       />
 
@@ -303,8 +301,7 @@ export default function CityTemplate({
 
       <ExhibitorsSection city={cityName.toLowerCase().includes("manaus") ? "manaus" : "belem"} />
 
-      <Footer onWhatsAppClick={openWhatsAppModal} />
-      <WhatsAppFloating onClick={openWhatsAppModal} />
+      <Footer />
 
       {/* Modals */}
       <Modal 
@@ -332,18 +329,11 @@ export default function CityTemplate({
         title="QUALIFICAÇÃO DE EXPOSITOR"
       >
         <ExhibitorBypassModalContent 
-          onConfirmExpositor={openWhatsAppModal}
+          onConfirmExpositor={openChat}
           onSelectLojista={openVisitModal}
         />
       </Modal>
 
-      <Modal 
-        isOpen={activeModal === "whatsapp"} 
-        onClose={closeModal} 
-        title="FALE COM UM CONSULTOR"
-      >
-        <WhatsAppModalContent />
-      </Modal>
 
       {/* City Specific Registration Modal */}
       <Modal
