@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://www.expomultimix.co'
+  const baseUrl = 'https://www.expomultimix.com.br'
 
   return [
     {
@@ -11,16 +11,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
-      url: `${baseUrl}/belem`,
-      lastModified: new Date(),
+      url: `${baseUrl}/manaus`,
+      lastModified: new Date('2026-06-09'),
       changeFrequency: 'weekly',
-      priority: 0.9,
+      priority: 0.95,
     },
     {
-      url: `${baseUrl}/manaus`,
-      lastModified: new Date(),
+      url: `${baseUrl}/belem`,
+      lastModified: new Date('2026-08-18'),
       changeFrequency: 'weekly',
-      priority: 0.9,
+      priority: 0.95,
     },
     {
       url: `${baseUrl}/quero-expor`,
