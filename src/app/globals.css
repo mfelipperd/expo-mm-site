@@ -104,3 +104,14 @@ body {
   scrollbar-width: thin;
   scrollbar-color: var(--brand-cyan) transparent;
 }
+
+/* Logos carousel animations */
+@keyframes scroll-logos-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes scroll-logos-right {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}

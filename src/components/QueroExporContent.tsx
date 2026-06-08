@@ -11,6 +11,7 @@ import WhatsAppFloating from "@/components/WhatsAppFloating";
 import { useState, useRef, useEffect } from "react";
 import { CheckCircle2, TrendingUp, Users, Package, ArrowRight, Rocket, ShieldCheck, Handshake, Calendar, MapPin } from "lucide-react";
 import Image from "next/image";
+import LogosCarousel from "@/components/LogosCarousel";
 
 export default function QueroExporContent() {
   const [activeModal, setActiveModal] = useState<"none" | "whatsapp" | "bypass" | "visit">("none");
@@ -187,6 +188,12 @@ export default function QueroExporContent() {
             </div>
         </div>
       </section>
+      <LogosCarousel
+        title="QUEM JÁ EXPÕE COM A GENTE"
+        subtitle="Marcas presentes nas edições anteriores"
+        direction="left"
+      />
+
       <section className="py-24 bg-black/20">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -354,6 +361,12 @@ export default function QueroExporContent() {
             </div>
          </div>
       </section>
+
+      <LogosCarousel
+        title="FAÇA PARTE DESSE TIME"
+        subtitle="Expositores confirmados 2026"
+        direction="right"
+      />
 
       {/* Contact Section */}
       <section className="py-24 bg-brand-orange">

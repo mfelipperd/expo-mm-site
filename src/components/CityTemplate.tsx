@@ -17,6 +17,7 @@ import RegistrationFormModal from "@/components/RegistrationFormModal";
 import WhatsAppFloating from "@/components/WhatsAppFloating";
 import CTASection from "@/components/CTASection";
 import ExhibitorsSection from "@/components/ExhibitorsSection";
+import LogosCarousel from "@/components/LogosCarousel";
 
 interface Benefit {
   title: string;
@@ -167,6 +168,12 @@ export default function CityTemplate({
          </div>
       </section>
 
+      <LogosCarousel
+        title="QUEM ESTARÁ NA FEIRA"
+        subtitle="Expositores confirmados"
+        direction="left"
+      />
+
       {/* Benefits Grid */}
       <section className="py-20 relative z-10 bg-brand-blue/50">
          <div className="max-w-6xl mx-auto px-6">
@@ -260,6 +267,12 @@ export default function CityTemplate({
           Quero comprar um stand
         </Link>
       </CTASection>
+
+      <LogosCarousel
+        title="INDÚSTRIAS E IMPORTADORAS"
+        subtitle="Veja quem estará expondo"
+        direction="right"
+      />
 
       {/* Cross-City Promotion Section - Bottom of Page */}
       <section className="py-20 relative overflow-hidden mt-10">

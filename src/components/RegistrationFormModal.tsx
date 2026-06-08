@@ -161,7 +161,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
         // Sequential submission to avoid rate limits or race conditions, and track progress
         let successCount = 0;
         for (const person of peopleToRegister) {
-            const response = await fetch("https://credenciamento-api-production.up.railway.app/visitors", {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/visitors`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(person),

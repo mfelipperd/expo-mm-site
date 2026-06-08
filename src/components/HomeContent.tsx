@@ -20,6 +20,7 @@ import { useGeoLocation } from "@/hooks/useGeoLocation";
 import { useRouter } from "next/navigation";
 import CrossCityWarningModalContent from "@/components/CrossCityWarningModalContent";
 import ExhibitorsSection from "@/components/ExhibitorsSection";
+import LogosCarousel from "@/components/LogosCarousel";
 
 export default function HomeContent() {
   const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit" | "whatsapp" | "bypass" | "crossCity">("none");
@@ -84,6 +85,12 @@ export default function HomeContent() {
         detectedCity={detectedCity}
       />
 
+      <LogosCarousel
+        title="QUEM ESTARÁ NA FEIRA"
+        subtitle="Expositores confirmados"
+        direction="left"
+      />
+
       {/* About the Event & Visitor Info (Moved Up) */}
       <AboutSection onVisitClick={openVisitModal} />
 
@@ -104,8 +111,14 @@ export default function HomeContent() {
       {/* Categories and Benefits */}
       <Features />
 
+      <LogosCarousel
+        title="INDÚSTRIAS E IMPORTADORAS"
+        subtitle="Veja quem estará expondo"
+        direction="right"
+      />
+
       {/* Secondary CTA for Registration/Visit */}
-      <CTASection 
+      <CTASection
         title="NÃO FIQUE DE FORA"
         subtitle="A feira é exclusiva para lojistas (B2B) e requer CNPJ para entrada."
         buttonText="FAZER MEU CREDENCIAMENTO"
