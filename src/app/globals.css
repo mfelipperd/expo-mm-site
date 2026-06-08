@@ -115,3 +115,8 @@ body {
   0% { transform: translateX(-50%); }
   100% { transform: translateX(0); }
 }
+
+.carousel-track {
+  width: max-content;
+  animation: var(--carousel-animation) var(--carousel-duration) linear infinite;
+}

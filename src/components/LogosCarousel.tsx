@@ -49,16 +49,10 @@ export default function LogosCarousel({
         return res.json();
       })
       .then((data) => {
-        console.log("[LogosCarousel] API response:", data);
         const items: ClientImage[] = Array.isArray(data) ? data : (data.data ?? []);
-        console.log("[LogosCarousel] items parsed:", items.length, "first item keys:", items[0] ? Object.keys(items[0]) : "none");
-        const filtered = items.filter((item) => resolveImageUrl(item));
-        console.log("[LogosCarousel] filtered (with image):", filtered.length);
-        setLogos(filtered);
+        setLogos(items.filter((item) => resolveImageUrl(item)));
       })
-      .catch((err) => {
-        console.error("[LogosCarousel] fetch error:", err);
-      })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [apiUrl]);
 
@@ -91,16 +85,18 @@ export default function LogosCarousel({
       </div>
 
       <div className="relative group">
-        <div className="pointer-events-none absolute left-0 top-0 h-full w-28 bg-gradient-to-r from-brand-blue to-transparent z-10" />
-        <div className="pointer-events-none absolute right-0 top-0 h-full w-28 bg-gradient-to-l from-brand-blue to-transparent z-10" />
+        <div className="pointer-events-none absolute left-0 top-0 h-full w-28 bg-linear-to-r from-brand-blue to-transparent z-10" />
+        <div className="pointer-events-none absolute right-0 top-0 h-full w-28 bg-linear-to-l from-brand-blue to-transparent z-10" />
 
         <div className="overflow-hidden">
           <div
-            className="flex gap-6 will-change-transform group-hover:[animation-play-state:paused]"
-            style={{
-              animation: `${animationName} ${duration}s linear infinite`,
-              width: "max-content",
-            }}
+            className="carousel-track flex gap-6 will-change-transform group-hover:[animation-play-state:paused]"
+            style={
+              {
+                "--carousel-animation": animationName,
+                "--carousel-duration": `${duration}s`,
+              } as React.CSSProperties
+            }
           >
             {doubled.map((logo, i) => {
               const imgUrl = resolveImageUrl(logo);
@@ -108,7 +104,7 @@ export default function LogosCarousel({
               return (
                 <div
                   key={`${logo.id ?? i}-${i}`}
-                  className="flex-shrink-0 w-36 h-20 bg-white rounded-xl flex items-center justify-center p-3 opacity-70 hover:opacity-100 transition-opacity duration-300"
+                  className="shrink-0 w-36 h-20 bg-white rounded-xl flex items-center justify-center p-3 opacity-70 hover:opacity-100 transition-opacity duration-300"
                   title={name}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
