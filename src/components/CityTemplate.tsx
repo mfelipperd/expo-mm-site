@@ -5,7 +5,8 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, Calendar, CheckCircle2, Star, ArrowRight } from "lucide-react";
+import { MapPin, Calendar, CheckCircle2, Star, ArrowRight, Users, Building2, Navigation } from "lucide-react";
+import type { TransportLinks } from "@/lib/fairsApi";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Modal from "@/components/Modal";
@@ -30,7 +31,7 @@ interface CityTemplateProps {
   fairId: string;
   heroTitle: React.ReactNode;
   heroTagline: string;
-  heroImage?: string; // New optional prop
+  heroImage?: string;
   aboutText: string;
   benefits: Benefit[];
   dates: string;
@@ -39,6 +40,9 @@ interface CityTemplateProps {
   mapEmbedUrl: string;
   industries: string[];
   schedule: string;
+  expectedVisitors?: number;
+  expectedExhibitors?: number;
+  transportLinks?: TransportLinks;
 }
 
 export default function CityTemplate({
@@ -46,7 +50,7 @@ export default function CityTemplate({
   fairId,
   heroTitle,
   heroTagline,
-  heroImage, // Destructure
+  heroImage,
   aboutText,
   benefits,
   dates,
@@ -55,6 +59,9 @@ export default function CityTemplate({
   mapEmbedUrl,
   industries,
   schedule,
+  expectedVisitors,
+  expectedExhibitors,
+  transportLinks,
 }: CityTemplateProps) {
   const router = useRouter();
   const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit" | "whatsapp" | "bypass" | "registration">("none");
@@ -165,6 +172,33 @@ export default function CityTemplate({
             <p className="text-lg md:text-xl text-gray-300 leading-relaxed text-balance">
                {aboutText}
             </p>
+
+            {(expectedVisitors || expectedExhibitors) && (
+              <div className="mt-12 flex flex-col sm:flex-row gap-6 justify-center">
+                {expectedVisitors && (
+                  <div className="flex items-center gap-4 glass px-8 py-5 rounded-2xl border border-white/10">
+                    <Users className="text-brand-cyan shrink-0" size={28} />
+                    <div className="text-left">
+                      <p className="text-2xl font-black text-white">
+                        {expectedVisitors.toLocaleString("pt-BR")}+
+                      </p>
+                      <p className="text-sm text-gray-400 font-medium">visitantes esperados</p>
+                    </div>
+                  </div>
+                )}
+                {expectedExhibitors && (
+                  <div className="flex items-center gap-4 glass px-8 py-5 rounded-2xl border border-white/10">
+                    <Building2 className="text-brand-orange shrink-0" size={28} />
+                    <div className="text-left">
+                      <p className="text-2xl font-black text-white">
+                        {expectedExhibitors.toLocaleString("pt-BR")}+
+                      </p>
+                      <p className="text-sm text-gray-400 font-medium">expositores confirmados</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
          </div>
       </section>
 
@@ -217,7 +251,55 @@ export default function CityTemplate({
                 <p className="text-gray-400 mb-6 leading-relaxed">
                   {locationDescription}
                 </p>
-                
+
+                {transportLinks && Object.values(transportLinks).some(Boolean) && (
+                  <div className="flex flex-wrap gap-3 mb-6">
+                    <p className="w-full text-xs font-bold text-gray-500 uppercase flex items-center gap-2">
+                      <Navigation size={12} /> Como chegar
+                    </p>
+                    {transportLinks.googleMaps && (
+                      <a
+                        href={transportLinks.googleMaps}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-bold text-white transition-colors"
+                      >
+                        🗺 Google Maps
+                      </a>
+                    )}
+                    {transportLinks.waze && (
+                      <a
+                        href={transportLinks.waze}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-bold text-white transition-colors"
+                      >
+                        🚗 Waze
+                      </a>
+                    )}
+                    {transportLinks.uber && (
+                      <a
+                        href={transportLinks.uber}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-bold text-white transition-colors"
+                      >
+                        🚕 Uber
+                      </a>
+                    )}
+                    {transportLinks.ninetyNine && (
+                      <a
+                        href={transportLinks.ninetyNine}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-bold text-white transition-colors"
+                      >
+                        🟡 99
+                      </a>
+                    )}
+                  </div>
+                )}
+
                 {/* Embedded Map */}
                 <div className="w-full h-[300px] rounded-xl overflow-hidden border border-white/10 bg-white/5 relative">
                    <iframe 

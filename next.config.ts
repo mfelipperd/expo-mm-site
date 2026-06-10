@@ -14,7 +14,19 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'www.expomultimix.com.br',
-      }
+      },
+      {
+        protocol: 'https',
+        hostname: '*.railway.app',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.amazonaws.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+      },
     ],
   },
 };

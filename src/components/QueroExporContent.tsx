@@ -11,11 +11,29 @@ import WhatsAppFloating from "@/components/WhatsAppFloating";
 import { useState, useRef, useEffect } from "react";
 import { CheckCircle2, TrendingUp, Users, Package, ArrowRight, Rocket, ShieldCheck, Handshake, Calendar, MapPin } from "lucide-react";
 import Image from "next/image";
+import { fetchFair, type StandOption } from "@/lib/fairsApi";
 import LogosCarousel from "@/components/LogosCarousel";
+
+const STAND_IMAGES: Record<string, string> = {
+  "2x3": "/assets/Stand-2-3.jpeg",
+  "3x3": "/assets/stand-3-3.jpeg",
+};
+
+function getStandImage(dimensions: string): string {
+  const key = Object.keys(STAND_IMAGES).find((k) =>
+    dimensions.toLowerCase().includes(k)
+  );
+  return key ? STAND_IMAGES[key] : "/assets/Stand-2-3.jpeg";
+}
+
+function formatPrice(value: number): string {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
 
 export default function QueroExporContent() {
   const [activeModal, setActiveModal] = useState<"none" | "whatsapp" | "bypass" | "visit">("none");
   const [whatsAppFilter, setWhatsAppFilter] = useState<string | undefined>(undefined);
+  const [standOptions, setStandOptions] = useState<StandOption[]>([]);
 
   const openWhatsAppModal = () => {
       setWhatsAppFilter(undefined);
@@ -34,12 +52,30 @@ export default function QueroExporContent() {
     if (typeof window !== "undefined") {
         const params = new URLSearchParams(window.location.search);
         if (params.get("target") === "stands") {
-            // Timeout ensures page is rendered before scrolling
             setTimeout(() => {
                 scrollToStands();
-            }, 600); 
+            }, 600);
         }
     }
+  }, []);
+
+  useEffect(() => {
+    const manausId = process.env.NEXT_PUBLIC_FAIR_ID_MANAUS || "";
+    const belemId = process.env.NEXT_PUBLIC_FAIR_ID_BELEM || "";
+    Promise.all([fetchFair(manausId), fetchFair(belemId)]).then(([manaus, belem]) => {
+      const seen = new Set<string>();
+      const combined: StandOption[] = [];
+      for (const fair of [manaus, belem]) {
+        for (const stand of fair?.standOptions ?? []) {
+          const key = stand.dimensions || stand.name;
+          if (!seen.has(key)) {
+            seen.add(key);
+            combined.push(stand);
+          }
+        }
+      }
+      if (combined.length > 0) setStandOptions(combined);
+    });
   }, []);
 
   const handleBuyStand = (standModel: string) => {
@@ -296,69 +332,125 @@ export default function QueroExporContent() {
                <h2 className="text-3xl md:text-5xl font-black text-white mt-2">MODELOS DISPONÍVEIS</h2>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-               {/* Stand 2x3 */}
-               <div className="glass p-8 rounded-3xl border border-white/10 hover:border-brand-orange/50 transition-all flex flex-col group">
-                  <div className="aspect-video bg-white/5 rounded-2xl mb-6 relative overflow-hidden">
-                     <Image 
-                        src="/assets/Stand-2-3.jpeg"
-                        alt="Stand Standard 2x3m"
+            {standOptions.length > 0 ? (
+              <div className={`grid gap-8 max-w-4xl mx-auto ${standOptions.length === 1 ? "max-w-md" : "md:grid-cols-2"}`}>
+                {standOptions.map((stand, i) => (
+                  <div key={stand.id || i} className="glass p-8 rounded-3xl border border-white/10 hover:border-brand-orange/50 transition-all flex flex-col group">
+                    <div className="aspect-video bg-white/5 rounded-2xl mb-6 relative overflow-hidden">
+                      <Image
+                        src={getStandImage(stand.dimensions)}
+                        alt={stand.name}
                         fill
                         className="object-cover group-hover:scale-110 transition-transform duration-500"
-                     />
+                      />
+                    </div>
+                    <h3 className="text-2xl font-black text-white mb-2">{stand.name.toUpperCase()}</h3>
+                    {stand.description && (
+                      <p className="text-gray-400 mb-6 text-sm">{stand.description}</p>
+                    )}
+                    <ul className="space-y-3 mb-4 flex-1">
+                      {stand.area > 0 && (
+                        <li className="flex items-center gap-2 text-sm text-gray-300">
+                          <CheckCircle2 size={16} className="text-brand-cyan" /> {stand.area}m² de área total
+                        </li>
+                      )}
+                      <li className="flex items-center gap-2 text-sm text-gray-300">
+                        <CheckCircle2 size={16} className="text-brand-cyan" /> Montagem básica inclusa
+                      </li>
+                      <li className="flex items-center gap-2 text-sm text-gray-300">
+                        <CheckCircle2 size={16} className="text-brand-cyan" /> Iluminação e Tomada
+                      </li>
+                      {stand.quantity > 0 && (
+                        <li className="flex items-center gap-2 text-sm text-gray-300">
+                          <CheckCircle2 size={16} className="text-brand-cyan" /> {stand.quantity} unidades disponíveis
+                        </li>
+                      )}
+                    </ul>
+                    {stand.totalPrice > 0 && (
+                      <p className="text-brand-orange font-black text-xl mb-4">
+                        {formatPrice(stand.totalPrice)}
+                      </p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleBuyStand(stand.dimensions)}
+                      className={`w-full font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 ${
+                        i === 0
+                          ? "bg-white/5 hover:bg-brand-orange hover:text-white text-brand-orange border border-brand-orange/30 hover:border-brand-orange"
+                          : "bg-brand-orange text-white hover:scale-105 shadow-lg shadow-brand-orange/20"
+                      }`}
+                    >
+                      SABER MAIS <ArrowRight size={18} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              /* Fallback hardcoded stands while loading or if API unavailable */
+              <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <div className="glass p-8 rounded-3xl border border-white/10 hover:border-brand-orange/50 transition-all flex flex-col group">
+                  <div className="aspect-video bg-white/5 rounded-2xl mb-6 relative overflow-hidden">
+                    <Image
+                      src="/assets/Stand-2-3.jpeg"
+                      alt="Stand Standard 2x3m"
+                      fill
+                      className="object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
                   </div>
                   <h3 className="text-2xl font-black text-white mb-2">STAND STANDARD 2x3m</h3>
                   <p className="text-gray-400 mb-6 text-sm">Ideal para pequenas exposições e ativação de marca.</p>
                   <ul className="space-y-3 mb-8 flex-1">
-                     <li className="flex items-center gap-2 text-sm text-gray-300">
-                        <CheckCircle2 size={16} className="text-brand-cyan" /> 6m² de área total
-                     </li>
-                     <li className="flex items-center gap-2 text-sm text-gray-300">
-                        <CheckCircle2 size={16} className="text-brand-cyan" /> Montagem básica inclusa
-                     </li>
-                     <li className="flex items-center gap-2 text-sm text-gray-300">
-                        <CheckCircle2 size={16} className="text-brand-cyan" /> Iluminação e Tomada
-                     </li>
+                    <li className="flex items-center gap-2 text-sm text-gray-300">
+                      <CheckCircle2 size={16} className="text-brand-cyan" /> 6m² de área total
+                    </li>
+                    <li className="flex items-center gap-2 text-sm text-gray-300">
+                      <CheckCircle2 size={16} className="text-brand-cyan" /> Montagem básica inclusa
+                    </li>
+                    <li className="flex items-center gap-2 text-sm text-gray-300">
+                      <CheckCircle2 size={16} className="text-brand-cyan" /> Iluminação e Tomada
+                    </li>
                   </ul>
-                  <button 
-                    onClick={() => handleBuyStand('2x3m')}
+                  <button
+                    type="button"
+                    onClick={() => handleBuyStand("2x3m")}
                     className="w-full bg-white/5 hover:bg-brand-orange hover:text-white text-brand-orange font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 border border-brand-orange/30 hover:border-brand-orange"
                   >
-                     SABER MAIS <ArrowRight size={18} />
+                    SABER MAIS <ArrowRight size={18} />
                   </button>
-               </div>
+                </div>
 
-               {/* Stand 3x3 */}
-               <div className="glass p-8 rounded-3xl border border-white/10 hover:border-brand-orange/50 transition-all flex flex-col group">
+                <div className="glass p-8 rounded-3xl border border-white/10 hover:border-brand-orange/50 transition-all flex flex-col group">
                   <div className="aspect-video bg-white/5 rounded-2xl mb-6 relative overflow-hidden">
-                      <Image 
-                        src="/assets/stand-3-3.jpeg"
-                        alt="Stand Standard 3x3m"
-                        fill
-                        className="object-cover group-hover:scale-110 transition-transform duration-500"
-                     />
+                    <Image
+                      src="/assets/stand-3-3.jpeg"
+                      alt="Stand Standard 3x3m"
+                      fill
+                      className="object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
                   </div>
                   <h3 className="text-2xl font-black text-white mb-2">STAND STANDARD 3x3m</h3>
                   <p className="text-gray-400 mb-6 text-sm">Mais espaço para produtos e atendimento.</p>
-                   <ul className="space-y-3 mb-8 flex-1">
-                     <li className="flex items-center gap-2 text-sm text-gray-300">
-                        <CheckCircle2 size={16} className="text-brand-cyan" /> 9m² de área total
-                     </li>
-                     <li className="flex items-center gap-2 text-sm text-gray-300">
-                        <CheckCircle2 size={16} className="text-brand-cyan" /> Montagem básica inclusa
-                     </li>
-                     <li className="flex items-center gap-2 text-sm text-gray-300">
-                        <CheckCircle2 size={16} className="text-brand-cyan" /> Iluminação e Tomada
-                     </li>
+                  <ul className="space-y-3 mb-8 flex-1">
+                    <li className="flex items-center gap-2 text-sm text-gray-300">
+                      <CheckCircle2 size={16} className="text-brand-cyan" /> 9m² de área total
+                    </li>
+                    <li className="flex items-center gap-2 text-sm text-gray-300">
+                      <CheckCircle2 size={16} className="text-brand-cyan" /> Montagem básica inclusa
+                    </li>
+                    <li className="flex items-center gap-2 text-sm text-gray-300">
+                      <CheckCircle2 size={16} className="text-brand-cyan" /> Iluminação e Tomada
+                    </li>
                   </ul>
-                  <button 
-                     onClick={() => handleBuyStand('3x3m')}
-                     className="w-full bg-brand-orange text-white font-bold py-4 rounded-xl hover:scale-105 transition-transform flex items-center justify-center gap-2 shadow-lg shadow-brand-orange/20"
+                  <button
+                    type="button"
+                    onClick={() => handleBuyStand("3x3m")}
+                    className="w-full bg-brand-orange text-white font-bold py-4 rounded-xl hover:scale-105 transition-transform flex items-center justify-center gap-2 shadow-lg shadow-brand-orange/20"
                   >
-                     SABER MAIS <ArrowRight size={18} />
+                    SABER MAIS <ArrowRight size={18} />
                   </button>
-               </div>
-            </div>
+                </div>
+              </div>
+            )}
          </div>
       </section>
 

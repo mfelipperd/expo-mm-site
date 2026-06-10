@@ -1,8 +1,14 @@
 import CityTemplate from "@/components/CityTemplate";
 import { Sparkles, Handshake, BadgeDollarSign } from "lucide-react";
-
 import { Metadata } from "next";
 import JsonLd from "@/components/JsonLd";
+import {
+  fetchFair,
+  formatFairDates,
+  formatFairSchedule,
+  formatFairLocation,
+  buildMapEmbedUrl,
+} from "@/lib/fairsApi";
 
 export const metadata: Metadata = {
   title: "Feira de Negócios em Belém 2026 — Comprar Direto da Fábrica no Pará",
@@ -29,12 +35,37 @@ export const metadata: Metadata = {
   },
 };
 
-export default function BelemPage() {
+export default async function BelemPage() {
+  const fairId = process.env.NEXT_PUBLIC_FAIR_ID_BELEM || "";
+  const fair = await fetchFair(fairId);
+
+  const dates = fair
+    ? formatFairDates(fair.startDate, fair.endDate) || "18, 19 E 20 DE AGOSTO DE 2026"
+    : "18, 19 E 20 DE AGOSTO DE 2026";
+
+  const schedule = fair?.dailySchedule?.length
+    ? formatFairSchedule(fair.dailySchedule) || "13H ÀS 21H"
+    : "13H ÀS 21H";
+
+  const location = fair?.address
+    ? formatFairLocation(fair.address) || "ESTAÇÃO DAS DOCAS"
+    : "ESTAÇÃO DAS DOCAS";
+
+  const mapUrl = fair
+    ? buildMapEmbedUrl(fair.coordinates, fair.address?.venue, fair.address?.city) ||
+      "https://maps.google.com/maps?q=Estação+das+Docas,Belém&t=&z=15&ie=UTF8&iwloc=&output=embed"
+    : "https://maps.google.com/maps?q=Estação+das+Docas,Belém&t=&z=15&ie=UTF8&iwloc=&output=embed";
+
+  const heroImage = fair?.bannerUrl || "/assets/fachada-belem-emm.jpeg";
+
+  const aboutText = fair?.description ||
+    "A Estação das Docas receberá milhares de lojistas para o maior encontro de negócios da região. A Expo MultiMix é o ponto de encontro estratégico para quem busca renovar estoques com qualidade e prazos imbatíveis. Prepare-se para renovar seu estoque e fortalecer sua marca.";
+
   return (
     <>
     <CityTemplate
       cityName="BELÉM"
-      fairId={process.env.NEXT_PUBLIC_FAIR_ID_BELEM || ""} // Using Env Var
+      fairId={fairId}
       heroTitle={
         <>
           A FEIRA MAIS <br />
@@ -45,8 +76,8 @@ export default function BelemPage() {
         </>
       }
       heroTagline="O maior encontro de negócios da região Norte."
-      heroImage="/assets/fachada-belem-emm.jpeg"
-      aboutText="A Estação das Docas receberá milhares de lojistas para o maior encontro de negócios da região. A Expo MultiMix é o ponto de encontro estratégico para quem busca renovar estoques com qualidade e prazos imbatíveis. Prepare-se para renovar seu estoque e fortalecer sua marca."
+      heroImage={heroImage}
+      aboutText={aboutText}
       benefits={[
         {
           title: "Novidades",
@@ -64,11 +95,11 @@ export default function BelemPage() {
           icon: <BadgeDollarSign className="text-brand-orange" />
         }
       ]}
-      dates="18, 19 E 20 DE AGOSTO DE 2026"
-      schedule="13H ÀS 21H"
-      location="ESTAÇÃO DAS DOCAS"
+      dates={dates}
+      schedule={schedule}
+      location={location}
       locationDescription="Um dos mais famosos pontos turísticos de Belém, com localização central, estacionamento, infraestrutura completa e um pôr-do-sol espetacular!"
-      mapEmbedUrl="https://maps.google.com/maps?q=Estação+das+Docas,Belém&t=&z=15&ie=UTF8&iwloc=&output=embed" 
+      mapEmbedUrl={mapUrl}
       industries={[
         "Utilidades Domésticas",
         "Brinquedos",
@@ -78,6 +109,9 @@ export default function BelemPage() {
         "Decoração",
         "Descartáveis"
       ]}
+      expectedVisitors={fair?.expectedVisitors}
+      expectedExhibitors={fair?.expectedExhibitors}
+      transportLinks={fair?.transportLinks}
     />
     <JsonLd
       data={{
@@ -94,8 +128,8 @@ export default function BelemPage() {
         "@context": "https://schema.org",
         "@type": "Event",
         "name": "Expo MultiMix Belém 2026",
-        "startDate": "2026-08-18T13:00:00-03:00",
-        "endDate": "2026-08-20T21:00:00-03:00",
+        "startDate": fair?.startDate ? `${fair.startDate}T13:00:00-03:00` : "2026-08-18T13:00:00-03:00",
+        "endDate": fair?.endDate ? `${fair.endDate}T21:00:00-03:00` : "2026-08-20T21:00:00-03:00",
         "eventStatus": "https://schema.org/EventScheduled",
         "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
         "description": "A maior feira de negócios B2B do Pará. Fornecedores de utilidades domésticas, brinquedos, festas, variedades e decoração. Compre direto da fábrica com condições exclusivas para lojistas.",
@@ -103,13 +137,15 @@ export default function BelemPage() {
         "url": "https://www.expomultimix.com.br/belem",
         "location": {
           "@type": "Place",
-          "name": "Estação das Docas — Pavilhão de Feiras",
+          "name": fair?.address?.venue || "Estação das Docas — Pavilhão de Feiras",
           "address": {
             "@type": "PostalAddress",
-            "streetAddress": "Boulevard Castilhos França, s/n",
-            "addressLocality": "Belém",
-            "addressRegion": "PA",
-            "postalCode": "66020-200",
+            "streetAddress": fair?.address?.street
+              ? `${fair.address.street}${fair.address.number ? `, ${fair.address.number}` : ""}`
+              : "Boulevard Castilhos França, s/n",
+            "addressLocality": fair?.address?.city || "Belém",
+            "addressRegion": fair?.address?.state || "PA",
+            "postalCode": fair?.address?.zipCode || "66020-200",
             "addressCountry": "BR",
           },
         },

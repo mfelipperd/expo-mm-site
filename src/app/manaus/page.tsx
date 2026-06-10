@@ -1,8 +1,14 @@
 import CityTemplate from "@/components/CityTemplate";
 import { Sparkles, Handshake, BadgeDollarSign } from "lucide-react";
-
 import { Metadata } from "next";
 import JsonLd from "@/components/JsonLd";
+import {
+  fetchFair,
+  formatFairDates,
+  formatFairSchedule,
+  formatFairLocation,
+  buildMapEmbedUrl,
+} from "@/lib/fairsApi";
 
 export const metadata: Metadata = {
   title: "Feira de Negócios em Manaus 2026 — Fornecedores e Atacado no Amazonas",
@@ -29,12 +35,37 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ManausPage() {
+export default async function ManausPage() {
+  const fairId = process.env.NEXT_PUBLIC_FAIR_ID_MANAUS || "";
+  const fair = await fetchFair(fairId);
+
+  const dates = fair
+    ? formatFairDates(fair.startDate, fair.endDate) || "09, 10 E 11 DE JUNHO"
+    : "09, 10 E 11 DE JUNHO";
+
+  const schedule = fair?.dailySchedule?.length
+    ? formatFairSchedule(fair.dailySchedule) || "13H ÀS 20H"
+    : "13H ÀS 20H";
+
+  const location = fair?.address
+    ? formatFairLocation(fair.address) || "CENTRO DE CONVENÇÕES VASCO VASQUES"
+    : "CENTRO DE CONVENÇÕES VASCO VASQUES";
+
+  const mapUrl = fair
+    ? buildMapEmbedUrl(fair.coordinates, fair.address?.venue, fair.address?.city) ||
+      "https://maps.google.com/maps?q=Centro+de+Convenções+Vasco+Vasques,Manaus&t=&z=15&ie=UTF8&iwloc=&output=embed"
+    : "https://maps.google.com/maps?q=Centro+de+Convenções+Vasco+Vasques,Manaus&t=&z=15&ie=UTF8&iwloc=&output=embed";
+
+  const heroImage = fair?.bannerUrl || "/assets/fachada-manaus-emm.jpeg";
+
+  const aboutText = fair?.description ||
+    "A Expo MultiMix chegou em Manaus! Com as maiores marcas e indústrias de todo o Brasil, a EMM 2025 está repleta de novidades para os lojistas e empreendedores do Amazonas. É uma oportunidade única de ver e testar os produtos em primeira mão e descobrir novas possibilidades.";
+
   return (
     <>
     <CityTemplate
       cityName="MANAUS"
-      fairId={process.env.NEXT_PUBLIC_FAIR_ID_MANAUS || ""} // Using Env Var
+      fairId={fairId}
       heroTitle={
         <>
           CONHEÇA A <br />
@@ -42,8 +73,8 @@ export default function ManausPage() {
         </>
       }
       heroTagline="É o momento perfeito para renovar seus estoques."
-      heroImage="/assets/fachada-manaus-emm.jpeg"
-      aboutText="A Expo MultiMix chegou em Manaus! Com as maiores marcas e indústrias de todo o Brasil, a EMM 2025 está repleta de novidades para os lojistas e empreendedores do Amazonas. É uma oportunidade única de ver e testar os produtos em primeira mão e descobrir novas possibilidades."
+      heroImage={heroImage}
+      aboutText={aboutText}
       benefits={[
         {
           title: "Experiência Real",
@@ -61,11 +92,11 @@ export default function ManausPage() {
           icon: <BadgeDollarSign className="text-brand-orange" />
         }
       ]}
-      dates="09, 10 E 11 DE JUNHO"
-      schedule="13H ÀS 20H"
-      location="CENTRO DE CONVENÇÕES VASCO VASQUES"
+      dates={dates}
+      schedule={schedule}
+      location={location}
       locationDescription="O maior e mais moderno espaço do gênero da Região Norte, com boa localização e estacionamento gratuito."
-      mapEmbedUrl="https://maps.google.com/maps?q=Centro+de+Convenções+Vasco+Vasques,Manaus&t=&z=15&ie=UTF8&iwloc=&output=embed"
+      mapEmbedUrl={mapUrl}
       industries={[
         "Utilidades Domésticas",
         "Brinquedos",
@@ -76,6 +107,9 @@ export default function ManausPage() {
         "Descartáveis",
         "Pet"
       ]}
+      expectedVisitors={fair?.expectedVisitors}
+      expectedExhibitors={fair?.expectedExhibitors}
+      transportLinks={fair?.transportLinks}
     />
     <JsonLd
       data={{
@@ -92,8 +126,8 @@ export default function ManausPage() {
         "@context": "https://schema.org",
         "@type": "Event",
         "name": "Expo MultiMix Manaus 2026",
-        "startDate": "2026-06-09T13:00:00-04:00",
-        "endDate": "2026-06-11T20:00:00-04:00",
+        "startDate": fair?.startDate ? `${fair.startDate}T13:00:00-04:00` : "2026-06-09T13:00:00-04:00",
+        "endDate": fair?.endDate ? `${fair.endDate}T20:00:00-04:00` : "2026-06-11T20:00:00-04:00",
         "eventStatus": "https://schema.org/EventScheduled",
         "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
         "description": "A maior feira de negócios B2B do Amazonas. Fornecedores de brinquedos, puericultura, utilidades domésticas, festas, variedades e pet. Compre direto da fábrica com condições exclusivas para lojistas.",
@@ -101,13 +135,15 @@ export default function ManausPage() {
         "url": "https://www.expomultimix.com.br/manaus",
         "location": {
           "@type": "Place",
-          "name": "Centro de Convenções Vasco Vasques",
+          "name": fair?.address?.venue || "Centro de Convenções Vasco Vasques",
           "address": {
             "@type": "PostalAddress",
-            "streetAddress": "Av. Constantino Nery, 5001",
-            "addressLocality": "Manaus",
-            "addressRegion": "AM",
-            "postalCode": "69050-001",
+            "streetAddress": fair?.address?.street
+              ? `${fair.address.street}${fair.address.number ? `, ${fair.address.number}` : ""}`
+              : "Av. Constantino Nery, 5001",
+            "addressLocality": fair?.address?.city || "Manaus",
+            "addressRegion": fair?.address?.state || "AM",
+            "postalCode": fair?.address?.zipCode || "69050-001",
             "addressCountry": "BR",
           },
         },
