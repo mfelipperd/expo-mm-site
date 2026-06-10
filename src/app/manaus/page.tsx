@@ -110,6 +110,7 @@ export default async function ManausPage() {
       expectedVisitors={fair?.expectedVisitors}
       expectedExhibitors={fair?.expectedExhibitors}
       transportLinks={fair?.transportLinks}
+      exhibitorBrands={fair?.exhibitorBrands}
     />
     <JsonLd
       data={{

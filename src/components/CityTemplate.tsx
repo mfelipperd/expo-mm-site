@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { MapPin, Calendar, CheckCircle2, Star, ArrowRight, Users, Building2, Navigation } from "lucide-react";
-import type { TransportLinks } from "@/lib/fairsApi";
+import type { TransportLinks, ExhibitorBrand } from "@/lib/fairsApi";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Modal from "@/components/Modal";
@@ -43,6 +43,7 @@ interface CityTemplateProps {
   expectedVisitors?: number;
   expectedExhibitors?: number;
   transportLinks?: TransportLinks;
+  exhibitorBrands?: ExhibitorBrand[];
 }
 
 export default function CityTemplate({
@@ -62,6 +63,7 @@ export default function CityTemplate({
   expectedVisitors,
   expectedExhibitors,
   transportLinks,
+  exhibitorBrands,
 }: CityTemplateProps) {
   const router = useRouter();
   const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit" | "whatsapp" | "bypass" | "registration">("none");
@@ -396,7 +398,10 @@ export default function CityTemplate({
         </div>
       </section>
 
-      <ExhibitorsSection city={cityName.toLowerCase().includes("manaus") ? "manaus" : "belem"} />
+      <ExhibitorsSection
+        city={cityName.toLowerCase().includes("manaus") ? "manaus" : "belem"}
+        apiExhibitors={exhibitorBrands}
+      />
 
       <Footer onWhatsAppClick={openWhatsAppModal} />
       <WhatsAppFloating onClick={openWhatsAppModal} />

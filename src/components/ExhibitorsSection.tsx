@@ -5,13 +5,15 @@ import { db } from "@/lib/firebase";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
+import type { ExhibitorBrand } from "@/lib/fairsApi";
 
 interface ExhibitorsSectionProps {
   city?: "manaus" | "belem";
+  apiExhibitors?: ExhibitorBrand[];
 }
 
-export default function ExhibitorsSection({ city }: ExhibitorsSectionProps) {
-  const [exhibitors, setExhibitors] = useState<any[]>([]);
+export default function ExhibitorsSection({ city, apiExhibitors }: ExhibitorsSectionProps) {
+  const [firebaseExhibitors, setFirebaseExhibitors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,20 +23,27 @@ export default function ExhibitorsSection({ city }: ExhibitorsSectionProps) {
         id: doc.id,
         ...doc.data()
       }));
-
-      // Filter by city if provided
-      const filtered = city 
+      const filtered = city
         ? docs.filter((ex: any) => ex.cities?.includes(city))
         : docs;
-
-      setExhibitors(filtered);
+      setFirebaseExhibitors(filtered);
       setLoading(false);
     });
-
     return () => unsubscribe();
   }, [city]);
 
-  if (loading) return null;
+  // Merge: start from Firebase (rich metadata), append API brands not already present
+  const firebaseNames = new Set(
+    firebaseExhibitors.map((e) => e.name?.toLowerCase().trim())
+  );
+  const apiBrandsOnly = (apiExhibitors ?? []).filter(
+    (b) => !firebaseNames.has(b.name?.toLowerCase().trim())
+  );
+  const exhibitors = [
+    ...firebaseExhibitors,
+    ...apiBrandsOnly.map((b) => ({ id: `api-${b.name}`, name: b.name, logoUrl: b.logoUrl })),
+  ];
+
   if (exhibitors.length === 0) return null;
 
   return (
