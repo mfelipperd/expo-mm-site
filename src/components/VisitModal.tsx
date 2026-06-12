@@ -23,27 +23,41 @@ function normCity(city: string): string {
   return city.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 
+interface CityMeta { startDate: string; active: boolean }
+
 export default function VisitModalContent({ detectedCity }: VisitModalContentProps) {
-  const [activeSlugs, setActiveSlugs] = useState<Set<string>>(new Set(["belem"]));
+  const [cityMeta, setCityMeta] = useState<Map<string, CityMeta>>(
+    new Map([["belem", { startDate: "2026-08-18", active: true }]])
+  );
 
   useEffect(() => {
     fetchFairs().then((fairs) => {
-      const active = fairs.filter(isFairActive);
-      const slugs = new Set(
-        active.map((f) => {
-          const norm = normCity(f.city);
-          return KNOWN_CITIES.find((c) => norm.includes(c.slug))?.slug ?? norm;
-        })
-      );
-      if (slugs.size) setActiveSlugs(slugs);
+      if (!fairs.length) return;
+      const meta = new Map<string, CityMeta>();
+      fairs.forEach((f) => {
+        const norm = normCity(f.city);
+        const slug = KNOWN_CITIES.find((c) => norm.includes(c.slug))?.slug ?? norm;
+        meta.set(slug, { startDate: f.startDate, active: isFairActive(f) });
+      });
+      if (meta.size) setCityMeta(meta);
     });
   }, []);
 
-  // If the detected city is already past, show all options so the user can pick an active one
-  const detectedIsActive = detectedCity ? activeSlugs.has(detectedCity) : false;
-  const citiesToShow = detectedIsActive
+  const detectedIsActive = detectedCity ? (cityMeta.get(detectedCity)?.active ?? false) : false;
+
+  const citiesToShow = (detectedIsActive
     ? KNOWN_CITIES.filter((c) => c.slug === detectedCity)
-    : KNOWN_CITIES;
+    : KNOWN_CITIES
+  ).slice().sort((a, b) => {
+    const ma = cityMeta.get(a.slug);
+    const mb = cityMeta.get(b.slug);
+    const activeA = ma?.active ? 0 : 1;
+    const activeB = mb?.active ? 0 : 1;
+    if (activeA !== activeB) return activeA - activeB;
+    const dateA = ma?.startDate ?? "9999";
+    const dateB = mb?.startDate ?? "9999";
+    return dateA.localeCompare(dateB);
+  });
 
   return (
     <div className="space-y-4">
@@ -52,7 +66,7 @@ export default function VisitModalContent({ detectedCity }: VisitModalContentPro
       </p>
 
       {citiesToShow.map((city) => {
-        const isActive = activeSlugs.has(city.slug);
+        const isActive = cityMeta.get(city.slug)?.active ?? false;
 
         if (isActive) {
           return (
