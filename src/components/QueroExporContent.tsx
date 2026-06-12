@@ -83,9 +83,10 @@ export default function QueroExporContent() {
 
   useEffect(() => {
     fetchFairs().then(async (fairs) => {
-      const sorted = [...fairs].sort(
-        (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
-      );
+      const currentYear = new Date().getFullYear();
+      const sorted = [...fairs]
+        .filter((f) => new Date(f.startDate + "T12:00:00").getFullYear() === currentYear)
+        .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
       setAllFairs(sorted);
 
       const today = new Date(); today.setHours(0, 0, 0, 0);
