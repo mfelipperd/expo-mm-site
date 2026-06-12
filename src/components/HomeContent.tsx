@@ -21,6 +21,7 @@ import { useRouter } from "next/navigation";
 import CrossCityWarningModalContent from "@/components/CrossCityWarningModalContent";
 import ExhibitorsSection from "@/components/ExhibitorsSection";
 import LogosCarousel from "@/components/LogosCarousel";
+import FairHistoryTimeline from "@/components/FairHistoryTimeline";
 
 export default function HomeContent() {
   const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit" | "whatsapp" | "bypass" | "crossCity">("none");
@@ -127,6 +128,8 @@ export default function HomeContent() {
       />
 
       <ExhibitorsSection />
+
+      <FairHistoryTimeline />
 
       <Footer onWhatsAppClick={openWhatsAppModal} />
       

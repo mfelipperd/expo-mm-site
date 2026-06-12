@@ -23,11 +23,20 @@ function normCity(city: string): string {
   return city.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 
-interface CityMeta { startDate: string; active: boolean }
+interface CityMeta { startDate: string; endDate: string; active: boolean }
+
+function isFairHappeningNow(meta: CityMeta): boolean {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return (
+    new Date(meta.startDate + "T00:00:00") <= today &&
+    new Date(meta.endDate + "T23:59:59") >= today
+  );
+}
 
 export default function VisitModalContent({ detectedCity }: VisitModalContentProps) {
   const [cityMeta, setCityMeta] = useState<Map<string, CityMeta>>(
-    new Map([["belem", { startDate: "2026-08-18", active: true }]])
+    new Map([["belem", { startDate: "2026-08-18", endDate: "2026-08-20", active: true }]])
   );
 
   useEffect(() => {
@@ -37,7 +46,7 @@ export default function VisitModalContent({ detectedCity }: VisitModalContentPro
       fairs.forEach((f) => {
         const norm = normCity(f.city);
         const slug = KNOWN_CITIES.find((c) => norm.includes(c.slug))?.slug ?? norm;
-        meta.set(slug, { startDate: f.startDate, active: isFairActive(f) });
+        meta.set(slug, { startDate: f.startDate, endDate: f.endDate, active: isFairActive(f) });
       });
       if (meta.size) setCityMeta(meta);
     });
@@ -66,7 +75,9 @@ export default function VisitModalContent({ detectedCity }: VisitModalContentPro
       </p>
 
       {citiesToShow.map((city) => {
-        const isActive = cityMeta.get(city.slug)?.active ?? false;
+        const meta = cityMeta.get(city.slug);
+        const isActive = meta?.active ?? false;
+        const isHappening = meta ? isFairHappeningNow(meta) : false;
 
         if (isActive) {
           return (
@@ -82,6 +93,12 @@ export default function VisitModalContent({ detectedCity }: VisitModalContentPro
                 <div>
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Edição</p>
                   <h4 className="text-xl font-black tracking-tight">{city.label}</h4>
+                  {isHappening && (
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-green-400 mt-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                      Em andamento
+                    </span>
+                  )}
                 </div>
               </div>
               <ArrowRight className="text-gray-600 group-hover:text-white transition-colors" />

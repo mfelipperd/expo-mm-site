@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { useRef, useState, useEffect, useCallback } from "react";
+import { fetchFairs, type FairListItem } from "@/lib/fairsApi";
 
 interface HeroProps {
   onVisitClick: () => void;
@@ -39,6 +40,7 @@ export default function Hero({ onVisitClick, onExposeClick, detectedCity }: Hero
   const [paused, setPaused] = useState(false);
   const [logos, setLogos] = useState<LogoItem[]>([]);
   const [progress, setProgress] = useState(0);
+  const [activeFairs, setActiveFairs] = useState<FairListItem[]>([]);
 
   // Fetch logos for the grid slide
   useEffect(() => {
@@ -51,6 +53,18 @@ export default function Hero({ onVisitClick, onExposeClick, detectedCity }: Hero
         setLogos(items.filter(resolveLogoUrl).slice(0, 16));
       })
       .catch(() => {});
+  }, []);
+
+  // Fetch active fairs for dynamic date line
+  useEffect(() => {
+    fetchFairs().then((fairs) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const active = fairs
+        .filter((f) => new Date(f.endDate + "T23:59:59") >= today)
+        .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+      setActiveFairs(active);
+    });
   }, []);
 
   const next = useCallback(() => {
@@ -75,12 +89,23 @@ export default function Hero({ onVisitClick, onExposeClick, detectedCity }: Hero
     return () => clearInterval(tick);
   }, [current, paused, next]);
 
-  const dateLine =
-    detectedCity === "manaus"
-      ? "MANAUS · 09-11 JUNHO"
-      : detectedCity === "belem"
-      ? "BELÉM · 18-20 AGOSTO"
-      : "MANAUS 09-11 JUN · BELÉM 18-20 AGO";
+  const PT_MONTHS_SHORT = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
+  function formatFairLine(fair: FairListItem): string {
+    const start = new Date(fair.startDate + "T12:00:00");
+    const end = new Date(fair.endDate + "T12:00:00");
+    const month = PT_MONTHS_SHORT[start.getMonth()];
+    return `${fair.city.toUpperCase()} · ${start.getDate()}-${end.getDate()} ${month}`;
+  }
+
+  const detectedFair = activeFairs.find((f) =>
+    f.city.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").includes(detectedCity ?? "")
+  );
+
+  const dateLine = activeFairs.length === 0
+    ? (detectedCity === "belem" ? "BELÉM · 18-20 AGOSTO" : "BELÉM · 18-20 AGO")
+    : detectedCity && detectedFair
+    ? formatFairLine(detectedFair)
+    : activeFairs.map(formatFairLine).join(" · ");
 
   return (
     <section

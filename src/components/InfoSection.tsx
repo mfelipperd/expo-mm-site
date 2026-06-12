@@ -17,6 +17,7 @@ interface EventCard {
   location: string;
   color: string;
   slug: string;
+  isHappening: boolean;
 }
 
 const FALLBACK_EVENTS: EventCard[] = [
@@ -27,6 +28,7 @@ const FALLBACK_EVENTS: EventCard[] = [
     location: "Pavilhão de Feiras da Estação das Docas",
     color: "border-brand-cyan",
     slug: "belem",
+    isHappening: false,
   },
 ];
 
@@ -44,6 +46,11 @@ function fairToEventCard(fair: FairListItem): EventCard {
     color: "border-brand-cyan",
     slug: key,
   };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const isHappening =
+    new Date(fair.startDate + "T00:00:00") <= today &&
+    new Date(fair.endDate + "T23:59:59") >= today;
   return {
     city: fair.city.toUpperCase(),
     date: formatFairDates(fair.startDate, fair.endDate) || fair.city,
@@ -51,6 +58,7 @@ function fairToEventCard(fair: FairListItem): EventCard {
     location: defaults.location,
     color: defaults.color,
     slug: defaults.slug,
+    isHappening,
   };
 }
 
@@ -94,8 +102,14 @@ export default function InfoSection({ detectedCity, onEventClick }: InfoSectionP
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className={`glass-card p-6 md:p-10 rounded-2xl border-l-8 ${event.color}`}
+              className={`relative glass-card p-6 md:p-10 rounded-2xl border-l-8 ${event.color}`}
             >
+              {event.isHappening && (
+                <span className="absolute top-5 right-5 inline-flex items-center gap-1.5 bg-green-500/15 border border-green-500/30 text-green-400 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                  Em andamento
+                </span>
+              )}
               <h3 className="text-3xl md:text-4xl font-black mb-6 md:mb-8 tracking-tighter">
                 {event.city}
               </h3>
