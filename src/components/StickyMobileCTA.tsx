@@ -4,11 +4,22 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface StickyMobileCTAProps {
-  onVisitClick: () => void;
-  onExposeClick: () => void;
+  onLeftClick: () => void;
+  onRightClick: () => void;
+  leftLabel?: string;
+  rightLabel?: string;
+  leftColor?: string;
+  rightColor?: string;
 }
 
-export default function StickyMobileCTA({ onVisitClick, onExposeClick }: StickyMobileCTAProps) {
+export default function StickyMobileCTA({
+  onLeftClick,
+  onRightClick,
+  leftLabel = "SOU LOJISTA",
+  rightLabel = "SOU EXPOSITOR",
+  leftColor = "bg-brand-pink shadow-[0_0_24px_rgba(233,30,99,0.25)]",
+  rightColor = "bg-brand-orange shadow-[0_0_24px_rgba(251,146,60,0.25)]",
+}: StickyMobileCTAProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -34,17 +45,17 @@ export default function StickyMobileCTA({ onVisitClick, onExposeClick }: StickyM
             <div className="grid grid-cols-2 gap-2.5">
               <button
                 type="button"
-                onClick={onVisitClick}
-                className="bg-brand-pink text-white py-4 rounded-2xl font-black text-sm active:scale-95 transition-transform shadow-[0_0_24px_rgba(233,30,99,0.25)]"
+                onClick={onLeftClick}
+                className={`${leftColor} text-white py-4 rounded-2xl font-black text-sm active:scale-95 transition-transform`}
               >
-                SOU LOJISTA
+                {leftLabel}
               </button>
               <button
                 type="button"
-                onClick={onExposeClick}
-                className="bg-brand-orange text-white py-4 rounded-2xl font-black text-sm active:scale-95 transition-transform shadow-[0_0_24px_rgba(251,146,60,0.25)]"
+                onClick={onRightClick}
+                className={`${rightColor} text-white py-4 rounded-2xl font-black text-sm active:scale-95 transition-transform`}
               >
-                SOU EXPOSITOR
+                {rightLabel}
               </button>
             </div>
           </div>

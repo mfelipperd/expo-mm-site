@@ -210,8 +210,8 @@ export default function HomeContent() {
 
       {/* Mobile sticky bar — always-visible registration shortcut */}
       <StickyMobileCTA
-        onVisitClick={openVisitModal}
-        onExposeClick={primaryExposeAction}
+        onLeftClick={openVisitModal}
+        onRightClick={primaryExposeAction}
       />
     </main>
   );

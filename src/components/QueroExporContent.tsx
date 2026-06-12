@@ -18,6 +18,7 @@ import Image from "next/image";
 import { fetchFairs, fetchFair, formatFairDates, type StandOption, type FairListItem } from "@/lib/fairsApi";
 import LogosCarousel from "@/components/LogosCarousel";
 import FairHistoryTimeline from "@/components/FairHistoryTimeline";
+import StickyMobileCTA from "@/components/StickyMobileCTA";
 
 /* ─── helpers ─────────────────────────────────────────────────── */
 
@@ -150,7 +151,7 @@ export default function QueroExporContent() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-xl text-gray-300 max-w-3xl mx-auto mb-10"
+            className="text-base md:text-xl text-gray-300 max-w-3xl mx-auto mb-10"
           >
             Conecte sua indústria diretamente com milhares de lojistas qualificados — sem atravessadores, sem voo para São Paulo, com retorno garantido em 3 dias.
           </motion.p>
@@ -158,19 +159,19 @@ export default function QueroExporContent() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center"
+            className="flex flex-col sm:flex-row gap-3 justify-center"
           >
             <button
               type="button"
               onClick={scrollToStands}
-              className="bg-brand-orange text-white px-10 py-5 rounded-full font-black text-lg shadow-2xl hover:scale-105 transition-transform inline-flex items-center gap-3"
+              className="bg-brand-orange text-white px-8 py-4 md:px-10 md:py-5 rounded-full font-black text-base md:text-lg shadow-2xl hover:scale-105 transition-transform inline-flex items-center justify-center gap-3"
             >
               VER MODELOS DE STAND <ArrowRight size={20} />
             </button>
             <button
               type="button"
               onClick={() => openWhatsApp("Comercial")}
-              className="glass hover:bg-white/10 text-white px-10 py-5 rounded-full font-black text-lg transition-all inline-flex items-center gap-3"
+              className="glass hover:bg-white/10 text-white px-8 py-4 md:px-10 md:py-5 rounded-full font-black text-base md:text-lg transition-all inline-flex items-center justify-center gap-3"
             >
               FALAR COM CONSULTOR
             </button>
@@ -246,7 +247,7 @@ export default function QueroExporContent() {
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    className={`relative p-8 rounded-3xl border-l-4 transition-all group ${meta.borderColor} ${
+                    className={`relative p-5 md:p-8 rounded-3xl border-l-4 transition-all group ${meta.borderColor} ${
                       active ? "glass hover:bg-white/5" : "bg-white/2 opacity-70"
                     }`}
                   >
@@ -429,7 +430,7 @@ export default function QueroExporContent() {
           <button
             type="button"
             onClick={() => openWhatsApp("Comercial")}
-            className="bg-brand-orange text-white px-10 py-5 rounded-full font-black text-lg hover:scale-105 transition-transform shadow-lg shadow-brand-orange/20 inline-flex items-center gap-3"
+            className="w-full sm:w-auto bg-brand-orange text-white px-8 py-5 rounded-full font-black text-base md:text-lg hover:scale-105 transition-transform shadow-lg shadow-brand-orange/20 inline-flex items-center justify-center gap-3"
           >
             VERIFICAR DISPONIBILIDADE AGORA <ArrowRight size={20} />
           </button>
@@ -506,8 +507,8 @@ export default function QueroExporContent() {
                     key={stand.id || i}
                     className={`relative flex flex-col rounded-3xl border transition-all group ${
                       isHighlighted
-                        ? "glass-card border-brand-orange/50 shadow-[0_0_40px_rgba(255,130,0,0.15)] p-8"
-                        : "glass border-white/10 hover:border-brand-orange/30 p-8"
+                        ? "glass-card border-brand-orange/50 shadow-[0_0_40px_rgba(255,130,0,0.15)] p-5 md:p-8"
+                        : "glass border-white/10 hover:border-brand-orange/30 p-5 md:p-8"
                     }`}
                   >
                     {isHighlighted && (
@@ -611,18 +612,18 @@ export default function QueroExporContent() {
           <p className="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
             A lista de interessados cresce toda semana. Fale agora com nossa equipe e escolha sua localização no pavilhão antes que outra marca ocupe seu espaço.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               type="button"
               onClick={() => openWhatsApp("Comercial")}
-              className="bg-white text-brand-orange px-12 py-6 rounded-full font-black text-xl shadow-2xl hover:scale-105 transition-transform inline-flex items-center gap-4"
+              className="bg-white text-brand-orange px-8 py-5 md:px-12 md:py-6 rounded-full font-black text-base md:text-xl shadow-2xl hover:scale-105 transition-transform inline-flex items-center justify-center gap-3"
             >
-              FALAR COM CONSULTOR <ArrowRight size={24} />
+              FALAR COM CONSULTOR <ArrowRight size={20} />
             </button>
             <button
               type="button"
               onClick={scrollToStands}
-              className="bg-white/10 hover:bg-white/20 text-white px-12 py-6 rounded-full font-black text-xl transition-all inline-flex items-center gap-4 border border-white/20"
+              className="bg-white/10 hover:bg-white/20 text-white px-8 py-5 md:px-12 md:py-6 rounded-full font-black text-base md:text-xl transition-all inline-flex items-center justify-center gap-3 border border-white/20"
             >
               VER MODELOS
             </button>
@@ -632,6 +633,16 @@ export default function QueroExporContent() {
 
       <Footer onWhatsAppClick={() => openWhatsApp()} />
       <WhatsAppFloating onClick={() => openWhatsApp()} />
+
+      {/* Mobile sticky CTA */}
+      <StickyMobileCTA
+        onLeftClick={scrollToStands}
+        onRightClick={() => openWhatsApp("Comercial")}
+        leftLabel="VER STANDS"
+        rightLabel="CONSULTOR"
+        leftColor="bg-brand-orange shadow-[0_0_24px_rgba(251,146,60,0.25)]"
+        rightColor="bg-white/10 border border-white/20"
+      />
 
       <Modal isOpen={activeModal === "bypass"} onClose={closeModal} title="QUALIFICAÇÃO DE EXPOSITOR">
         <ExhibitorBypassModalContent onConfirmExpositor={() => openWhatsApp()} onSelectLojista={() => setActiveModal("visit")} />
@@ -654,7 +665,7 @@ function FallbackFairCard({
   color: string; borderColor: string; active: boolean; onContact: () => void;
 }) {
   return (
-    <div className={`relative p-8 rounded-3xl border-l-4 ${borderColor} ${active ? "glass hover:bg-white/5" : "bg-white/2 opacity-60"} transition-all group`}>
+    <div className={`relative p-5 md:p-8 rounded-3xl border-l-4 ${borderColor} ${active ? "glass hover:bg-white/5" : "bg-white/2 opacity-60"} transition-all group`}>
       {!active && (
         <span className="absolute top-4 right-4 text-[10px] font-bold uppercase text-gray-600 border border-white/10 rounded-full px-3 py-1">Encerrada</span>
       )}
@@ -693,7 +704,7 @@ function StandFallbackCard({
   img, name, desc, area, highlighted, onBuy,
 }: { img: string; name: string; desc: string; area: string; highlighted: boolean; onBuy: () => void }) {
   return (
-    <div className={`relative flex flex-col rounded-3xl border transition-all group p-8 ${highlighted ? "glass-card border-brand-orange/50 shadow-[0_0_40px_rgba(255,130,0,0.15)]" : "glass border-white/10 hover:border-brand-orange/30"}`}>
+    <div className={`relative flex flex-col rounded-3xl border transition-all group p-5 md:p-8 ${highlighted ? "glass-card border-brand-orange/50 shadow-[0_0_40px_rgba(255,130,0,0.15)]" : "glass border-white/10 hover:border-brand-orange/30"}`}>
       {highlighted && (
         <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand-orange text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full whitespace-nowrap">
           ⭐ Mais escolhido
@@ -744,8 +755,8 @@ function FairScrollTelling() {
   ];
 
   return (
-    <div className="py-24 bg-brand-blue relative">
-      <div className="text-center mb-20 px-6">
+    <div className="py-12 md:py-24 bg-brand-blue relative">
+      <div className="text-center mb-12 md:mb-20 px-6">
         <p className="text-brand-cyan font-bold tracking-widest mb-4 uppercase text-sm">A feira na prática</p>
         <h2 className="text-3xl md:text-5xl font-black text-white">
           VEJA COMO É <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-cyan to-brand-pink">PARTICIPAR</span>
@@ -764,7 +775,7 @@ function ScrollStep({ step, index }: { step: { title: string; desc: string; img:
   const ref = useRef(null);
   const isInView = useInView(ref, { margin: "-50% 0px -50% 0px" });
   return (
-    <div ref={ref} className={`flex flex-col md:flex-row items-center gap-12 py-24 ${index % 2 === 1 ? "md:flex-row-reverse" : ""}`}>
+    <div ref={ref} className={`flex flex-col md:flex-row items-center gap-8 md:gap-12 py-10 md:py-24 ${index % 2 === 1 ? "md:flex-row-reverse" : ""}`}>
       <div className="flex-1 space-y-6">
         <motion.div
           initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
@@ -777,7 +788,7 @@ function ScrollStep({ step, index }: { step: { title: string; desc: string; img:
         <motion.h3 initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} className="text-3xl font-black text-white">
           {step.title}
         </motion.h3>
-        <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} className="text-xl text-gray-400 leading-relaxed">
+        <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} className="text-base md:text-xl text-gray-400 leading-relaxed">
           {step.desc}
         </motion.p>
       </div>
