@@ -17,6 +17,7 @@ import {
 import Image from "next/image";
 import { fetchFairs, fetchFair, formatFairDates, type StandOption, type FairListItem } from "@/lib/fairsApi";
 import LogosCarousel from "@/components/LogosCarousel";
+import FairHistoryTimeline from "@/components/FairHistoryTimeline";
 
 /* ─── helpers ─────────────────────────────────────────────────── */
 
@@ -593,6 +594,8 @@ export default function QueroExporContent() {
       </section>
 
       <LogosCarousel title="FAÇA PARTE DESSE TIME" subtitle="Expositores confirmados 2026" direction="right" />
+
+      <FairHistoryTimeline />
 
       {/* ── CTA final ──────────────────────────────────────── */}
       <section className="py-24 relative overflow-hidden">
