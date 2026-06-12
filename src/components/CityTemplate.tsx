@@ -399,7 +399,6 @@ export default function CityTemplate({
       </section>
 
       <ExhibitorsSection
-        city={cityName.toLowerCase().includes("manaus") ? "manaus" : "belem"}
         apiExhibitors={exhibitorBrands}
       />
 
