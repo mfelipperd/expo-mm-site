@@ -75,6 +75,11 @@ export default function Hero({
     setProgress(0);
   }, []);
 
+  const prev = useCallback(() => {
+    setCurrent((c) => (c - 1 + TOTAL_SLIDES) % TOTAL_SLIDES);
+    setProgress(0);
+  }, []);
+
   useEffect(() => {
     if (paused) return;
     setProgress(0);
@@ -134,6 +139,18 @@ export default function Hero({
           <span className="h-px w-8 bg-brand-cyan block" />
         </motion.p>
 
+        {/* Swipe-enabled wrapper for mobile */}
+        <motion.div
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.12}
+          dragDirectionLock
+          onDragEnd={(_, info) => {
+            if (info.offset.x < -40) next();
+            else if (info.offset.x > 40) prev();
+          }}
+          className="touch-pan-y"
+        >
         <div className="min-h-[320px] md:min-h-[360px] flex items-center justify-center">
           <AnimatePresence mode="wait">
             {current === 0 && (
@@ -157,6 +174,7 @@ export default function Hero({
             )}
           </AnimatePresence>
         </div>
+        </motion.div>
 
         <div className="flex items-center justify-center gap-3 mt-8">
           {Array.from({ length: TOTAL_SLIDES }).map((_, i) => (
@@ -165,14 +183,18 @@ export default function Hero({
               type="button"
               onClick={() => { setCurrent(i); setProgress(0); }}
               aria-label={`Ir para slide ${i + 1}`}
-              className={`relative h-1.5 rounded-full overflow-hidden transition-all duration-300 focus:outline-none bg-white/20 ${i === current ? "w-12" : "w-4"}`}
+              className="p-2 focus:outline-none"
             >
-              {i === current && (
-                <motion.span
-                  className="absolute inset-y-0 left-0 bg-brand-cyan rounded-full"
-                  style={{ width: `${progress}%` }}
-                />
-              )}
+              <span
+                className={`relative block h-2 rounded-full overflow-hidden transition-all duration-300 bg-white/20 ${i === current ? "w-12" : "w-4"}`}
+              >
+                {i === current && (
+                  <motion.span
+                    className="absolute inset-y-0 left-0 bg-brand-cyan rounded-full"
+                    style={{ width: `${progress}%` }}
+                  />
+                )}
+              </span>
             </button>
           ))}
         </div>

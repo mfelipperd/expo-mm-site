@@ -15,7 +15,7 @@ export default function WhatsAppFloating({ onClick }: WhatsAppFloatingProps) {
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
       onClick={onClick}
-      className="fixed bottom-8 right-8 z-90 w-16 h-16 bg-[#25D366] text-white rounded-full flex items-center justify-center shadow-2xl transition-all hover:brightness-110 active:brightness-90"
+      className="fixed bottom-28 right-5 md:bottom-8 md:right-8 z-30 w-14 h-14 md:w-16 md:h-16 bg-[#25D366] text-white rounded-full flex items-center justify-center shadow-2xl transition-all hover:brightness-110 active:brightness-90"
       aria-label="Falar pelo WhatsApp"
     >
       <svg 

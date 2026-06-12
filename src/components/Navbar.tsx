@@ -105,13 +105,29 @@ export default function Navbar({ onVisitClick, onExposeClick, onContactClick, vi
           </button>
         </div>
 
-        {/* Mobile Toggle */}
-        <button
-          className="md:hidden text-white"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        >
-          {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
-        </button>
+        {/* Mobile: quick CTA pill + hamburger */}
+        <div className="md:hidden flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onVisitClick}
+            className={cn(
+              "px-4 py-2 rounded-full text-xs font-black",
+              visitButtonColor === "cyan"
+                ? "bg-brand-cyan text-brand-blue"
+                : "bg-brand-pink text-white"
+            )}
+          >
+            INSCREVER
+          </button>
+          <button
+            type="button"
+            className="text-white p-1"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Menu"
+          >
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}

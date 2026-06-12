@@ -24,43 +24,18 @@ export default function WhoAreYouSheet({ show, onSelect, onDismiss }: WhoAreYouS
   return (
     <AnimatePresence>
       {visible && (
-        <>
-          {/* ── Mobile: bottom sheet ───────────────────────────── */}
-          <motion.div
-            className="fixed inset-x-0 bottom-0 z-50 md:hidden"
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 28, stiffness: 220 }}
-          >
-            <div className="bg-[#0a1628] border-t border-white/10 rounded-t-3xl px-6 pt-4 pb-10 shadow-2xl">
-              <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5" />
-              <SheetContent onSelect={onSelect} onDismiss={onDismiss} />
-            </div>
-          </motion.div>
-
-          {/* Mobile backdrop */}
-          <motion.div
-            className="fixed inset-0 bg-black/50 z-40 md:hidden"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onDismiss}
-          />
-
-          {/* ── Desktop: floating card ─────────────────────────── */}
-          <motion.div
-            className="fixed bottom-6 right-6 z-50 hidden md:block w-72"
-            initial={{ opacity: 0, y: 16, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.95 }}
-            transition={{ duration: 0.35 }}
-          >
-            <div className="bg-[#0a1628] border border-white/10 rounded-2xl p-5 shadow-2xl">
-              <SheetContent onSelect={onSelect} onDismiss={onDismiss} compact />
-            </div>
-          </motion.div>
-        </>
+        /* Desktop-only floating card — mobile uses StickyMobileCTA instead */
+        <motion.div
+          className="fixed bottom-6 right-6 z-50 hidden md:block w-72"
+          initial={{ opacity: 0, y: 16, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 16, scale: 0.95 }}
+          transition={{ duration: 0.35 }}
+        >
+          <div className="bg-[#0a1628] border border-white/10 rounded-2xl p-5 shadow-2xl">
+            <SheetContent onSelect={onSelect} onDismiss={onDismiss} compact />
+          </div>
+        </motion.div>
       )}
     </AnimatePresence>
   );

@@ -20,6 +20,7 @@ import ExhibitorsSection from "@/components/ExhibitorsSection";
 import LogosCarousel from "@/components/LogosCarousel";
 import FairHistoryTimeline from "@/components/FairHistoryTimeline";
 import WhoAreYouSheet from "@/components/WhoAreYouSheet";
+import StickyMobileCTA from "@/components/StickyMobileCTA";
 import { useFairRouting } from "@/hooks/useFairRouting";
 import { useRouter } from "next/navigation";
 
@@ -206,6 +207,12 @@ export default function HomeContent() {
       />
 
       <DevGeoControls />
+
+      {/* Mobile sticky bar — always-visible registration shortcut */}
+      <StickyMobileCTA
+        onVisitClick={openVisitModal}
+        onExposeClick={primaryExposeAction}
+      />
     </main>
   );
 }
