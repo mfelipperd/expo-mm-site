@@ -32,6 +32,7 @@ export default function Footer({ onWhatsAppClick }: FooterProps) {
             <li><Link href="/manaus" className="hover:text-brand-cyan transition-colors">Visite Manaus</Link></li>
             <li><Link href="/belem" className="hover:text-brand-cyan transition-colors">Visite Belém</Link></li>
             <li><Link href="/quero-expor" className="hover:text-brand-cyan transition-colors">Quero Expor</Link></li>
+            <li><Link href="/faq" className="hover:text-brand-cyan transition-colors">Perguntas Frequentes</Link></li>
           </ul>
         </div>
 

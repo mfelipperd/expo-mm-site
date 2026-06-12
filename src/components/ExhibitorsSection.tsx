@@ -1,50 +1,46 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { motion } from "framer-motion";
-import { ArrowUpRight } from "lucide-react";
 import type { ExhibitorBrand } from "@/lib/fairsApi";
+import type { ClientImageDto } from "@/lib/adminApi";
 
 interface ExhibitorsSectionProps {
-  city?: "manaus" | "belem";
+  fairId?: string;
   apiExhibitors?: ExhibitorBrand[];
 }
 
-export default function ExhibitorsSection({ city, apiExhibitors }: ExhibitorsSectionProps) {
-  const [firebaseExhibitors, setFirebaseExhibitors] = useState<any[]>([]);
+export default function ExhibitorsSection({ fairId, apiExhibitors }: ExhibitorsSectionProps) {
+  const [images, setImages] = useState<ClientImageDto[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, "exhibitors"), orderBy("name", "asc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docs = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      const filtered = city
-        ? docs.filter((ex: any) => ex.cities?.includes(city))
-        : docs;
-      setFirebaseExhibitors(filtered);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, [city]);
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
+    const url = fairId
+      ? `${API_BASE}/finance/clients/images?fairId=${fairId}`
+      : `${API_BASE}/finance/clients/images`;
 
-  // Merge: start from Firebase (rich metadata), append API brands not already present
-  const firebaseNames = new Set(
-    firebaseExhibitors.map((e) => e.name?.toLowerCase().trim())
+    fetch(url)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: ClientImageDto[]) => {
+        setImages(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setImages([]))
+      .finally(() => setLoading(false));
+  }, [fairId]);
+
+  // Merge: API images first, then fallback to prop brands not already present
+  const imageUrls = new Set(images.map((img) => img.url?.toLowerCase().trim()));
+  const fallbackBrands = (apiExhibitors ?? []).filter(
+    (b) => b.logoUrl && !imageUrls.has(b.logoUrl.toLowerCase().trim())
   );
-  const apiBrandsOnly = (apiExhibitors ?? []).filter(
-    (b) => !firebaseNames.has(b.name?.toLowerCase().trim())
-  );
-  const exhibitors = [
-    ...firebaseExhibitors,
-    ...apiBrandsOnly.map((b) => ({ id: `api-${b.name}`, name: b.name, logoUrl: b.logoUrl })),
+
+  const allLogos: Array<{ id: string; url: string; caption: string | null }> = [
+    ...images.map((img) => ({ id: img.id, url: img.url, caption: img.caption })),
+    ...fallbackBrands.map((b) => ({ id: `brand-${b.name}`, url: b.logoUrl, caption: b.name })),
   ];
 
-  if (exhibitors.length === 0) return null;
+  if (!loading && allLogos.length === 0) return null;
 
   return (
     <section className="py-24 bg-brand-blue relative z-10 overflow-hidden">
@@ -68,62 +64,39 @@ export default function ExhibitorsSection({ city, apiExhibitors }: ExhibitorsSec
           </motion.h2>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-          {exhibitors.map((exhibitor, i) => (
-            <ExhibitorCard key={exhibitor.id} exhibitor={exhibitor} index={i} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+            {Array.from({ length: 16 }).map((_, i) => (
+              <div
+                key={i}
+                className="aspect-square rounded-2xl bg-white/5 animate-pulse"
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 md:gap-5">
+            {allLogos.map((logo, i) => (
+              <motion.div
+                key={logo.id}
+                initial={{ opacity: 0, scale: 0.85 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ delay: (i % 12) * 0.04, duration: 0.3 }}
+                viewport={{ once: true }}
+                className="aspect-square bg-white rounded-2xl flex items-center justify-center p-3 opacity-75 hover:opacity-100 hover:scale-105 transition-all duration-300"
+                title={logo.caption ?? undefined}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={logo.url}
+                  alt={logo.caption ?? "Expositor Expo MultiMix"}
+                  className="max-w-full max-h-full object-contain"
+                  loading="lazy"
+                />
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
-  );
-}
-
-function ExhibitorCard({ exhibitor, index }: { exhibitor: any, index: number }) {
-  const isClickable = !!exhibitor.link;
-
-  const CardContent = (
-    <>
-      <div className={`aspect-square flex items-center justify-center p-2 md:p-4 mb-4 relative transition-all duration-500 group-hover:drop-shadow-[0_0_15px_rgba(34,211,238,0.4)] ${
-        exhibitor.bgColor === "white" ? "bg-white rounded-2xl" :
-        exhibitor.bgColor === "brand-blue" ? "bg-brand-blue rounded-2xl" :
-        exhibitor.bgColor === "brand-pink" ? "bg-brand-pink rounded-2xl" :
-        exhibitor.bgColor === "brand-orange" ? "bg-brand-orange rounded-2xl" :
-        "bg-transparent"
-      }`}>
-         <img 
-            src={exhibitor.logoUrl} 
-            alt={exhibitor.name} 
-            className="max-w-full max-h-full object-contain filter grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:scale-110" 
-         />
-         {isClickable && (
-            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-brand-cyan text-brand-blue p-1 rounded-full scale-75 group-hover:scale-100 duration-500">
-               <ArrowUpRight size={14} />
-            </div>
-         )}
-      </div>
-      <h3 className="text-sm md:text-base font-bold text-center text-gray-400 group-hover:text-white transition-colors truncate px-2">
-        {exhibitor.name}
-      </h3>
-    </>
-  );
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      whileInView={{ opacity: 1, scale: 1 }}
-      transition={{ delay: (index % 10) * 0.05 }}
-      viewport={{ once: true }}
-      className={`group ${isClickable ? 'cursor-pointer' : 'cursor-default'}`}
-    >
-      {isClickable ? (
-        <a href={exhibitor.link} target="_blank" rel="noopener noreferrer" className="block">
-          {CardContent}
-        </a>
-      ) : (
-        <div className="block">
-          {CardContent}
-        </div>
-      )}
-    </motion.div>
   );
 }

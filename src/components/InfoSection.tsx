@@ -21,14 +21,6 @@ interface EventCard {
 
 const FALLBACK_EVENTS: EventCard[] = [
   {
-    city: "MANAUS",
-    date: "09 a 11 de Junho de 2026",
-    time: "13h - 20h",
-    location: "Centro de Convenções Vasco Vasques",
-    color: "border-brand-pink",
-    slug: "manaus",
-  },
-  {
     city: "BELÉM",
     date: "18 a 20 de Agosto de 2026",
     time: "13h - 21h",
@@ -68,8 +60,12 @@ export default function InfoSection({ detectedCity, onEventClick }: InfoSectionP
   useEffect(() => {
     fetchFairs().then((fairs) => {
       if (!fairs.length) return;
-      const sorted = [...fairs].sort((a) =>
-        a.city.toLowerCase().includes("manaus") ? -1 : 1
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const active = fairs.filter((f) => new Date(f.endDate + "T23:59:59") >= today);
+      if (!active.length) return;
+      const sorted = [...active].sort((a, b) =>
+        new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
       );
       setEvents(sorted.map(fairToEventCard));
     });
@@ -90,7 +86,7 @@ export default function InfoSection({ detectedCity, onEventClick }: InfoSectionP
           <div className="h-1 w-20 bg-brand-pink mx-auto rounded-full"></div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className={`grid gap-8 ${events.length === 1 ? "max-w-2xl mx-auto w-full" : "md:grid-cols-2"}`}>
           {events.map((event, index) => (
             <motion.div
               key={event.city}

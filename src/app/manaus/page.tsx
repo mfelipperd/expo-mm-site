@@ -26,6 +26,16 @@ export const metadata: Metadata = {
     "Vasco Vasques feira",
     "fornecedor artigos festa atacado Manaus",
     "distribuidora utilidades domésticas Amazonas",
+    "onde comprar atacado em Manaus",
+    "maior feira do Amazonas 2026",
+    "feira atacado junho 2026 Manaus",
+    "evento para lojistas Manaus",
+    "indústrias atacado Amazonas",
+    "fornecedor brinquedo puericultura Manaus",
+    "feira Centro de Convenções Vasco Vasques",
+    "comprar no atacado Manaus CNPJ",
+    "renovar estoque lojista Amazonas",
+    "feira pet atacado Manaus",
   ],
   openGraph: {
     url: "https://www.expomultimix.com.br/manaus",
@@ -120,6 +130,59 @@ export default async function ManausPage() {
           { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.expomultimix.com.br" },
           { "@type": "ListItem", "position": 2, "name": "Feira Manaus 2026", "item": "https://www.expomultimix.com.br/manaus" },
         ],
+      }}
+    />
+    <JsonLd
+      data={{
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "@id": "https://www.expomultimix.com.br/manaus#webpage",
+        "url": "https://www.expomultimix.com.br/manaus",
+        "name": "Feira de Negócios em Manaus 2026 — Expo MultiMix",
+        "description": "A maior feira de negócios de Manaus. Fornecedores de brinquedos, puericultura, utilidades domésticas, festas e variedades. 9 a 11 de junho de 2026, Centro de Convenções Vasco Vasques.",
+        "inLanguage": "pt-BR",
+        "isPartOf": { "@id": "https://www.expomultimix.com.br" },
+        "breadcrumb": { "@id": "https://www.expomultimix.com.br/manaus#breadcrumb" }
+      }}
+    />
+    <JsonLd
+      data={{
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Quando é a Expo MultiMix em Manaus 2026?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A Expo MultiMix Manaus 2026 acontece nos dias 9, 10 e 11 de junho de 2026, no Centro de Convenções Vasco Vasques, em Manaus (AM). O horário de funcionamento é das 13h às 20h."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Onde fica a Expo MultiMix Manaus?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A Expo MultiMix Manaus 2026 será realizada no Centro de Convenções Vasco Vasques, localizado na Av. Constantino Nery, 5001, em Manaus (AM). É o maior e mais moderno espaço de eventos da Região Norte, com estacionamento gratuito e boa localização."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Quais fornecedores participam da Expo MultiMix Manaus?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Na Expo MultiMix Manaus participam indústrias e importadoras nacionais dos segmentos de brinquedos, puericultura, utilidades domésticas, artigos para festas, variedades, decoração, descartáveis e pet. São centenas de marcas com stands próprios para negociação direta com lojistas."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Como se credenciar para a feira de negócios em Manaus?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "O credenciamento para a Expo MultiMix Manaus é gratuito. Lojistas com CNPJ podem se credenciar pelo site expomultimix.com.br/manaus clicando no botão 'Quero Me Credenciar'. O acesso é exclusivo para o setor comercial."
+            }
+          },
+        ]
       }}
     />
     <JsonLd

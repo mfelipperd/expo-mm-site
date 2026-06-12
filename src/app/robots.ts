@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: '/admin/',
     },
-    sitemap: 'https://www.expomultimix.co/sitemap.xml',
+    sitemap: 'https://www.expomultimix.com.br/sitemap.xml',
   }
 }

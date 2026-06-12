@@ -1,56 +1,45 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { auth } from "@/lib/firebase";
-import { 
-  onAuthStateChanged, 
-  signInWithPopup, 
-  GoogleAuthProvider, 
-  signOut,
-  User
-} from "firebase/auth";
-import { isAuthorized } from "@/lib/AuthRegistry";
-import { Loader2, Lock, LogOut } from "lucide-react";
+import { getToken, clearToken, login } from "@/lib/adminApi";
+import { Loader2, Lock, LogOut, Eye, EyeOff } from "lucide-react";
 
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        if (isAuthorized(currentUser.email)) {
-          setUser(currentUser);
-          setError(null);
-        } else {
-          setUser(null);
-          setError("Acesso negado. Seu e-mail não está autorizado.");
-          signOut(auth);
-        }
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    const token = getToken();
+    setAuthenticated(!!token);
+    setLoading(false);
   }, []);
 
-  const handleLogin = async () => {
-    setLoading(true);
-    const provider = new GoogleAuthProvider();
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
     try {
-      await signInWithPopup(auth, provider);
-    } catch (err: any) {
-      console.error("Login error:", err);
-      setError("Erro ao fazer login com Google.");
-      setLoading(false);
+      const { setToken } = await import("@/lib/adminApi");
+      const token = await login(email, password);
+      setToken(token);
+      setAuthenticated(true);
+    } catch {
+      setError("E-mail ou senha incorretos. Verifique suas credenciais.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleLogout = () => {
-    signOut(auth);
+    clearToken();
+    setAuthenticated(false);
+    setEmail("");
+    setPassword("");
   };
 
   if (loading) {
@@ -61,24 +50,73 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
     );
   }
 
-  if (!user) {
+  if (!authenticated) {
     return (
       <div className="min-h-screen bg-brand-blue flex items-center justify-center p-6">
-        <div className="glass max-w-md w-full p-10 rounded-3xl border border-white/10 text-center">
-          <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-8 border border-white/10">
-            <Lock className="text-brand-orange" size={40} />
+        <div className="glass max-w-md w-full p-10 rounded-3xl border border-white/10">
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/10">
+              <Lock className="text-brand-orange" size={36} />
+            </div>
+            <h1 className="text-3xl font-black text-white mb-2">ÁREA RESTRITA</h1>
+            <p className="text-gray-400 text-sm">Acesse com suas credenciais de administrador.</p>
           </div>
-          <h1 className="text-3xl font-black text-white mb-4">ÁREA RESTRITA</h1>
-          <p className="text-gray-400 mb-8">
-            {error || "Acesse com sua conta Google autorizada para gerenciar os expositores."}
-          </p>
-          <button
-            onClick={handleLogin}
-            className="w-full bg-white text-brand-blue font-black py-4 rounded-xl hover:scale-105 transition-transform flex items-center justify-center gap-3"
-          >
-            <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
-            ENTRAR COM GOOGLE
-          </button>
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                E-mail
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                placeholder="admin@expomultimix.com.br"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-brand-cyan transition-colors"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                Senha
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-12 text-white placeholder:text-gray-600 focus:outline-none focus:border-brand-cyan transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm font-medium">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full bg-brand-cyan text-brand-blue font-black py-4 rounded-xl hover:scale-105 transition-transform flex items-center justify-center gap-2 disabled:opacity-50 disabled:scale-100 mt-2"
+            >
+              {submitting ? <Loader2 className="animate-spin" size={20} /> : <Lock size={20} />}
+              {submitting ? "ENTRANDO..." : "ENTRAR"}
+            </button>
+          </form>
         </div>
       </div>
     );
@@ -87,16 +125,16 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
   return (
     <>
       <div className="bg-brand-blue/90 border-b border-white/10 py-4 px-6 flex justify-between items-center sticky top-0 z-50 backdrop-blur-md">
-        <div className="flex items-center gap-4">
-           <div className="w-10 h-10 rounded-full overflow-hidden border border-brand-cyan/30">
-              <img src={user.photoURL || ""} alt={user.displayName || "Admin"} />
-           </div>
-           <div>
-              <p className="text-xs text-brand-cyan font-bold uppercase tracking-wider">Administrador</p>
-              <p className="text-sm text-white font-medium">{user.displayName}</p>
-           </div>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-brand-cyan/20 border border-brand-cyan/30 flex items-center justify-center">
+            <Lock size={14} className="text-brand-cyan" />
+          </div>
+          <div>
+            <p className="text-xs text-brand-cyan font-bold uppercase tracking-wider">Administrador</p>
+            <p className="text-sm text-white font-medium">Expo MultiMix</p>
+          </div>
         </div>
-        <button 
+        <button
           onClick={handleLogout}
           className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 text-sm font-bold"
         >

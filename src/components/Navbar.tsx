@@ -39,6 +39,7 @@ export default function Navbar({ onVisitClick, onExposeClick, onContactClick, vi
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "Quero Expor", href: "/quero-expor" },
+    { name: "FAQ", href: "/faq" },
     { name: "Contato", href: "#", onClick: onContactClick },
   ];
 

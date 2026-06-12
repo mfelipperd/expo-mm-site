@@ -26,6 +26,15 @@ export const metadata: Metadata = {
     "Estação das Docas feira",
     "fornecedor variedades decoração Belém",
     "distribuidora descartáveis Pará",
+    "onde comprar atacado em Belém",
+    "maior feira do Pará 2026",
+    "feira atacado agosto 2026 Belém",
+    "evento para lojistas Belém Pará",
+    "indústrias atacado Belém",
+    "fornecedor brinquedo puericultura Pará",
+    "feira Estação das Docas 2026",
+    "comprar no atacado Belém CNPJ",
+    "renovar estoque lojista Pará",
   ],
   openGraph: {
     url: "https://www.expomultimix.com.br/belem",
@@ -122,6 +131,59 @@ export default async function BelemPage() {
           { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.expomultimix.com.br" },
           { "@type": "ListItem", "position": 2, "name": "Feira Belém 2026", "item": "https://www.expomultimix.com.br/belem" },
         ],
+      }}
+    />
+    <JsonLd
+      data={{
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "@id": "https://www.expomultimix.com.br/belem#webpage",
+        "url": "https://www.expomultimix.com.br/belem",
+        "name": "Feira de Negócios em Belém 2026 — Expo MultiMix",
+        "description": "A maior feira de negócios de Belém. Fornecedores de utilidades domésticas, brinquedos, festas e variedades. 18 a 20 de agosto de 2026, Estação das Docas. Credenciamento gratuito.",
+        "inLanguage": "pt-BR",
+        "isPartOf": { "@id": "https://www.expomultimix.com.br" },
+        "breadcrumb": { "@id": "https://www.expomultimix.com.br/belem#breadcrumb" }
+      }}
+    />
+    <JsonLd
+      data={{
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Quando é a Expo MultiMix em Belém 2026?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A Expo MultiMix Belém 2026 acontece nos dias 18, 19 e 20 de agosto de 2026, na Estação das Docas, no centro histórico de Belém (PA). O horário de funcionamento é das 13h às 21h."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Onde fica a Expo MultiMix Belém?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A Expo MultiMix Belém 2026 será realizada na Estação das Docas, localizada na Boulevard Castilhos França, s/n, no centro histórico de Belém do Pará. O local é um dos pontos turísticos mais famosos da cidade, com localização central, estacionamento e infraestrutura completa."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Quais fornecedores participam da Expo MultiMix Belém?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Na Expo MultiMix Belém participam indústrias e importadoras nacionais dos segmentos de utilidades domésticas, brinquedos, puericultura, artigos para festas, variedades, decoração e descartáveis. São centenas de marcas com stands próprios para negociação direta com lojistas."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Como se credenciar para a feira de negócios em Belém?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "O credenciamento para a Expo MultiMix Belém é gratuito. Lojistas com CNPJ podem se credenciar pelo site expomultimix.com.br/belem clicando no botão 'Quero Me Credenciar'. O acesso é exclusivo para o setor comercial."
+            }
+          },
+        ]
       }}
     />
     <JsonLd

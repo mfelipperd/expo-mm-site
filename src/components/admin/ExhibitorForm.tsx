@@ -1,148 +1,96 @@
 "use client";
 
 import { useState } from "react";
-import { db, storage } from "@/lib/firebase";
-import { collection, addDoc, updateDoc, doc, Timestamp } from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { Loader2, Upload, X, Save } from "lucide-react";
+import { createClient, updateClient, uploadClientImage, type ClientDto, type CreateClientDto } from "@/lib/adminApi";
+import { Loader2, Upload, Save, AlertTriangle } from "lucide-react";
 
 interface ExhibitorFormProps {
-  initialData?: any;
+  initialData?: ClientDto & { bgColor?: string; cities?: string[] };
   onSuccess: () => void;
   onCancel: () => void;
 }
 
 export default function ExhibitorForm({ initialData, onSuccess, onCancel }: ExhibitorFormProps) {
-  const [name, setName] = useState(initialData?.name || "");
-  const [link, setLink] = useState(initialData?.link || "");
-  const [cities, setCities] = useState<string[]>(initialData?.cities || []);
+  const [name, setName] = useState(initialData?.name ?? "");
+  const [cnpj, setCnpj] = useState(initialData?.cnpj ?? "");
+  const [email, setEmail] = useState(initialData?.email ?? "");
+  const [phone, setPhone] = useState(initialData?.phone ?? "");
+  const [website, setWebsite] = useState(initialData?.website ?? "");
+  const [contactPerson, setContactPerson] = useState(initialData?.contactPerson ?? "");
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string>(initialData?.logoUrl || "");
-  const [bgColor, setBgColor] = useState<string>(initialData?.bgColor || "transparent");
+  const [logoPreview, setLogoPreview] = useState<string>(initialData?.logoUrl ?? "");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
-  const [progress, setProgress] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        setError("A logo deve ter menos de 2MB.");
-        return;
-      }
-      if (!file.type.startsWith("image/")) {
-        setError("O arquivo deve ser uma imagem.");
-        return;
-      }
-      setLogoFile(file);
-      setLogoPreview(URL.createObjectURL(file));
-      setError(null);
-    }
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { setError("A logo deve ter menos de 5MB."); return; }
+    if (!file.type.startsWith("image/")) { setError("O arquivo deve ser uma imagem."); return; }
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+    setError(null);
+  };
+
+  const formatCnpj = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 14);
+    return digits
+      .replace(/(\d{2})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1/$2")
+      .replace(/(\d{4})(\d)/, "$1-$2");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
-      setError("O nome da empresa é obrigatório.");
-      return;
-    }
-    if (!initialData && !logoFile) {
-      setError("A logo é obrigatória para novos cadastros.");
-      return;
-    }
-    if (cities.length === 0) {
-      setError("Selecione pelo menos uma cidade para o expositor.");
-      return;
-    }
+    if (!name.trim()) { setError("O nome da empresa é obrigatório."); return; }
+    if (!cnpj.trim()) { setError("O CNPJ é obrigatório."); return; }
+    if (!email.trim()) { setError("O e-mail é obrigatório."); return; }
+    if (!initialData && !logoFile) { setError("A logo é obrigatória para novos cadastros."); return; }
 
     setLoading(true);
     setError(null);
 
     try {
-      console.log("Submit started. Name:", name);
-      let logoUrl = initialData?.logoUrl || "";
-
-      if (logoFile) {
-        setStatus("Iniciando upload...");
-        console.log("Preparing storage ref for:", logoFile.name);
-        const storageRef = ref(storage, `exhibitors/${Date.now()}_${logoFile.name}`);
-        const uploadTask = uploadBytesResumable(storageRef, logoFile);
-
-        await new Promise<void>((resolve, reject) => {
-          uploadTask.on(
-            "state_changed",
-            (snapshot) => {
-              const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-              setProgress(Math.round(p));
-              setStatus(`Enviando logo: ${Math.round(p)}%`);
-              console.log(`Upload progress: ${p}%`);
-            },
-            (err) => {
-              console.error("Upload error:", err);
-              reject(err);
-            },
-            async () => {
-              console.log("Upload completed, getting URL...");
-              logoUrl = await getDownloadURL(uploadTask.snapshot.ref);
-              resolve();
-            }
-          );
-        });
-      }
-
-      const exhibitorData = {
+      const dto: CreateClientDto = {
         name: name.trim(),
-        link: link.trim() || null,
-        cities,
-        logoUrl,
-        bgColor,
-        updatedAt: Timestamp.now(),
+        cnpj: cnpj.replace(/\D/g, ""),
+        email: email.trim(),
+        ...(phone ? { phone: phone.trim() } : {}),
+        ...(website ? { website: website.trim() } : {}),
+        ...(contactPerson ? { contactPerson: contactPerson.trim() } : {}),
       };
 
-      setStatus("Salvando no banco...");
-      console.log("Saving to Firestore. Collection: exhibitors. Data:", JSON.stringify(exhibitorData, null, 2));
+      let clientId = initialData?.id;
 
-      // Adding a small delay to see if it helps with freshly initialized DBs
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      try {
-        const dbPromise = (async () => {
-          if (initialData?.id) {
-            console.log("Attempting updateDoc for ID:", initialData.id);
-            await updateDoc(doc(db, "exhibitors", initialData.id), exhibitorData);
-          } else {
-            console.log("Attempting addDoc...");
-            const docRef = await addDoc(collection(db, "exhibitors"), {
-              ...exhibitorData,
-              createdAt: Timestamp.now(),
-            });
-            console.log("Document added with ID:", docRef.id);
-          }
-        })();
-
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Timeout: O banco de dados não respondeu em 15 segundos.")), 15000)
-        );
-
-        await Promise.race([dbPromise, timeoutPromise]);
-
-      } catch (dbErr: any) {
-        console.error("CRITICAL Firestore Write Error:", dbErr);
-        throw dbErr;
+      if (initialData?.id) {
+        setStatus("Atualizando dados...");
+        await updateClient(initialData.id, dto);
+      } else {
+        setStatus("Criando expositor...");
+        const created = await createClient(dto);
+        clientId = created.id;
       }
 
-      console.log("Save successful!");
+      if (logoFile && clientId) {
+        setStatus("Enviando logo...");
+        await uploadClientImage(clientId, logoFile);
+      }
+
       onSuccess();
     } catch (err: any) {
-      console.error("Error saving exhibitor full log:", err);
-      const errorMessage = err.message || "Erro desconhecido";
-      setError(`Erro ao salvar: ${errorMessage}. Confira o console do navegador.`);
+      setError(err.message === "UNAUTHORIZED"
+        ? "Sessão expirada. Faça login novamente."
+        : `Erro ao salvar: ${err.message ?? "Tente novamente."}`);
     } finally {
       setLoading(false);
       setStatus(null);
     }
   };
+
+  const inputClass = "w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-brand-cyan transition-colors";
+  const labelClass = "block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2";
 
   return (
     <div className="glass p-8 rounded-3xl border border-white/10 max-w-2xl mx-auto">
@@ -150,146 +98,93 @@ export default function ExhibitorForm({ initialData, onSuccess, onCancel }: Exhi
         {initialData ? "EDITAR EXPOSITOR" : "NOVO EXPOSITOR"}
       </h2>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Backend pending notice */}
+      <div className="flex items-start gap-3 bg-brand-orange/10 border border-brand-orange/30 rounded-2xl p-4 mb-6">
+        <AlertTriangle size={18} className="text-brand-orange flex-shrink-0 mt-0.5" />
+        <p className="text-xs text-brand-orange/90 leading-relaxed">
+          <strong>Campos em desenvolvimento:</strong> filtragem por cidade (Belém/Manaus), cor de fundo da logo e setor de atuação serão habilitados após atualização do backend. Ver <code>docs/backend-public-api-requirements.md</code>.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm font-bold text-gray-400 uppercase mb-2">Nome da Fábrica / Empresa *</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-cyan transition-colors"
-            placeholder="Ex: Fábrica de Cadeiras EMM"
-          />
+          <label className={labelClass}>Nome da Empresa / Fábrica *</label>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} placeholder="Ex: Nathor Indústria e Comércio" />
         </div>
 
-        <div>
-           <label className="block text-sm font-bold text-gray-400 uppercase mb-2">Link Opcional (URL)</label>
-           <input
-            type="url"
-            value={link}
-            onChange={(e) => setLink(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-cyan transition-colors"
-            placeholder="https://suaempresa.com.br"
-          />
-          <p className="text-xs text-gray-500 mt-2">Se deixado em branco, o card não será clicável.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={labelClass}>CNPJ *</label>
+            <input
+              type="text"
+              value={cnpj}
+              onChange={(e) => setCnpj(formatCnpj(e.target.value))}
+              className={inputClass}
+              placeholder="00.000.000/0000-00"
+              maxLength={18}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>E-mail *</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} placeholder="contato@empresa.com.br" />
+          </div>
         </div>
 
-        <div>
-           <label className="block text-sm font-bold text-gray-400 uppercase mb-3">Participação nas Feiras *</label>
-           <div className="flex gap-6">
-              <label className="flex items-center gap-3 cursor-pointer group">
-                  <input 
-                    type="checkbox"
-                    checked={cities.includes("manaus")}
-                    onChange={(e) => {
-                      if (e.target.checked) setCities([...cities, "manaus"]);
-                      else setCities(cities.filter(c => c !== "manaus"));
-                    }}
-                    className="w-5 h-5 rounded border-white/10 bg-white/5 checked:bg-brand-pink accent-brand-pink"
-                  />
-                  <span className="text-white font-bold group-hover:text-brand-pink transition-colors">MANAUS</span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer group">
-                  <input 
-                    type="checkbox"
-                    checked={cities.includes("belem")}
-                    onChange={(e) => {
-                      if (e.target.checked) setCities([...cities, "belem"]);
-                      else setCities(cities.filter(c => c !== "belem"));
-                    }}
-                    className="w-5 h-5 rounded border-white/10 bg-white/5 checked:bg-brand-cyan accent-brand-cyan"
-                  />
-                  <span className="text-white font-bold group-hover:text-brand-cyan transition-colors">BELÉM</span>
-              </label>
-           </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-bold text-gray-400 uppercase mb-3">Cor de Fundo da Logo</label>
-          <div className="flex flex-wrap gap-4">
-            {[
-              { id: "transparent", label: "Sem Fundo", class: "bg-white/5 border-white/10" },
-              { id: "white", label: "Branco", class: "bg-white text-black" },
-              { id: "brand-blue", label: "Azul", class: "bg-brand-blue border-white/20" },
-              { id: "brand-pink", label: "Rosa", class: "bg-brand-pink text-white" },
-              { id: "brand-orange", label: "Laranja", class: "bg-brand-orange text-white" },
-            ].map((color) => (
-              <button
-                key={color.id}
-                type="button"
-                onClick={() => setBgColor(color.id)}
-                className={`px-4 py-2 rounded-xl text-xs font-black uppercase transition-all border-2 ${
-                  bgColor === color.id 
-                    ? "border-brand-cyan scale-105 shadow-lg shadow-brand-cyan/20" 
-                    : "border-transparent opacity-60 hover:opacity-100"
-                } ${color.class}`}
-              >
-                {color.label}
-              </button>
-            ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={labelClass}>Telefone</label>
+            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} placeholder="(91) 99999-9999" />
+          </div>
+          <div>
+            <label className={labelClass}>Responsável</label>
+            <input type="text" value={contactPerson} onChange={(e) => setContactPerson(e.target.value)} className={inputClass} placeholder="Nome do contato" />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-gray-400 uppercase mb-2">Logo da Empresa *</label>
+          <label className={labelClass}>Site (URL)</label>
+          <input type="url" value={website} onChange={(e) => setWebsite(e.target.value)} className={inputClass} placeholder="https://suaempresa.com.br" />
+        </div>
+
+        <div>
+          <label className={labelClass}>Logo da Empresa {!initialData && "*"}</label>
           <div className="flex items-center gap-6">
-            <div className={`w-32 h-32 rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center p-2 relative overflow-hidden group transition-colors ${
-              bgColor === "transparent" ? "bg-white/5" :
-              bgColor === "white" ? "bg-white" :
-              bgColor === "brand-blue" ? "bg-brand-blue" :
-              bgColor === "brand-pink" ? "bg-brand-pink" :
-              "bg-brand-orange"
-            }`}>
+            <label className="w-32 h-32 rounded-2xl border-2 border-dashed border-white/15 flex items-center justify-center p-2 relative overflow-hidden cursor-pointer bg-white hover:border-brand-cyan transition-colors group">
               {logoPreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img src={logoPreview} alt="Preview" className="w-full h-full object-contain" />
               ) : (
-                <Upload className="text-gray-600" />
+                <Upload className="text-gray-400 group-hover:text-brand-cyan transition-colors" />
               )}
-              <input
-                type="file"
-                onChange={handleFileChange}
-                accept="image/*"
-                className="absolute inset-0 opacity-0 cursor-pointer"
-              />
-            </div>
-            <div className="text-sm text-gray-400">
-              <p>Formatos: PNG, JPG ou WEBP</p>
-              <p>Tamanho máximo: 2MB</p>
-              <p className="mt-2 text-brand-cyan font-medium">Clique no quadrado para selecionar</p>
+              <input type="file" onChange={handleFileChange} accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" />
+            </label>
+            <div className="text-sm text-gray-400 space-y-1">
+              <p>PNG, JPG ou WEBP</p>
+              <p>Máximo 5 MB</p>
+              <p className="text-brand-cyan font-medium text-xs mt-2">Clique para selecionar</p>
             </div>
           </div>
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-xl text-sm font-bold">
+          <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm font-medium">
             {error}
           </div>
         )}
 
-        <div className="flex gap-4 pt-4">
+        <div className="flex gap-4 pt-2">
           <button
             type="submit"
             disabled={loading}
             className="flex-1 bg-brand-cyan text-brand-blue font-black py-4 rounded-xl hover:scale-105 transition-transform flex items-center justify-center gap-2 disabled:opacity-50 disabled:scale-100"
           >
             {loading ? (
-              <>
-                <Loader2 className="animate-spin" />
-                <span>{status || "CARREGANDO..."}</span>
-              </>
+              <><Loader2 className="animate-spin" size={18} /><span>{status ?? "CARREGANDO..."}</span></>
             ) : (
-              <>
-                <Save size={20} />
-                <span>{initialData ? "ATUALIZAR" : "SALVAR EXPOSITOR"}</span>
-              </>
+              <><Save size={18} /><span>{initialData ? "ATUALIZAR" : "SALVAR EXPOSITOR"}</span></>
             )}
           </button>
-          
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-6 bg-white/5 text-white font-bold rounded-xl hover:bg-white/10 transition-colors"
-          >
+          <button type="button" onClick={onCancel} className="px-6 bg-white/5 text-white font-bold rounded-xl hover:bg-white/10 transition-colors">
             CANCELAR
           </button>
         </div>
