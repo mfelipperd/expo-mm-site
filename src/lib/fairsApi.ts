@@ -51,6 +51,7 @@ export interface FairListItem {
   durationDays: number;
   expectedVisitors: number;
   expectedExhibitors: number;
+  standsAvailable?: number;
 }
 
 export interface FairDetail extends FairListItem {
