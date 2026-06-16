@@ -41,23 +41,13 @@ export default function WhatsAppModalContent({ filterRole }: WhatsAppModalConten
   const contacts = [
     {
       name: "Ana Paula",
-      role: "Comercial",
+      role: "Organizadora · Comercial",
       phone: "(91) 98130-6900",
     },
     {
-      name: "Marcos Felippe",
-      role: "Desenvolvimento",
-      phone: "(91) 99119-5755",
-    },
-    {
       name: "Ana Raquel",
-      role: "Design & Social Media",
-      phone: "(91) 98283-6424",
-    },
-    {
-      name: "Gabriel",
       role: "Comercial",
-      phone: "(91) 98267-3273",
+      phone: "(91) 98635-7418",
     },
   ];
 
