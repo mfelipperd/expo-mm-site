@@ -119,6 +119,7 @@ export default function QueroExporContent() {
         onVisitClick={() => setActiveModal("visit")}
         onExposeClick={scrollToStands}
         onContactClick={() => openWhatsApp()}
+        exposeButtonText="RESERVE SEU STAND"
       />
 
       {/* ── Hero ───────────────────────────────────────────── */}

@@ -94,12 +94,16 @@ export default function Hero({
     f.city.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").includes(detectedCity ?? "")
   );
 
+  // activeFairs comes pre-filtered (endDate >= today) and sorted by startDate,
+  // so the first entry is whichever fair is happening now, or the soonest upcoming one.
+  const nearestFair = activeFairs[0];
+
   const dateLine =
     activeFairs.length === 0
       ? "BELÉM · 18-20 AGO"
       : detectedCity && detectedFair
       ? formatFairLine(detectedFair)
-      : activeFairs.map(formatFairLine).join(" · ");
+      : formatFairLine(nearestFair);
 
   return (
     <section

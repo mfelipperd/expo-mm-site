@@ -14,13 +14,20 @@ interface NavbarProps {
   onExposeClick: () => void;
   onContactClick: () => void;
   visitButtonColor?: "cyan" | "pink";
+  exposeButtonText?: string;
 }
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export default function Navbar({ onVisitClick, onExposeClick, onContactClick, visitButtonColor }: NavbarProps) {
+export default function Navbar({
+  onVisitClick,
+  onExposeClick,
+  onContactClick,
+  visitButtonColor,
+  exposeButtonText = "FAZER MEU CREDENCIAMENTO",
+}: NavbarProps) {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -101,7 +108,7 @@ export default function Navbar({ onVisitClick, onExposeClick, onContactClick, vi
             onClick={onExposeClick}
             className="bg-brand-orange hover:bg-opacity-90 text-white px-6 py-2 rounded-full text-sm font-bold transition-all transform hover:scale-105 shadow-lg"
           >
-            RESERVE SEU STAND
+            {exposeButtonText}
           </button>
         </div>
 
@@ -175,7 +182,7 @@ export default function Navbar({ onVisitClick, onExposeClick, onContactClick, vi
               onClick={() => { onExposeClick(); setIsMobileMenuOpen(false); }}
               className="bg-brand-orange text-white px-6 py-3 rounded-full text-center font-bold"
             >
-              RESERVE SEU STAND
+              {exposeButtonText}
             </button>
           </motion.div>
         )}
