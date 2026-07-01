@@ -80,7 +80,6 @@ export default function HomeContent() {
 
       <Hero
         onVisitClick={openVisitModal}
-        onExposeClick={primaryExposeAction}
         detectedCity={detectedCity}
         activeFairs={activeFairs}
       />

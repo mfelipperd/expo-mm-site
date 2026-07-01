@@ -7,7 +7,6 @@ import type { FairListItem } from "@/lib/fairsApi";
 
 interface HeroProps {
   onVisitClick: () => void;
-  onExposeClick: () => void;
   detectedCity?: "manaus" | "belem" | null;
   activeFairs?: FairListItem[];
 }
@@ -42,7 +41,6 @@ function formatFairLine(fair: FairListItem): string {
 
 export default function Hero({
   onVisitClick,
-  onExposeClick,
   detectedCity,
   activeFairs = [],
 }: HeroProps) {
@@ -153,7 +151,7 @@ export default function Hero({
         <div className="min-h-[320px] md:min-h-[360px] flex items-center justify-center">
           <AnimatePresence mode="wait">
             {current === 0 && (
-              <SlideVisitorUrgency key="s0-vis" onVisitClick={onVisitClick} onExposeClick={onExposeClick} />
+              <SlideVisitorUrgency key="s0-vis" onVisitClick={onVisitClick} />
             )}
             {current === 1 && (
               <SlideLogos
@@ -163,7 +161,7 @@ export default function Hero({
               />
             )}
             {current === 2 && (
-              <SlideDirectFactory key="s2-vis" onVisitClick={onVisitClick} onExposeClick={onExposeClick} />
+              <SlideDirectFactory key="s2-vis" onVisitClick={onVisitClick} />
             )}
           </AnimatePresence>
         </div>
@@ -200,10 +198,8 @@ export default function Hero({
 
 function SlideVisitorUrgency({
   onVisitClick,
-  onExposeClick,
 }: {
   onVisitClick: () => void;
-  onExposeClick: () => void;
 }) {
   return (
     <motion.div
@@ -223,20 +219,13 @@ function SlideVisitorUrgency({
       <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
         Negocie direto com quem fabrica. Preços de fábrica, prazos imbatíveis e condições exclusivas — sem precisar pegar avião para São Paulo.
       </p>
-      <div className="flex flex-col md:flex-row gap-4 justify-center">
+      <div className="flex justify-center">
         <button
           type="button"
           onClick={onVisitClick}
           className="bg-brand-pink hover:bg-brand-pink/90 text-white px-8 py-4 rounded-full font-bold transition-all hover:scale-105 shadow-[0_0_20px_rgba(233,30,99,0.3)]"
         >
-          QUERO VISITAR
-        </button>
-        <button
-          type="button"
-          onClick={onExposeClick}
-          className="glass hover:bg-white/10 text-white px-8 py-4 rounded-full font-bold transition-all hover:scale-105"
-        >
-          SER UM EXPOSITOR
+          FAÇA SEU CREDENCIAMENTO
         </button>
       </div>
     </motion.div>
@@ -245,10 +234,8 @@ function SlideVisitorUrgency({
 
 function SlideDirectFactory({
   onVisitClick,
-  onExposeClick,
 }: {
   onVisitClick: () => void;
-  onExposeClick: () => void;
 }) {
   return (
     <motion.div
@@ -268,20 +255,13 @@ function SlideDirectFactory({
       <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
         Sem atravessadores. Negocie condições exclusivas diretamente com gerentes e diretores — descontos que só existem durante os dias da feira.
       </p>
-      <div className="flex flex-col md:flex-row gap-4 justify-center">
+      <div className="flex justify-center">
         <button
           type="button"
           onClick={onVisitClick}
           className="bg-brand-cyan hover:bg-brand-cyan/90 text-brand-blue px-8 py-4 rounded-full font-bold transition-all hover:scale-105 shadow-[0_0_20px_rgba(34,211,238,0.3)]"
         >
           QUERO ESSES PREÇOS
-        </button>
-        <button
-          type="button"
-          onClick={onExposeClick}
-          className="glass hover:bg-white/10 text-white px-8 py-4 rounded-full font-bold transition-all hover:scale-105"
-        >
-          SER UM EXPOSITOR
         </button>
       </div>
     </motion.div>
@@ -348,7 +328,7 @@ function SlideLogos({
         onClick={onVisitClick}
         className="bg-brand-pink hover:bg-brand-pink/90 text-white px-8 py-4 rounded-full font-bold transition-all hover:scale-105 shadow-[0_0_20px_rgba(233,30,99,0.3)]"
       >
-        GARANTIR MEU ACESSO
+        FAÇA SEU CREDENCIAMENTO
       </button>
     </motion.div>
   );
