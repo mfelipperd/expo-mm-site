@@ -4,13 +4,11 @@ import Image from "next/image";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { useRef, useState, useEffect, useCallback } from "react";
 import type { FairListItem } from "@/lib/fairsApi";
-import type { PageMode } from "@/hooks/useFairRouting";
 
 interface HeroProps {
   onVisitClick: () => void;
   onExposeClick: () => void;
   detectedCity?: "manaus" | "belem" | null;
-  mode?: PageMode;
   activeFairs?: FairListItem[];
 }
 
@@ -46,7 +44,6 @@ export default function Hero({
   onVisitClick,
   onExposeClick,
   detectedCity,
-  mode = "generalist",
   activeFairs = [],
 }: HeroProps) {
   const ref = useRef(null);
@@ -104,8 +101,6 @@ export default function Hero({
       ? formatFairLine(detectedFair)
       : activeFairs.map(formatFairLine).join(" · ");
 
-  const isExhibitor = mode === "exhibitor";
-
   return (
     <section
       ref={ref}
@@ -154,23 +149,17 @@ export default function Hero({
         <div className="min-h-[320px] md:min-h-[360px] flex items-center justify-center">
           <AnimatePresence mode="wait">
             {current === 0 && (
-              isExhibitor
-                ? <SlideExhibitorPitch key="s0-exp" onExposeClick={onExposeClick} activeFairs={activeFairs} />
-                : <SlideVisitorUrgency key="s0-vis" onVisitClick={onVisitClick} onExposeClick={onExposeClick} />
+              <SlideVisitorUrgency key="s0-vis" onVisitClick={onVisitClick} onExposeClick={onExposeClick} />
             )}
             {current === 1 && (
               <SlideLogos
                 key="s1"
                 logos={logos}
                 onVisitClick={onVisitClick}
-                onExposeClick={onExposeClick}
-                isExhibitor={isExhibitor}
               />
             )}
             {current === 2 && (
-              isExhibitor
-                ? <SlideExhibitorStats key="s2-exp" onExposeClick={onExposeClick} activeFairs={activeFairs} />
-                : <SlideDirectFactory key="s2-vis" onVisitClick={onVisitClick} onExposeClick={onExposeClick} />
+              <SlideDirectFactory key="s2-vis" onVisitClick={onVisitClick} onExposeClick={onExposeClick} />
             )}
           </AnimatePresence>
         </div>
@@ -295,119 +284,14 @@ function SlideDirectFactory({
   );
 }
 
-/* ─── Exhibitor slides ───────────────────────────────────────── */
-
-function SlideExhibitorPitch({
-  onExposeClick,
-  activeFairs,
-}: {
-  onExposeClick: () => void;
-  activeFairs: FairListItem[];
-}) {
-  const cities = activeFairs.map((f) => f.city).join(" e ") || "Belém";
-  const totalVisitors = activeFairs.reduce((s, f) => s + (f.expectedVisitors || 0), 0);
-  const visitorsLabel = totalVisitors > 0 ? `+${totalVisitors.toLocaleString("pt-BR")}` : "+15.000";
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -24 }}
-      transition={{ duration: 0.5 }}
-      className="w-full"
-    >
-      <h1 className="text-4xl sm:text-5xl md:text-7xl font-black mb-6 leading-tight">
-        APRESENTE SUA MARCA <br />
-        PARA {visitorsLabel} <br />
-        <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-orange to-brand-pink">
-          LOJISTAS DA REGIÃO
-        </span>
-      </h1>
-      <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-        A Expo MultiMix conecta indústrias e importadoras diretamente com os lojistas de {cities}. Ocupe seu espaço antes que os concorrentes o façam.
-      </p>
-      <div className="flex flex-col md:flex-row gap-4 justify-center">
-        <button
-          type="button"
-          onClick={onExposeClick}
-          className="bg-brand-orange hover:bg-brand-orange/90 text-white px-8 py-4 rounded-full font-bold transition-all hover:scale-105 shadow-[0_0_20px_rgba(251,146,60,0.3)]"
-        >
-          QUERO MEU STAND
-        </button>
-        <button
-          type="button"
-          onClick={onExposeClick}
-          className="glass hover:bg-white/10 text-white px-8 py-4 rounded-full font-bold transition-all hover:scale-105"
-        >
-          VER OPÇÕES DE STAND
-        </button>
-      </div>
-    </motion.div>
-  );
-}
-
-function SlideExhibitorStats({
-  onExposeClick,
-  activeFairs,
-}: {
-  onExposeClick: () => void;
-  activeFairs: FairListItem[];
-}) {
-  const totalVisitors = activeFairs.reduce((s, f) => s + (f.expectedVisitors || 0), 0);
-  const totalExhibitors = activeFairs.reduce((s, f) => s + (f.expectedExhibitors || 0), 0);
-
-  const stats = [
-    { value: totalVisitors > 0 ? `+${totalVisitors.toLocaleString("pt-BR")}` : "+15.000", label: "Lojistas esperados" },
-    { value: totalExhibitors > 0 ? `+${totalExhibitors}` : "+150",  label: "Expositores por edição" },
-    { value: activeFairs.length > 0 ? `${activeFairs.length}` : "2", label: activeFairs.length === 1 ? "Capital do Norte" : "Capitais do Norte" },
-  ];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -24 }}
-      transition={{ duration: 0.5 }}
-      className="w-full"
-    >
-      <h1 className="text-4xl sm:text-5xl md:text-7xl font-black mb-6 leading-tight">
-        NÚMEROS QUE <br />
-        TRANSFORMAM <br />
-        <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-cyan to-blue-400">
-          NEGÓCIOS.
-        </span>
-      </h1>
-      <div className="flex justify-center gap-8 mb-8">
-        {stats.map((s) => (
-          <div key={s.label} className="text-center">
-            <p className="text-3xl md:text-4xl font-black text-brand-cyan">{s.value}</p>
-            <p className="text-xs text-gray-400 mt-1">{s.label}</p>
-          </div>
-        ))}
-      </div>
-      <button
-        type="button"
-        onClick={onExposeClick}
-        className="bg-brand-cyan hover:bg-brand-cyan/90 text-brand-blue px-8 py-4 rounded-full font-bold transition-all hover:scale-105 shadow-[0_0_20px_rgba(34,211,238,0.3)]"
-      >
-        RESERVAR MEU STAND AGORA
-      </button>
-    </motion.div>
-  );
-}
-
 /* ─── Shared: logos grid ─────────────────────────────────────── */
 
 function SlideLogos({
   logos,
   onVisitClick,
-  onExposeClick,
-  isExhibitor,
 }: {
   logos: LogoItem[];
   onVisitClick: () => void;
-  onExposeClick: () => void;
-  isExhibitor: boolean;
 }) {
   return (
     <motion.div
@@ -418,14 +302,10 @@ function SlideLogos({
       className="w-full"
     >
       <p className="text-brand-cyan font-bold tracking-[0.2em] uppercase text-sm mb-2">
-        {isExhibitor ? "Sua concorrência já está aqui" : "Presenças confirmadas"}
+        Presenças confirmadas
       </p>
       <h2 className="text-3xl md:text-5xl font-black mb-8 text-white">
-        {isExhibitor ? (
-          <>SEU ESPAÇO AINDA <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-orange to-brand-pink">ESTÁ DISPONÍVEL</span></>
-        ) : (
-          <>QUEM ESTARÁ <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-cyan to-blue-400">NA FEIRA</span></>
-        )}
+        QUEM ESTARÁ <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-cyan to-blue-400">NA FEIRA</span>
       </h2>
 
       {logos.length > 0 ? (
@@ -459,23 +339,13 @@ function SlideLogos({
         </div>
       )}
 
-      {isExhibitor ? (
-        <button
-          type="button"
-          onClick={onExposeClick}
-          className="bg-brand-orange hover:bg-brand-orange/90 text-white px-8 py-4 rounded-full font-bold transition-all hover:scale-105 shadow-[0_0_20px_rgba(251,146,60,0.3)]"
-        >
-          GARANTIR MEU STAND
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={onVisitClick}
-          className="bg-brand-pink hover:bg-brand-pink/90 text-white px-8 py-4 rounded-full font-bold transition-all hover:scale-105 shadow-[0_0_20px_rgba(233,30,99,0.3)]"
-        >
-          GARANTIR MEU ACESSO
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={onVisitClick}
+        className="bg-brand-pink hover:bg-brand-pink/90 text-white px-8 py-4 rounded-full font-bold transition-all hover:scale-105 shadow-[0_0_20px_rgba(233,30,99,0.3)]"
+      >
+        GARANTIR MEU ACESSO
+      </button>
     </motion.div>
   );
 }

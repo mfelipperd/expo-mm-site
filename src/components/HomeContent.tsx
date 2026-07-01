@@ -14,12 +14,11 @@ import WhatsAppModalContent from "@/components/WhatsAppModal";
 import ExhibitorBypassModalContent from "@/components/ExhibitorBypassModal";
 import AboutSection from "@/components/AboutSection";
 import WhatsAppFloating from "@/components/WhatsAppFloating";
-import DevGeoControls from "@/components/DevGeoControls";
 import CrossCityWarningModalContent from "@/components/CrossCityWarningModalContent";
 import ExhibitorsSection from "@/components/ExhibitorsSection";
 import LogosCarousel from "@/components/LogosCarousel";
 import FairHistoryTimeline from "@/components/FairHistoryTimeline";
-import WhoAreYouSheet from "@/components/WhoAreYouSheet";
+import RegionSelectorSheet from "@/components/RegionSelectorSheet";
 import StickyMobileCTA from "@/components/StickyMobileCTA";
 import { useFairRouting } from "@/hooks/useFairRouting";
 import { useRouter } from "next/navigation";
@@ -27,18 +26,14 @@ import { useRouter } from "next/navigation";
 export default function HomeContent() {
   const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit" | "whatsapp" | "bypass" | "crossCity">("none");
   const [pendingTargetCity, setPendingTargetCity] = useState<string | null>(null);
-  const [sheetDismissed, setSheetDismissed] = useState(false);
   const router = useRouter();
 
   const {
-    mode,
-    showTypePrompt,
-    setUserType,
     activeFairs,
     detectedCity,
+    hasChosenCity,
+    setCity,
   } = useFairRouting();
-
-  const isExhibitorMode = mode === "exhibitor";
 
   const openVisitModal = () => {
     if (detectedCity) {
@@ -49,13 +44,11 @@ export default function HomeContent() {
   };
   const openLeadModal = () => setActiveModal("lead");
   const openWhatsAppModal = () => setActiveModal("whatsapp");
-  const openBypassModal = () => setActiveModal("bypass");
   const closeModal = () => setActiveModal("none");
 
-  // Exhibitor mode: skip the choice modal, go straight to Quero Expor
   const handleExposeClick = () => router.push("/quero-expor?target=stands");
 
-  const primaryExposeAction = isExhibitorMode ? handleExposeClick : openLeadModal;
+  const primaryExposeAction = openLeadModal;
 
   const handleEventClick = (slug: string) => {
     if (detectedCity && slug !== detectedCity) {
@@ -89,7 +82,6 @@ export default function HomeContent() {
         onVisitClick={openVisitModal}
         onExposeClick={primaryExposeAction}
         detectedCity={detectedCity}
-        mode={mode}
         activeFairs={activeFairs}
       />
 
@@ -107,15 +99,10 @@ export default function HomeContent() {
       />
 
       <CTASection
-        title={isExhibitorMode ? "OCUPE SEU STAND" : "O SUCESSO DO SEU NEGÓCIO"}
-        subtitle={
-          isExhibitorMode
-            ? "Stands com tamanhos e preços para cada perfil de expositor. Reserve antes que acabem."
-            : "Seja um expositor e apresente suas novidades para milhares de lojistas da região Norte."
-        }
+        title="O SUCESSO DO SEU NEGÓCIO"
+        subtitle="Seja um expositor e apresente suas novidades para milhares de lojistas da região Norte."
         variant="orange"
         onClick={primaryExposeAction}
-        buttonText={isExhibitorMode ? "VER OPÇÕES DE STAND" : undefined}
       />
 
       <Features />
@@ -196,17 +183,11 @@ export default function HomeContent() {
         )}
       </Modal>
 
-      {/* "Who are you?" prompt — appears 2s after load when geo unavailable */}
-      <WhoAreYouSheet
-        show={showTypePrompt && !sheetDismissed}
-        onSelect={(type) => {
-          setUserType(type);
-          setSheetDismissed(true);
-        }}
-        onDismiss={() => setSheetDismissed(true)}
+      {/* Region prompt — appears 2s after load until the visitor picks a city */}
+      <RegionSelectorSheet
+        show={!hasChosenCity}
+        onSelect={setCity}
       />
-
-      <DevGeoControls />
 
       {/* Mobile sticky bar — always-visible registration shortcut */}
       <StickyMobileCTA
