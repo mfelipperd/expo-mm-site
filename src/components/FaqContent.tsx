@@ -4,7 +4,12 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ChevronDown, MapPin, Users, Briefcase, HelpCircle, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import Modal from "@/components/Modal";
+import LeadModalContent from "@/components/LeadModal";
+import VisitModalContent from "@/components/VisitModal";
+import WhatsAppModalContent from "@/components/WhatsAppModal";
 
 type Category = "todos" | "visitantes" | "expositores" | "datas-local" | "geral";
 
@@ -265,9 +270,17 @@ function AccordionItem({
 }
 
 export default function FaqContent() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<Category>("todos");
   const [openId, setOpenId] = useState<number | null>(1);
+  const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit" | "whatsapp">("none");
+
+  const openVisitModal = () => setActiveModal("visit");
+  const openLeadModal = () => setActiveModal("lead");
+  const openWhatsAppModal = () => setActiveModal("whatsapp");
+  const closeModal = () => setActiveModal("none");
+  const handleExposeClick = () => router.push("/quero-expor?target=stands");
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
@@ -288,7 +301,7 @@ export default function FaqContent() {
 
   return (
     <main className="min-h-screen bg-brand-blue text-white">
-      <Navbar onVisitClick={() => {}} onExposeClick={() => {}} onContactClick={() => {}} />
+      <Navbar onVisitClick={openVisitModal} onExposeClick={openLeadModal} onContactClick={openWhatsAppModal} />
       {/* Hero */}
       <section className="relative pt-32 pb-16 px-6 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-brand-cyan/10 rounded-full blur-[120px] pointer-events-none" />
@@ -508,6 +521,33 @@ export default function FaqContent() {
           </motion.div>
         </div>
       </section>
+
+      <Modal
+        isOpen={activeModal === "lead"}
+        onClose={closeModal}
+        title="COMO DESEJA PARTICIPAR?"
+      >
+        <LeadModalContent
+          onSelectLojista={openVisitModal}
+          onSelectExpositor={handleExposeClick}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={activeModal === "visit"}
+        onClose={closeModal}
+        title="QUERO VISITAR"
+      >
+        <VisitModalContent />
+      </Modal>
+
+      <Modal
+        isOpen={activeModal === "whatsapp"}
+        onClose={closeModal}
+        title="FALE COM UM CONSULTOR"
+      >
+        <WhatsAppModalContent />
+      </Modal>
     </main>
   );
 }
