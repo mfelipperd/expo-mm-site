@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { registerPushSubscription } from "@/lib/pushApi";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -27,36 +27,56 @@ export function useNotifications(_options?: UseNotificationsOptions) {
     typeof window !== "undefined" && "Notification" in window ? Notification.permission : "default"
   );
 
+  const canUsePush =
+    typeof window !== "undefined" &&
+    "Notification" in window &&
+    "serviceWorker" in navigator &&
+    "PushManager" in window &&
+    !!VAPID_PUBLIC_KEY;
+
+  // Registers (or re-registers) this browser's subscription with the backend.
+  // Idempotent: getSubscription() returns the existing one if there is one,
+  // and the backend dedupes by endpoint — safe to call on every mount.
+  const subscribeAndRegister = useCallback(async () => {
+    if (!canUsePush) return;
+    const registration = await navigator.serviceWorker.register("/sw-push.js");
+    const existing = await registration.pushManager.getSubscription();
+    const subscription =
+      existing ??
+      (await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY as string),
+      }));
+
+    await registerPushSubscription(subscription.toJSON());
+  }, [canUsePush]);
+
   const requestPermission = useCallback(async () => {
-    if (
-      typeof window === "undefined" ||
-      !("Notification" in window) ||
-      !("serviceWorker" in navigator) ||
-      !("PushManager" in window) ||
-      !VAPID_PUBLIC_KEY
-    ) {
-      return;
-    }
+    if (!canUsePush) return;
 
     try {
       const result = await Notification.requestPermission();
       setPermission(result);
       if (result !== "granted") return;
 
-      const registration = await navigator.serviceWorker.register("/sw-push.js");
-      const existing = await registration.pushManager.getSubscription();
-      const subscription =
-        existing ??
-        (await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-        }));
-
-      await registerPushSubscription(subscription.toJSON());
+      await subscribeAndRegister();
     } catch (err) {
       console.error("Failed to enable push notifications:", err);
     }
-  }, []);
+  }, [canUsePush, subscribeAndRegister]);
+
+  // Self-heal: the privacy banner that triggers requestPermission() only ever
+  // shows once per browser (gated by its own localStorage flag), so a visitor
+  // who already granted Notification permission in an earlier visit — e.g.
+  // before a bug fix or env var landed — would never get a second chance to
+  // subscribe. If the browser already says "granted", make sure the backend
+  // actually has this subscription on every load, without asking again.
+  useEffect(() => {
+    if (!canUsePush || Notification.permission !== "granted") return;
+    subscribeAndRegister().catch((err) =>
+      console.error("Failed to re-sync push subscription:", err)
+    );
+  }, [canUsePush, subscribeAndRegister]);
 
   return { requestPermission, permission };
 }
