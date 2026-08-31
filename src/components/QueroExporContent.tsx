@@ -186,10 +186,10 @@ export default function QueroExporContent() {
         <div className="max-w-5xl mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {[
-              { value: "+15.000", label: "Lojistas por edição", color: "text-brand-cyan" },
-              { value: "+150",    label: "Marcas expositoras",  color: "text-brand-pink" },
-              { value: "3 dias",  label: "De pura negociação",  color: "text-brand-orange" },
-              { value: "2",       label: "Capitais do Norte",   color: "text-brand-cyan" },
+              { value: "+1.000", label: "Lojistas por edição", color: "text-brand-cyan" },
+              { value: "+70",    label: "Marcas expositoras",  color: "text-brand-pink" },
+              { value: "3 dias", label: "De pura negociação",  color: "text-brand-orange" },
+              { value: "2",      label: "Capitais do Norte",   color: "text-brand-cyan" },
             ].map((stat, i) => (
               <motion.div
                 key={i}
