@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useGeoLocation } from "@/hooks/useGeoLocation";
+import { cityFromDDD, cityFromLocality, CITY_LABELS, type FairCity } from "@/lib/cityGuardrail";
 
 interface RegistrationFormModalProps {
   cityName: string;
@@ -73,8 +74,8 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
 
   // Calculate Location Warning Logic
   const { city: detectedCity } = useGeoLocation();
-  const currentFormCity = normalizeCity(cityName);
-  const isLocationMismatch = !!(detectedCity && normalizeCity(detectedCity) !== currentFormCity);
+  const currentFormCity = normalizeCity(cityName) as FairCity;
+  const [cepDetectedCity, setCepDetectedCity] = useState<FairCity | null>(null);
   
   // 1 = Visitor Type, 2 = Personal, 3 = Address, 4 = Details/Guests
   const [currentStep, setCurrentStep] = useState(1);
@@ -103,6 +104,29 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
   });
 
   const visitorType = watch("ingresso");
+  const phoneValue = watch("phone") || "";
+
+  // Three independent city signals, most to least confident:
+  // DDD (only 91/92 are unambiguous) > CEP entered in the address step > IP-based geolocation.
+  const dddCity = cityFromDDD(phoneValue);
+  const mismatchCity: FairCity | null =
+    dddCity && dddCity !== currentFormCity
+      ? dddCity
+      : cepDetectedCity && cepDetectedCity !== currentFormCity
+      ? cepDetectedCity
+      : detectedCity && normalizeCity(detectedCity) !== currentFormCity
+      ? (normalizeCity(detectedCity) as FairCity)
+      : null;
+
+  const isLocationMismatch = !!mismatchCity;
+
+  const mismatchReason = !mismatchCity
+    ? ""
+    : dddCity === mismatchCity
+    ? `O DDD do telefone informado é de ${CITY_LABELS[mismatchCity]}`
+    : cepDetectedCity === mismatchCity
+    ? `O CEP informado é de ${CITY_LABELS[mismatchCity]}`
+    : `Identificamos que você está em ${CITY_LABELS[mismatchCity] ?? detectedCity}`;
 
   // Navigation Logic
   const nextStep = async () => {
@@ -214,6 +238,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
       if (value.length > 8) value = value.slice(0, 8);
       if (value.length > 5) value = `${value.slice(0, 5)}-${value.slice(5)}`;
       setValue("zipCode", value);
+      setCepDetectedCity(null);
 
       if (value.length === 9) {
           setIsLoadingCep(true);
@@ -225,7 +250,8 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                   setValue("neighborhood", data.bairro);
                   setValue("city", data.localidade);
                   setValue("state", data.uf);
-                  
+                  setCepDetectedCity(cityFromLocality(data.localidade));
+
                   // Trigger validation to clear errors if any
                   trigger(["street", "neighborhood", "city", "state"]);
               }
@@ -641,27 +667,36 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
              </div>
         )}
 
-        {/* Geo Location Warning */}
-        {/* Geo Location Warning */}
-        {isLocationMismatch && (
+        {/* City Mismatch Warning — DDD / CEP / IP geolocation */}
+        {isLocationMismatch && mismatchCity && (
             <div className="bg-amber-500/10 border border-amber-500/20 text-amber-200 p-3 rounded-lg text-xs animate-fade-in mt-2">
                 <div className="flex items-start gap-3">
                     <MapPin className="shrink-0 mt-0.5" size={16} />
                     <div>
                         <p className="font-bold uppercase mb-1">Atenção à Localidade</p>
                         <p>
-                            Identificamos que você está em <strong className="text-white capitalize">{detectedCity}</strong>, 
-                            mas está se credenciando para a feira de <strong className="text-white uppercase">{cityName}</strong>.
+                            {mismatchReason}, mas você está se credenciando para a feira de{" "}
+                            <strong className="text-white uppercase">{cityName}</strong>.
                         </p>
                     </div>
                 </div>
-                
+
+                {/* Switch to the right city's form */}
+                <div className="mt-3 pl-7">
+                    <a
+                        href={`/${mismatchCity}?cadastro=1`}
+                        className="inline-flex items-center gap-1.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-white font-bold px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                        TROCAR PARA {CITY_LABELS[mismatchCity].toUpperCase()}
+                    </a>
+                </div>
+
                 {/* Confirmation Checkbox */}
                 <div className="mt-3 pl-7 flex items-center gap-2">
-                    <input 
-                        type="checkbox" 
+                    <input
+                        type="checkbox"
                         id="location-confirm"
-                        checked={locationWarningConfirmed} 
+                        checked={locationWarningConfirmed}
                         onChange={(e) => setLocationWarningConfirmed(e.target.checked)}
                         className="w-4 h-4 rounded border-amber-500/50 bg-amber-900/20 text-brand-orange focus:ring-amber-500/50 cursor-pointer"
                     />
