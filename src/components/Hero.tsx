@@ -4,9 +4,11 @@ import Image from "next/image";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { useRef, useState, useEffect, useCallback } from "react";
 import type { FairListItem } from "@/lib/fairsApi";
+import { getSiteMode } from "@/lib/siteMode";
 
 interface HeroProps {
   onVisitClick: () => void;
+  onExposeClick: () => void;
   detectedCity?: "manaus" | "belem" | null;
   activeFairs?: FairListItem[];
 }
@@ -41,6 +43,7 @@ function formatFairLine(fair: FairListItem): string {
 
 export default function Hero({
   onVisitClick,
+  onExposeClick,
   detectedCity,
   activeFairs = [],
 }: HeroProps) {
@@ -95,13 +98,16 @@ export default function Hero({
   // activeFairs comes pre-filtered (endDate >= today) and sorted by startDate,
   // so the first entry is whichever fair is happening now, or the soonest upcoming one.
   const nearestFair = activeFairs[0];
+  const mode = getSiteMode(activeFairs);
 
   const dateLine =
-    activeFairs.length === 0
-      ? "BELÉM · 18-20 AGO"
+    mode === "stands"
+      ? "RESERVE SEU STAND PARA A PRÓXIMA EDIÇÃO"
       : detectedCity && detectedFair
       ? formatFairLine(detectedFair)
-      : formatFairLine(nearestFair);
+      : nearestFair
+      ? formatFairLine(nearestFair)
+      : "PRÓXIMA EDIÇÃO EM BREVE";
 
   return (
     <section
@@ -150,18 +156,40 @@ export default function Hero({
         >
         <div className="min-h-[320px] md:min-h-[360px] flex items-center justify-center">
           <AnimatePresence mode="wait">
-            {current === 0 && (
-              <SlideVisitorUrgency key="s0-vis" onVisitClick={onVisitClick} />
-            )}
-            {current === 1 && (
-              <SlideLogos
-                key="s1"
-                logos={logos}
-                onVisitClick={onVisitClick}
-              />
-            )}
-            {current === 2 && (
-              <SlideDirectFactory key="s2-vis" onVisitClick={onVisitClick} />
+            {mode === "stands" ? (
+              <>
+                {current === 0 && (
+                  <SlideExhibitorPitch key="s0-exp" onExposeClick={onExposeClick} />
+                )}
+                {current === 1 && (
+                  <SlideLogos
+                    key="s1"
+                    logos={logos}
+                    ctaLabel="RESERVE SEU STAND"
+                    onCtaClick={onExposeClick}
+                  />
+                )}
+                {current === 2 && (
+                  <SlideStandsFactory key="s2-exp" onExposeClick={onExposeClick} />
+                )}
+              </>
+            ) : (
+              <>
+                {current === 0 && (
+                  <SlideVisitorUrgency key="s0-vis" onVisitClick={onVisitClick} />
+                )}
+                {current === 1 && (
+                  <SlideLogos
+                    key="s1"
+                    logos={logos}
+                    ctaLabel="FAÇA SEU CREDENCIAMENTO"
+                    onCtaClick={onVisitClick}
+                  />
+                )}
+                {current === 2 && (
+                  <SlideDirectFactory key="s2-vis" onVisitClick={onVisitClick} />
+                )}
+              </>
             )}
           </AnimatePresence>
         </div>
@@ -272,10 +300,12 @@ function SlideDirectFactory({
 
 function SlideLogos({
   logos,
-  onVisitClick,
+  ctaLabel,
+  onCtaClick,
 }: {
   logos: LogoItem[];
-  onVisitClick: () => void;
+  ctaLabel: string;
+  onCtaClick: () => void;
 }) {
   return (
     <motion.div
@@ -325,11 +355,85 @@ function SlideLogos({
 
       <button
         type="button"
-        onClick={onVisitClick}
+        onClick={onCtaClick}
         className="bg-brand-pink hover:bg-brand-pink/90 text-white px-8 py-4 rounded-full font-bold transition-all hover:scale-105 shadow-[0_0_20px_rgba(233,30,99,0.3)]"
       >
-        FAÇA SEU CREDENCIAMENTO
+        {ctaLabel}
       </button>
+    </motion.div>
+  );
+}
+
+/* ─── Stands (off-season) slides ─────────────────────────────── */
+
+function SlideExhibitorPitch({
+  onExposeClick,
+}: {
+  onExposeClick: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -24 }}
+      transition={{ duration: 0.5 }}
+      className="w-full"
+    >
+      <h1 className="text-4xl sm:text-5xl md:text-7xl font-black mb-6 leading-tight">
+        SUA INDÚSTRIA NA <br />
+        <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-orange to-brand-pink">
+          MAIOR VITRINE
+        </span> <br />
+        DO NORTE
+      </h1>
+      <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+        Conecte sua fábrica direto com milhares de lojistas qualificados. Garanta seu stand agora e feche a agenda de negócios do ano.
+      </p>
+      <div className="flex justify-center">
+        <button
+          type="button"
+          onClick={onExposeClick}
+          className="bg-brand-orange hover:bg-brand-orange/90 text-white px-8 py-4 rounded-full font-bold transition-all hover:scale-105 shadow-[0_0_20px_rgba(255,112,67,0.3)]"
+        >
+          RESERVE SEU STAND
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+function SlideStandsFactory({
+  onExposeClick,
+}: {
+  onExposeClick: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -24 }}
+      transition={{ duration: 0.5 }}
+      className="w-full"
+    >
+      <h1 className="text-4xl sm:text-5xl md:text-7xl font-black mb-6 leading-tight">
+        VENDA DIRETO. <br />
+        SEM <br />
+        <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-cyan to-blue-400">
+          ATRAVESSADORES.
+        </span>
+      </h1>
+      <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+        Público 100% qualificado, com CNPJ e poder de decisão. Stand pronto, montado e iluminado — você chega e fecha pedidos.
+      </p>
+      <div className="flex justify-center">
+        <button
+          type="button"
+          onClick={onExposeClick}
+          className="bg-brand-cyan hover:bg-brand-cyan/90 text-brand-blue px-8 py-4 rounded-full font-bold transition-all hover:scale-105 shadow-[0_0_20px_rgba(34,211,238,0.3)]"
+        >
+          GARANTIR MEU STAND
+        </button>
+      </div>
     </motion.div>
   );
 }

@@ -9,6 +9,7 @@ import {
   formatFairLocation,
   buildMapEmbedUrl,
 } from "@/lib/fairsApi";
+import { getSiteMode } from "@/lib/siteMode";
 
 export const metadata: Metadata = {
   title: "Feira de Negócios em Belém 2026 — Comprar Direto da Fábrica no Pará",
@@ -67,6 +68,8 @@ export default async function BelemPage() {
 
   const heroImage = fair?.bannerUrl || "/assets/fachada-belem-emm.jpeg";
 
+  const registrationOpen = fair ? getSiteMode([fair]) === "visitantes" : false;
+
   const aboutText = fair?.description ||
     "A Estação das Docas receberá milhares de lojistas para o maior encontro de negócios da região. A Expo MultiMix é o ponto de encontro estratégico para quem busca renovar estoques com qualidade e prazos imbatíveis. Prepare-se para renovar seu estoque e fortalecer sua marca.";
 
@@ -122,6 +125,7 @@ export default async function BelemPage() {
       expectedExhibitors={fair?.expectedExhibitors}
       transportLinks={fair?.transportLinks}
       exhibitorBrands={fair?.exhibitorBrands}
+      registrationOpen={registrationOpen}
     />
     <JsonLd
       data={{

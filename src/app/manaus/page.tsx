@@ -9,6 +9,7 @@ import {
   formatFairLocation,
   buildMapEmbedUrl,
 } from "@/lib/fairsApi";
+import { getSiteMode } from "@/lib/siteMode";
 
 export const metadata: Metadata = {
   title: "Feira de Negócios em Manaus 2026 — Fornecedores e Atacado no Amazonas",
@@ -68,6 +69,8 @@ export default async function ManausPage() {
 
   const heroImage = fair?.bannerUrl || "/assets/fachada-manaus-emm.jpeg";
 
+  const registrationOpen = fair ? getSiteMode([fair]) === "visitantes" : false;
+
   const aboutText = fair?.description ||
     "A Expo MultiMix chegou em Manaus! Com as maiores marcas e indústrias de todo o Brasil, a EMM 2025 está repleta de novidades para os lojistas e empreendedores do Amazonas. É uma oportunidade única de ver e testar os produtos em primeira mão e descobrir novas possibilidades.";
 
@@ -121,6 +124,7 @@ export default async function ManausPage() {
       expectedExhibitors={fair?.expectedExhibitors}
       transportLinks={fair?.transportLinks}
       exhibitorBrands={fair?.exhibitorBrands}
+      registrationOpen={registrationOpen}
     />
     <JsonLd
       data={{

@@ -15,6 +15,7 @@ interface NavbarProps {
   onContactClick: () => void;
   visitButtonColor?: "cyan" | "pink";
   exposeButtonText?: string;
+  mobileQuickCta?: { label: string; onClick: () => void; className: string };
 }
 
 function cn(...inputs: ClassValue[]) {
@@ -27,6 +28,7 @@ export default function Navbar({
   onContactClick,
   visitButtonColor,
   exposeButtonText = "FAZER MEU CREDENCIAMENTO",
+  mobileQuickCta,
 }: NavbarProps) {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -116,15 +118,18 @@ export default function Navbar({
         <div className="md:hidden flex items-center gap-2">
           <button
             type="button"
-            onClick={onVisitClick}
-            className={cn(
-              "px-4 py-2 rounded-full text-xs font-black",
-              visitButtonColor === "cyan"
-                ? "bg-brand-cyan text-brand-blue"
-                : "bg-brand-pink text-white"
-            )}
+            onClick={mobileQuickCta?.onClick ?? onVisitClick}
+            className={
+              mobileQuickCta?.className ??
+              cn(
+                "px-4 py-2 rounded-full text-xs font-black",
+                visitButtonColor === "cyan"
+                  ? "bg-brand-cyan text-brand-blue"
+                  : "bg-brand-pink text-white"
+              )
+            }
           >
-            INSCREVER
+            {mobileQuickCta?.label ?? "INSCREVER"}
           </button>
           <button
             type="button"

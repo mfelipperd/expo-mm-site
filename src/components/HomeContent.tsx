@@ -22,6 +22,7 @@ import RegionSelectorSheet from "@/components/RegionSelectorSheet";
 import StickyMobileCTA from "@/components/StickyMobileCTA";
 import { useFairRouting } from "@/hooks/useFairRouting";
 import { useRouter } from "next/navigation";
+import { getSiteMode } from "@/lib/siteMode";
 
 export default function HomeContent() {
   const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit" | "whatsapp" | "bypass" | "crossCity">("none");
@@ -34,6 +35,9 @@ export default function HomeContent() {
     hasChosenCity,
     setCity,
   } = useFairRouting();
+
+  const siteMode = getSiteMode(activeFairs);
+  const isStandsMode = siteMode === "stands";
 
   const openVisitModal = () => {
     if (detectedCity) {
@@ -48,7 +52,9 @@ export default function HomeContent() {
 
   const handleExposeClick = () => router.push("/quero-expor?target=stands");
 
-  const primaryExposeAction = openLeadModal;
+  // Fora da janela de credenciamento, o CTA de expositor vai direto pro quero-expor —
+  // não faz sentido perguntar "lojista ou expositor" quando não há inscrição de visitante aberta.
+  const primaryExposeAction = isStandsMode ? handleExposeClick : openLeadModal;
 
   const handleEventClick = (slug: string) => {
     if (detectedCity && slug !== detectedCity) {
@@ -76,10 +82,17 @@ export default function HomeContent() {
         onExposeClick={primaryExposeAction}
         onContactClick={openWhatsAppModal}
         visitButtonColor={detectedCity === "manaus" ? "pink" : detectedCity === "belem" ? "cyan" : undefined}
+        exposeButtonText={isStandsMode ? "RESERVE SEU STAND" : "FAZER MEU CREDENCIAMENTO"}
+        mobileQuickCta={
+          isStandsMode
+            ? { label: "RESERVAR STAND", onClick: handleExposeClick, className: "px-4 py-2 rounded-full text-xs font-black bg-brand-orange text-white" }
+            : undefined
+        }
       />
 
       <Hero
         onVisitClick={openVisitModal}
+        onExposeClick={handleExposeClick}
         detectedCity={detectedCity}
         activeFairs={activeFairs}
       />
@@ -112,13 +125,23 @@ export default function HomeContent() {
         direction="right"
       />
 
-      <CTASection
-        title="NÃO FIQUE DE FORA"
-        subtitle="A feira é exclusiva para lojistas (B2B) e requer CNPJ para entrada."
-        buttonText="FAZER MEU CREDENCIAMENTO"
-        variant="pink"
-        onClick={openVisitModal}
-      />
+      {isStandsMode ? (
+        <CTASection
+          title="GARANTA SEU ESPAÇO ANTES QUE ACABE"
+          subtitle="As vagas são limitadas por tamanho de pavilhão. Expositores das edições anteriores têm prioridade de renovação."
+          buttonText="RESERVAR STAND"
+          variant="pink"
+          onClick={handleExposeClick}
+        />
+      ) : (
+        <CTASection
+          title="NÃO FIQUE DE FORA"
+          subtitle="A feira é exclusiva para lojistas (B2B) e requer CNPJ para entrada."
+          buttonText="FAZER MEU CREDENCIAMENTO"
+          variant="pink"
+          onClick={openVisitModal}
+        />
+      )}
 
       <ExhibitorsSection />
 
@@ -182,17 +205,29 @@ export default function HomeContent() {
         )}
       </Modal>
 
-      {/* Region prompt — appears 2s after load until the visitor picks a city */}
+      {/* Region prompt — appears 2s after load until the visitor picks a city. Skipped in
+          stands mode: there's no open registration to route the visitor into. */}
       <RegionSelectorSheet
-        show={!hasChosenCity}
+        show={!hasChosenCity && !isStandsMode}
         onSelect={setCity}
       />
 
-      {/* Mobile sticky bar — always-visible registration shortcut */}
-      <StickyMobileCTA
-        onLeftClick={openVisitModal}
-        onRightClick={primaryExposeAction}
-      />
+      {/* Mobile sticky bar */}
+      {isStandsMode ? (
+        <StickyMobileCTA
+          onLeftClick={handleExposeClick}
+          onRightClick={openWhatsAppModal}
+          leftLabel="RESERVAR STAND"
+          rightLabel="CONSULTOR"
+          leftColor="bg-brand-orange shadow-[0_0_24px_rgba(251,146,60,0.25)]"
+          rightColor="bg-white/10 border border-white/20"
+        />
+      ) : (
+        <StickyMobileCTA
+          onLeftClick={openVisitModal}
+          onRightClick={primaryExposeAction}
+        />
+      )}
     </main>
   );
 }

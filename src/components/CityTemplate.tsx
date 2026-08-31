@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -44,6 +44,8 @@ interface CityTemplateProps {
   expectedExhibitors?: number;
   transportLinks?: TransportLinks;
   exhibitorBrands?: ExhibitorBrand[];
+  /** Whether visitor credenciamento is open for this edition (fair happening now or starting soon). */
+  registrationOpen: boolean;
 }
 
 export default function CityTemplate({
@@ -64,6 +66,7 @@ export default function CityTemplate({
   expectedExhibitors,
   transportLinks,
   exhibitorBrands,
+  registrationOpen,
 }: CityTemplateProps) {
   const router = useRouter();
   const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit" | "whatsapp" | "bypass" | "registration">("none");
@@ -74,6 +77,16 @@ export default function CityTemplate({
   const openBypassModal = () => setActiveModal("bypass");
   const openRegistrationModal = () => setActiveModal("registration");
   const closeModal = () => setActiveModal("none");
+
+  // Fast entry for marketing links (?cadastro=1): skip straight to the form instead of
+  // making the visitor scroll or click through the landing page.
+  useEffect(() => {
+    if (typeof window === "undefined" || !registrationOpen) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("cadastro") !== "1") return;
+    const t = setTimeout(() => setActiveModal("registration"), 0);
+    return () => clearTimeout(t);
+  }, [registrationOpen]);
 
   const handleExposeClick = () => {
     router.push("/quero-expor?target=stands");
@@ -101,11 +114,17 @@ export default function CityTemplate({
 
   return (
     <main className="min-h-screen bg-brand-blue selection:bg-brand-cyan/30 selection:text-white">
-      <Navbar 
-        onVisitClick={handleNavbarVisit} 
-        onExposeClick={openLeadModal} 
+      <Navbar
+        onVisitClick={handleNavbarVisit}
+        onExposeClick={registrationOpen ? openLeadModal : handleExposeClick}
         onContactClick={openWhatsAppModal}
         visitButtonColor={colorVariant as "cyan" | "pink"}
+        exposeButtonText={registrationOpen ? "FAZER MEU CREDENCIAMENTO" : "RESERVE SEU STAND"}
+        mobileQuickCta={
+          registrationOpen
+            ? undefined
+            : { label: "RESERVAR STAND", onClick: handleExposeClick, className: "px-4 py-2 rounded-full text-xs font-black bg-brand-orange text-white" }
+        }
       />
 
       {/* Hero Section */}
@@ -153,12 +172,29 @@ export default function CityTemplate({
           </motion.p>
           
           <div className="flex flex-col md:flex-row gap-4 justify-center">
-             <button 
-              onClick={openRegistrationModal}
-              className={`${buttonColorClass} px-8 py-4 rounded-full font-bold transition-all hover:scale-105`}
-            >
-              FAZER CREDENCIAMENTO
-            </button>
+            {registrationOpen ? (
+              <button
+                onClick={openRegistrationModal}
+                className={`${buttonColorClass} px-8 py-4 rounded-full font-bold transition-all hover:scale-105`}
+              >
+                FAZER CREDENCIAMENTO
+              </button>
+            ) : (
+              <>
+                <Link
+                  href="/quero-expor"
+                  className="bg-brand-orange hover:bg-brand-orange/90 text-white px-8 py-4 rounded-full font-bold transition-all hover:scale-105 shadow-lg inline-flex items-center justify-center"
+                >
+                  SOU INDÚSTRIA — RESERVAR STAND
+                </Link>
+                <button
+                  onClick={openWhatsAppModal}
+                  className="glass hover:bg-white/10 text-white px-8 py-4 rounded-full font-bold transition-all"
+                >
+                  QUERO SER AVISADO DA PRÓXIMA EDIÇÃO
+                </button>
+              </>
+            )}
           </div>
 
 
@@ -336,21 +372,40 @@ export default function CityTemplate({
         </div>
       </section>
 
-      <CTASection 
-        id="registration-cta"
-        title="NÃO FIQUE DE FORA"
-        subtitle="Garanta sua participação no maior evento multissetorial da região."
-        buttonText="FAZER CREDENCIAMENTO"
-        variant={colorVariant as any}
-        onClick={openRegistrationModal}
-      >
-        <Link 
-          href="/quero-expor" 
-          className="inline-block border-b border-white/30 pb-1 text-sm text-gray-300 hover:text-white hover:border-white transition-colors"
+      {registrationOpen ? (
+        <CTASection
+          id="registration-cta"
+          title="NÃO FIQUE DE FORA"
+          subtitle="Garanta sua participação no maior evento multissetorial da região."
+          buttonText="FAZER CREDENCIAMENTO"
+          variant={colorVariant}
+          onClick={openRegistrationModal}
         >
-          Quero comprar um stand
-        </Link>
-      </CTASection>
+          <Link
+            href="/quero-expor"
+            className="inline-block border-b border-white/30 pb-1 text-sm text-gray-300 hover:text-white hover:border-white transition-colors"
+          >
+            Quero comprar um stand
+          </Link>
+        </CTASection>
+      ) : (
+        <CTASection
+          id="registration-cta"
+          title="É INDÚSTRIA OU IMPORTADORA?"
+          subtitle="O credenciamento de visitantes abre mais perto da data do evento. Enquanto isso, garanta seu stand e apresente sua marca para milhares de lojistas da região."
+          buttonText="RESERVAR STAND"
+          variant={colorVariant}
+          onClick={() => router.push("/quero-expor")}
+        >
+          <button
+            type="button"
+            onClick={openWhatsAppModal}
+            className="inline-block border-b border-white/30 pb-1 text-sm text-gray-300 hover:text-white hover:border-white transition-colors"
+          >
+            Quero ser avisado quando o credenciamento abrir
+          </button>
+        </CTASection>
+      )}
 
       <LogosCarousel
         title="INDÚSTRIAS E IMPORTADORAS"
