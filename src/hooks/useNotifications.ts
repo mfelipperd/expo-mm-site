@@ -1,13 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import type { Messaging } from "firebase/messaging";
-import { registerPushToken } from "@/lib/pushApi";
+import { useCallback, useState } from "react";
+import { registerPushSubscription } from "@/lib/pushApi";
 
-const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+
+// applicationServerKey must be a Uint8Array, but env vars are strings — this is the
+// standard base64url -> Uint8Array conversion documented for the Push API.
+function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  const output = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) {
+    output[i] = rawData.charCodeAt(i);
+  }
+  return output;
+}
 
 interface UseNotificationsOptions {
-  /** Listen for foreground push messages (tab open) while mounted. */
   listen?: boolean;
 }
 
@@ -17,7 +28,13 @@ export function useNotifications(_options?: UseNotificationsOptions) {
   );
 
   const requestPermission = useCallback(async () => {
-    if (typeof window === "undefined" || !("Notification" in window) || !("serviceWorker" in navigator) || !VAPID_KEY) {
+    if (
+      typeof window === "undefined" ||
+      !("Notification" in window) ||
+      !("serviceWorker" in navigator) ||
+      !("PushManager" in window) ||
+      !VAPID_PUBLIC_KEY
+    ) {
       return;
     }
 
@@ -26,36 +43,20 @@ export function useNotifications(_options?: UseNotificationsOptions) {
       setPermission(result);
       if (result !== "granted") return;
 
-      const { messaging } = await import("@/lib/firebase");
-      if (!messaging) return;
+      const registration = await navigator.serviceWorker.register("/sw-push.js");
+      const existing = await registration.pushManager.getSubscription();
+      const subscription =
+        existing ??
+        (await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        }));
 
-      const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
-      const { getToken } = await import("firebase/messaging");
-      const token = await getToken(messaging as Messaging, {
-        vapidKey: VAPID_KEY,
-        serviceWorkerRegistration: registration,
-      });
-      if (token) await registerPushToken(token);
+      await registerPushSubscription(subscription.toJSON());
     } catch (err) {
       console.error("Failed to enable push notifications:", err);
     }
   }, []);
-
-  useEffect(() => {
-    if (!_options?.listen || typeof window === "undefined") return;
-
-    let unsubscribe: (() => void) | undefined;
-    (async () => {
-      const { messaging } = await import("@/lib/firebase");
-      if (!messaging) return;
-      const { onMessage } = await import("firebase/messaging");
-      unsubscribe = onMessage(messaging as Messaging, (payload) => {
-        console.info("Foreground push received:", payload);
-      });
-    })();
-
-    return () => unsubscribe?.();
-  }, [_options?.listen]);
 
   return { requestPermission, permission };
 }

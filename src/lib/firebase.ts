@@ -1,5 +1,4 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getMessaging, Messaging } from "firebase/messaging";
 import { getAnalytics, Analytics, isSupported } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
@@ -22,13 +21,11 @@ const auth = getAuth(app);
 const db = getFirestore(app, "emm-site");
 const storage = getStorage(app);
 
-let messaging: Messaging | undefined;
 let analytics: Analytics | undefined;
 
 if (typeof window !== "undefined") {
   try {
-    messaging = getMessaging(app);
-    isSupported().then(supported => {
+    isSupported().then((supported) => {
       if (supported) analytics = getAnalytics(app);
     });
   } catch (err) {
@@ -36,4 +33,4 @@ if (typeof window !== "undefined") {
   }
 }
 
-export { app, auth, db, storage, messaging, analytics };
+export { app, auth, db, storage, analytics };

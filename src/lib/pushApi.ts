@@ -1,24 +1,25 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 /**
- * Registers an FCM push token with the backend so an admin campaign can later reach this visitor.
- *
- * NOTE: `POST /push/subscribe` does not exist on the backend yet (confirmed against the live
- * OpenAPI spec on 2026-08-31). This call fails silently until that endpoint is implemented —
- * it must not throw or otherwise disrupt the page.
+ * Registers a Web Push subscription with the backend so an admin campaign can later reach
+ * this visitor. Uses the native Push API subscription shape (endpoint + p256dh/auth keys) —
+ * no third-party push provider involved.
  */
-export async function registerPushToken(token: string): Promise<void> {
-  if (!API_BASE) return;
+export async function registerPushSubscription(subscription: PushSubscriptionJSON): Promise<void> {
+  if (!API_BASE || !subscription.endpoint || !subscription.keys) return;
   try {
     const res = await fetch(`${API_BASE}/push/subscribe`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
+      body: JSON.stringify({
+        endpoint: subscription.endpoint,
+        keys: subscription.keys,
+      }),
     });
     if (!res.ok) {
-      console.warn("Push subscribe endpoint not available yet:", res.status);
+      console.warn("Push subscribe endpoint rejected the subscription:", res.status);
     }
   } catch (err) {
-    console.warn("Failed to register push token:", err);
+    console.warn("Failed to register push subscription:", err);
   }
 }
