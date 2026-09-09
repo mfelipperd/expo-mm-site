@@ -44,8 +44,8 @@ export const credenciamentoSchema = z.object({
     name: z.string().min(1, "Nome do convidado é obrigatório")
   })).optional()
 }).superRefine((data, ctx) => {
-  // CNPJ mandatory validation
-  if (!data.cnpj || data.cnpj.length < 18) {
+  // CNPJ is mandatory for lojistas; representantes comerciais without a CNPJ skip this.
+  if (data.ingresso === "lojista" && (!data.cnpj || data.cnpj.length < 18)) {
      ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: "CNPJ é obrigatório",
@@ -56,6 +56,21 @@ export const credenciamentoSchema = z.object({
 
 export type CredenciamentoFormData = z.infer<typeof credenciamentoSchema>;
 
+// Public, key-less lookup — same data source the backend's own CNPJ prospecting tool uses.
+const brasilApiCnpjSchema = z.object({
+  razao_social: z.string(),
+  nome_fantasia: z.string().nullable().optional(),
+  cep: z.string().nullable().optional(),
+  logradouro: z.string().nullable().optional(),
+  numero: z.string().nullable().optional(),
+  complemento: z.string().nullable().optional(),
+  bairro: z.string().nullable().optional(),
+  municipio: z.string().nullable().optional(),
+  uf: z.string().nullable().optional(),
+});
+
+type CnpjFlow = "input" | "asking" | "representative" | "blocked";
+
 export default function RegistrationFormModal({ cityName, fairId, industries = [], onClose }: RegistrationFormModalProps) {
   const [mode, setMode] = useState<"form" | "reuse">("form");
   const [isSuccess, setIsSuccess] = useState(false);
@@ -65,6 +80,8 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [cnpjFlow, setCnpjFlow] = useState<CnpjFlow>("input");
+  const [cnpjLookupStatus, setCnpjLookupStatus] = useState<"idle" | "loading" | "found" | "not-found" | "error">("idle");
 
   useEffect(() => {
     setMounted(true);
@@ -79,7 +96,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
   const currentFormCity = normalizeCity(cityName) as FairCity;
   const [cepDetectedCity, setCepDetectedCity] = useState<FairCity | null>(null);
   
-  // 1 = Visitor Type, 2 = Personal, 3 = Address, 4 = Details/Guests
+  // 1 = CNPJ, 2 = Personal, 3 = Address, 4 = Details/Guests
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
 
@@ -105,7 +122,6 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
     name: "guests"
   });
 
-  const visitorType = watch("ingresso");
   const phoneValue = watch("phone") || "";
 
   // Three independent city signals, most to least confident:
@@ -226,6 +242,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
   const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       let value = e.target.value.replace(/\D/g, "");
       if (value.length > 14) value = value.slice(0, 14);
+      const digits = value;
 
       value = value.replace(/^(\d{2})(\d)/, "$1.$2");
       value = value.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
@@ -233,6 +250,38 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
       value = value.replace(/(\d{4})(\d)/, "$1-$2");
 
       setValue("cnpj", value);
+      setCnpjLookupStatus("idle");
+
+      if (digits.length === 14) {
+        handleCnpjLookup(digits);
+      }
+  }
+
+  const handleCnpjLookup = async (digits: string) => {
+      setCnpjLookupStatus("loading");
+      try {
+        const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`);
+        if (!res.ok) {
+          setCnpjLookupStatus("not-found");
+          return;
+        }
+        const parsed = brasilApiCnpjSchema.parse(await res.json());
+
+        setValue("company", parsed.nome_fantasia || parsed.razao_social);
+        setValue("ingresso", "lojista");
+        if (parsed.cep) setValue("zipCode", parsed.cep.replace(/(\d{5})(\d{3})/, "$1-$2"));
+        if (parsed.logradouro) setValue("street", parsed.logradouro);
+        if (parsed.numero) setValue("number", parsed.numero);
+        if (parsed.complemento) setValue("complement", parsed.complemento);
+        if (parsed.bairro) setValue("neighborhood", parsed.bairro);
+        if (parsed.municipio) setValue("city", parsed.municipio);
+        if (parsed.uf) setValue("state", parsed.uf);
+
+        trigger(["company", "ingresso", "zipCode", "street", "number", "neighborhood", "city", "state"]);
+        setCnpjLookupStatus("found");
+      } catch {
+        setCnpjLookupStatus("error");
+      }
   }
 
   const handleZipChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -355,7 +404,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
       >
         <AnimatePresence mode="wait">
         
-        {/* STEP 1: VISITOR TYPE */}
+        {/* STEP 1: CNPJ */}
         {currentStep === 1 && (
             <motion.div
                 key="step1"
@@ -365,45 +414,125 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                 transition={{ duration: 0.3 }}
                 className="space-y-4"
             >
-                 <p className="text-gray-300 text-sm mb-4">Para começar, qual o seu perfil de visitante?</p>
-                <div className="grid grid-cols-2 gap-3">
-                    <button
-                        type="button"
-                        onClick={() => setValue("ingresso", "lojista")}
-                        className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border transition-all ${
-                            visitorType === "lojista" 
-                            ? "bg-brand-cyan text-brand-blue border-brand-cyan font-bold shadow-[0_0_20px_rgba(0,255,255,0.2)]" 
-                            : "bg-white/5 text-gray-400 border-white/10 hover:bg-white/10"
-                        }`}
-                    >
-                        <div className={`w-3 h-3 rounded-full border-2 ${visitorType === "lojista" ? "border-brand-blue bg-brand-blue" : "border-gray-500"}`} />
-                        <span>Sou Lojista</span>
-                    </button>
+                {cnpjFlow === "input" && (
+                    <>
+                        <p className="text-gray-300 text-sm mb-4">Para começar, informe o CNPJ da sua loja.</p>
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-gray-500 uppercase">CNPJ</label>
+                            <div className="relative">
+                                <input
+                                    {...register("cnpj")}
+                                    onChange={handleCnpjChange}
+                                    type="text"
+                                    autoFocus
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-cyan transition-colors"
+                                    placeholder="00.000.000/0000-00"
+                                />
+                                {cnpjLookupStatus === "loading" && (
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-cyan">
+                                        <Loader2 className="animate-spin w-4 h-4" />
+                                    </div>
+                                )}
+                            </div>
+                            {cnpjLookupStatus === "found" && (
+                                <p className="text-xs text-brand-cyan flex items-center gap-1.5 mt-1">
+                                    <CheckCircle size={12} /> Encontramos sua empresa: {watch("company")}
+                                </p>
+                            )}
+                            {cnpjLookupStatus === "not-found" && (
+                                <p className="text-xs text-red-400 mt-1">CNPJ não encontrado na Receita Federal. Confira o número digitado.</p>
+                            )}
+                            {cnpjLookupStatus === "error" && (
+                                <p className="text-xs text-amber-400 mt-1">Não conseguimos consultar agora — você pode preencher os dados manualmente nas próximas etapas.</p>
+                            )}
+                        </div>
 
-                    <button
-                        type="button"
-                        onClick={() => setValue("ingresso", "representante-comercial")}
-                        className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border transition-all ${
-                            visitorType === "representante-comercial" 
-                            ? "bg-brand-cyan text-brand-blue border-brand-cyan font-bold shadow-[0_0_20px_rgba(0,255,255,0.2)]" 
-                            : "bg-white/5 text-gray-400 border-white/10 hover:bg-white/10"
-                        }`}
-                    >
-                         <div className={`w-3 h-3 rounded-full border-2 ${visitorType === "representante-comercial" ? "border-brand-blue bg-brand-blue" : "border-gray-500"}`} />
-                        <span className="text-center">Representante Comercial</span>
-                    </button>
-                </div>
-                
-                <input type="hidden" {...register("ingresso")} />
-                {errors.ingresso && <span className="text-red-400 text-xs block text-center mt-2 animate-pulse">{errors.ingresso.message}</span>}
+                        <input type="hidden" {...register("ingresso")} />
+                        {errors.ingresso && (
+                            <span className="text-red-400 text-xs block">Informe um CNPJ válido ou clique em &quot;Não tenho CNPJ&quot;.</span>
+                        )}
 
-                 {visitorType && (
-                    <div className="bg-brand-cyan/10 border border-brand-cyan/20 p-3 rounded-lg text-center mt-4">
-                         <p className="text-[10px] text-brand-cyan font-bold uppercase tracking-wider">
-                            * CNPJ Obrigatório para credenciamento
-                         </p>
+                        <button
+                            type="button"
+                            onClick={() => setCnpjFlow("asking")}
+                            className="text-xs font-bold text-gray-400 hover:text-white underline decoration-dotted transition-colors"
+                        >
+                            Não tenho CNPJ
+                        </button>
+                    </>
+                )}
+
+                {cnpjFlow === "asking" && (
+                    <div className="space-y-4">
+                        <p className="text-gray-300 text-sm">Você é representante comercial de uma indústria/importadora, ou pessoa física?</p>
+                        <div className="grid grid-cols-1 gap-3">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setValue("ingresso", "representante-comercial");
+                                    setValue("cnpj", "");
+                                    trigger("ingresso");
+                                    setCnpjFlow("representative");
+                                }}
+                                className="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-left transition-all"
+                            >
+                                <span className="font-bold text-white block">Representante Comercial</span>
+                                <span className="text-xs text-gray-400">Visito em nome de uma indústria ou importadora.</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setCnpjFlow("blocked")}
+                                className="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-left transition-all"
+                            >
+                                <span className="font-bold text-white block">Pessoa Física</span>
+                                <span className="text-xs text-gray-400">Não represento uma empresa.</span>
+                            </button>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setCnpjFlow("input")}
+                            className="text-xs font-bold text-gray-500 hover:text-white underline decoration-dotted transition-colors"
+                        >
+                            Voltar
+                        </button>
                     </div>
-                 )}
+                )}
+
+                {cnpjFlow === "representative" && (
+                    <div className="space-y-4">
+                        <div className="bg-brand-cyan/10 border border-brand-cyan/20 p-4 rounded-xl flex items-start gap-3">
+                            <CheckCircle size={18} className="text-brand-cyan shrink-0 mt-0.5" />
+                            <p className="text-sm text-gray-200">
+                                Certo! Você vai se cadastrar como <strong className="text-white">representante comercial</strong>, sem CNPJ próprio.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setCnpjFlow("input")}
+                            className="text-xs font-bold text-gray-500 hover:text-white underline decoration-dotted transition-colors"
+                        >
+                            Na verdade, tenho CNPJ
+                        </button>
+                    </div>
+                )}
+
+                {cnpjFlow === "blocked" && (
+                    <div className="space-y-4">
+                        <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl flex items-start gap-3">
+                            <AlertCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
+                            <p className="text-sm text-gray-200">
+                                A Expo MultiMix é uma feira <strong className="text-white">B2B</strong> (empresa para empresa) — não realizamos venda direta para pessoa física (CPF). O credenciamento é exclusivo para lojistas e representantes comerciais com CNPJ.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setCnpjFlow("input")}
+                            className="text-xs font-bold text-gray-500 hover:text-white underline decoration-dotted transition-colors"
+                        >
+                            Voltar e informar meu CNPJ
+                        </button>
+                    </div>
+                )}
             </motion.div>
         )}
 
@@ -437,18 +566,10 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                     {errors.email && <span className="text-red-400 text-xs">{errors.email.message}</span>}
                  </div>
 
-                 <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase">WhatsApp</label>
-                        <input {...register("phone")} onChange={handlePhoneChange} type="tel" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-cyan transition-colors" placeholder="(00) 00000-0000" />
-                        {errors.phone && <span className="text-red-400 text-xs">{errors.phone.message}</span>}
-                    </div>
-                    
-                    <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase">CNPJ</label>
-                        <input {...register("cnpj")} onChange={handleCnpjChange} type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-cyan transition-colors" placeholder="00.000.000/0000-00" />
-                        {errors.cnpj && <span className="text-red-400 text-xs">{errors.cnpj.message}</span>}
-                    </div>
+                 <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase">WhatsApp</label>
+                    <input {...register("phone")} onChange={handlePhoneChange} type="tel" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-cyan transition-colors" placeholder="(00) 00000-0000" />
+                    {errors.phone && <span className="text-red-400 text-xs">{errors.phone.message}</span>}
                  </div>
             </motion.div>
         )}
@@ -723,7 +844,8 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
             </div>
         )}
 
-        {/* FOOTER ACTIONS */}
+        {/* FOOTER ACTIONS — hidden on step 1 while the CNPJ sub-flow has its own action buttons */}
+        {!(currentStep === 1 && (cnpjFlow === "asking" || cnpjFlow === "blocked")) && (
         <div className="pt-4 flex gap-3">
              {currentStep > 1 && (
                <button
@@ -770,6 +892,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                </button>
              )}
         </div>
+        )}
       </form>
 
 
