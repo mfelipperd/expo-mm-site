@@ -31,10 +31,12 @@ export interface ExhibitorBrand {
 export interface StandOption {
   id: string;
   name: string;
-  dimensions: string;
+  width: number;
+  height: number;
   area: number;
   quantity: number;
   totalPrice: number;
+  anchorPrice?: number | null;
   description: string;
 }
 
@@ -127,6 +129,10 @@ export function formatFairSchedule(schedule: FairScheduleEntry[]): string {
   } catch {
     return "";
   }
+}
+
+export function formatStandDimensions(stand: Pick<StandOption, "width" | "height">): string {
+  return `${stand.width}x${stand.height}`;
 }
 
 export function formatFairLocation(address: FairAddress): string {

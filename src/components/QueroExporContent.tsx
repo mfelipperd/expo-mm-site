@@ -15,7 +15,7 @@ import {
   ChevronRight, AlertTriangle,
 } from "lucide-react";
 import Image from "next/image";
-import { fetchFairs, fetchFair, formatFairDates, type StandOption, type FairListItem } from "@/lib/fairsApi";
+import { fetchFairs, fetchFair, formatFairDates, formatStandDimensions, type StandOption, type FairListItem } from "@/lib/fairsApi";
 import LogosCarousel from "@/components/LogosCarousel";
 import FairHistoryTimeline from "@/components/FairHistoryTimeline";
 import StickyMobileCTA from "@/components/StickyMobileCTA";
@@ -35,6 +35,10 @@ function getStandImage(dimensions: string): string {
 function formatPrice(value: number): string {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
+
+type StandOptionWithMeta = StandOption & { durationDays: number | null };
+
+const INSTALLMENTS = 12;
 
 const CITY_META: Record<string, { color: string; borderColor: string; state: string; slug: string; icon: string }> = {
   manaus:  { color: "text-brand-pink",  borderColor: "border-brand-pink",  state: "Amazonas", slug: "manaus", icon: "🏙️" },
@@ -67,7 +71,7 @@ function isFairHappening(fair: FairListItem) {
 export default function QueroExporContent() {
   const [activeModal, setActiveModal] = useState<"none" | "whatsapp" | "bypass" | "visit">("none");
   const [whatsAppFilter, setWhatsAppFilter] = useState<string | undefined>(undefined);
-  const [standOptions, setStandOptions] = useState<StandOption[]>([]);
+  const [standOptions, setStandOptions] = useState<StandOptionWithMeta[]>([]);
   const [allFairs, setAllFairs] = useState<FairListItem[]>([]);
   const [activeFairs, setActiveFairs] = useState<FairListItem[]>([]);
 
@@ -96,11 +100,14 @@ export default function QueroExporContent() {
       // Fetch stand options only for active fairs
       const details = await Promise.all(active.map((f) => fetchFair(f.id)));
       const seen = new Set<string>();
-      const combined: StandOption[] = [];
+      const combined: StandOptionWithMeta[] = [];
       for (const detail of details) {
         for (const stand of detail?.standOptions ?? []) {
-          const key = stand.dimensions || stand.name;
-          if (!seen.has(key)) { seen.add(key); combined.push(stand); }
+          const key = formatStandDimensions(stand);
+          if (!seen.has(key)) {
+            seen.add(key);
+            combined.push({ ...stand, durationDays: detail?.durationDays ?? null });
+          }
         }
       }
       if (combined.length > 0) setStandOptions(combined);
@@ -521,7 +528,7 @@ export default function QueroExporContent() {
 
                     <div className="aspect-video bg-white/5 rounded-2xl mb-6 relative overflow-hidden">
                       <Image
-                        src={getStandImage(stand.dimensions)}
+                        src={getStandImage(formatStandDimensions(stand))}
                         alt={stand.name}
                         fill
                         className="object-cover group-hover:scale-110 transition-transform duration-500"
@@ -554,8 +561,22 @@ export default function QueroExporContent() {
 
                     {stand.totalPrice > 0 && (
                       <div className="mb-6">
+                        {stand.anchorPrice != null && stand.anchorPrice > stand.totalPrice && (
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-gray-500 line-through text-sm">{formatPrice(stand.anchorPrice)}</span>
+                            <span className="text-green-400 text-xs font-black uppercase tracking-wide bg-green-500/10 border border-green-500/20 rounded-full px-2 py-0.5">
+                              Economize {formatPrice(stand.anchorPrice - stand.totalPrice)}
+                            </span>
+                          </div>
+                        )}
                         <p className="text-xs text-gray-500 uppercase font-bold tracking-widest">Valor da reserva</p>
                         <p className="text-brand-orange font-black text-3xl">{formatPrice(stand.totalPrice)}</p>
+                        <p className="text-gray-400 text-sm mt-1">
+                          ou {INSTALLMENTS}x de {formatPrice(stand.totalPrice / INSTALLMENTS)}
+                          {stand.durationDays && stand.durationDays > 0 && (
+                            <> · {formatPrice(stand.totalPrice / stand.durationDays)}/dia de exposição</>
+                          )}
+                        </p>
                       </div>
                     )}
 
