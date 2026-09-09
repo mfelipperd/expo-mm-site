@@ -215,7 +215,7 @@ export default function QueroExporContent() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="mt-6 inline-flex items-center gap-1.5 text-sm text-gray-300 hover:text-white transition-colors"
+              className="mt-6 inline-flex flex-wrap items-center justify-center gap-1.5 text-center text-sm text-gray-300 hover:text-white transition-colors"
             >
               Stands a partir de <span className="text-brand-orange font-black">{formatPrice(cheapestStand.totalPrice)}</span> à vista no Pix
               <ChevronRight size={14} />
@@ -414,7 +414,7 @@ export default function QueroExporContent() {
                           referrerPolicy="no-referrer-when-downgrade"
                           className="absolute inset-0 grayscale hover:grayscale-0 transition-all duration-500"
                         />
-                        <span className="absolute top-3 left-3 bg-slate-900/85 backdrop-blur text-white text-[10px] font-black uppercase tracking-wide px-3 py-1.5 rounded-full border border-white/10 pointer-events-none">
+                        <span className="absolute top-3 left-3 max-w-[calc(100%-1.5rem)] truncate block bg-slate-900/85 backdrop-blur text-white text-[10px] font-black uppercase tracking-wide px-3 py-1.5 rounded-full border border-white/10 pointer-events-none">
                           📍 {detail?.address?.venue || fair.city}
                         </span>
                       </div>
@@ -693,7 +693,7 @@ export default function QueroExporContent() {
                             </p>
                           </div>
 
-                          <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-xl px-3 py-2.5">
+                          <div className="flex flex-wrap items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-xl px-3 py-2.5">
                             <span className="shrink-0 text-green-400 text-[10px] font-black uppercase tracking-wide bg-green-500/20 rounded-full px-2 py-1">
                               {pixDiscountPct}% OFF
                             </span>
