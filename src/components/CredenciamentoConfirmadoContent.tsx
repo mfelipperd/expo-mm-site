@@ -3,16 +3,21 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { CheckCircle2, MessageCircle } from "lucide-react";
+import { CheckCircle2, MessageCircle, QrCode } from "lucide-react";
 import Footer from "@/components/Footer";
 
 export default function CredenciamentoConfirmadoContent() {
   const [cidade, setCidade] = useState<string | null>(null);
+  const [visitantes, setVisitantes] = useState<number | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const value = params.get("cidade") || params.get("city");
-    const t = setTimeout(() => setCidade(value), 0);
+    const cidadeValue = params.get("cidade") || params.get("city");
+    const visitantesValue = Number(params.get("visitantes"));
+    const t = setTimeout(() => {
+      setCidade(cidadeValue);
+      if (visitantesValue > 0) setVisitantes(visitantesValue);
+    }, 0);
     return () => clearTimeout(t);
   }, []);
 
@@ -42,9 +47,18 @@ export default function CredenciamentoConfirmadoContent() {
           </h1>
           <p className="text-gray-400 leading-relaxed">
             Seu cadastro{cidade ? ` para a Expo MultiMix ${cidade}` : " na Expo MultiMix"} foi confirmado
-            com sucesso. Você já está inscrito — fique de olho no seu email e WhatsApp, vamos enviar mais
-            detalhes conforme a data do evento se aproxima.
+            com sucesso.
+            {visitantes && visitantes > 1 ? ` Cadastramos ${visitantes} visitantes.` : ""}
           </p>
+
+          <div className="mt-6 bg-brand-cyan/10 border border-brand-cyan/20 p-4 rounded-xl flex items-start gap-3 text-left">
+            <QrCode size={22} className="text-brand-cyan shrink-0 mt-0.5" />
+            <p className="text-sm text-gray-200">
+              Enviamos um email com o <strong className="text-white">QR Code de confirmação</strong> do seu
+              credenciamento — apresente ele na entrada do evento. Confira sua caixa de entrada (e a pasta de
+              spam, por garantia).
+            </p>
+          </div>
 
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
             <Link

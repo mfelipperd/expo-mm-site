@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import { X, CheckCircle, Loader2, AlertCircle, Plus, Trash2, MapPin, ArrowRight, MailCheck } from "lucide-react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
@@ -73,9 +74,8 @@ const brasilApiCnpjSchema = z.object({
 type CnpjFlow = "input" | "asking" | "representative" | "blocked";
 
 export default function RegistrationFormModal({ cityName, fairId, industries = [], onClose }: RegistrationFormModalProps) {
+  const router = useRouter();
   const [mode, setMode] = useState<"form" | "reuse">("form");
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [submitSuccessCount, setSubmitSuccessCount] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [locationWarningConfirmed, setLocationWarningConfirmed] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -254,8 +254,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
 
   const onSubmit = async (data: CredenciamentoFormData) => {
     setSubmitError(null);
-    setSubmitSuccessCount(0);
-    
+
     // Prepare base payload
     const basePayload = {
         name: data.name.toLowerCase(),
@@ -298,9 +297,11 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
             }
             successCount++;
         }
-        
-        setSubmitSuccessCount(successCount);
-        setIsSuccess(true);
+
+        const confirmationParams = new URLSearchParams();
+        confirmationParams.set("cidade", cityName);
+        if (successCount > 1) confirmationParams.set("visitantes", String(successCount));
+        router.push(`/credenciamento-confirmado?${confirmationParams.toString()}`);
 
     } catch (error) {
       console.error("Erro no credenciamento:", error);
@@ -400,28 +401,6 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
 
   if (mode === "reuse") {
     return <VisitorReuseFlow cityName={cityName} fairId={fairId} onBack={() => setMode("form")} />;
-  }
-
-  if (isSuccess) {
-    return (
-      <div className="text-center py-12 px-6">
-        <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-          <CheckCircle size={40} />
-        </div>
-        <h3 className="text-2xl font-bold text-white mb-4">Credenciamento Realizado!</h3>
-        <p className="text-gray-400 mb-8">
-          Sua pré-inscrição para a <strong>Expo MultiMix {cityName}</strong> foi recebida com sucesso.
-          <br/>Cadastramos <strong>{submitSuccessCount}</strong> visitante(s).
-          <br/>Em breve entraremos em contato com mais informações.
-        </p>
-        <button
-          onClick={onClose}
-          className="bg-brand-cyan text-white px-8 py-3 rounded-full font-bold hover:bg-brand-cyan/90 transition-all"
-        >
-          FECHAR
-        </button>
-      </div>
-    );
   }
 
   // Preparação do link dinâmico do WhatsApp para fallback em caso de erros
