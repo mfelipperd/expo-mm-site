@@ -4,7 +4,11 @@ import { getSiteMode } from "./siteMode";
 interface ResolvedCityFair {
   fair: FairDetail | null;
   fairId: string;
+  /** Whether visitor registration should be the page's main focus (fair within the 60-day window). */
   registrationOpen: boolean;
+  /** Whether a real upcoming/ongoing edition exists at all — visitors can pre-register even
+   * when the page's main focus stays on exhibitors (registrationOpen === false). */
+  hasActiveFair: boolean;
 }
 
 /**
@@ -22,5 +26,5 @@ export async function resolveCityFair(city: string, fallbackFairId: string): Pro
   const fair = fairId ? await fetchFair(fairId) : null;
   const registrationOpen = activeFair ? getSiteMode([activeFair]) === "visitantes" : false;
 
-  return { fair, fairId, registrationOpen };
+  return { fair, fairId, registrationOpen, hasActiveFair: !!activeFair };
 }

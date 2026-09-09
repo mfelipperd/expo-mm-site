@@ -45,7 +45,7 @@ export const metadata: Metadata = {
 };
 
 export default async function BelemPage() {
-  const { fair, fairId, registrationOpen } = await resolveCityFair(
+  const { fair, fairId, registrationOpen, hasActiveFair } = await resolveCityFair(
     "Belem",
     process.env.NEXT_PUBLIC_FAIR_ID_BELEM || ""
   );
@@ -125,6 +125,7 @@ export default async function BelemPage() {
       transportLinks={fair?.transportLinks}
       exhibitorBrands={fair?.exhibitorBrands}
       registrationOpen={registrationOpen}
+      canRegisterAsVisitor={hasActiveFair}
     />
     <JsonLd
       data={{

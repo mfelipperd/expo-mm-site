@@ -46,7 +46,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ManausPage() {
-  const { fair, fairId, registrationOpen } = await resolveCityFair(
+  const { fair, fairId, registrationOpen, hasActiveFair } = await resolveCityFair(
     "Manaus",
     process.env.NEXT_PUBLIC_FAIR_ID_MANAUS || ""
   );
@@ -124,6 +124,7 @@ export default async function ManausPage() {
       transportLinks={fair?.transportLinks}
       exhibitorBrands={fair?.exhibitorBrands}
       registrationOpen={registrationOpen}
+      canRegisterAsVisitor={hasActiveFair}
     />
     <JsonLd
       data={{

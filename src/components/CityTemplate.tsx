@@ -44,8 +44,11 @@ interface CityTemplateProps {
   expectedExhibitors?: number;
   transportLinks?: TransportLinks;
   exhibitorBrands?: ExhibitorBrand[];
-  /** Whether visitor credenciamento is open for this edition (fair happening now or starting soon). */
+  /** Whether visitor credenciamento is the page's main focus (fair happening now or starting soon). */
   registrationOpen: boolean;
+  /** Whether a real upcoming/ongoing edition exists at all, so visitors can still reach the
+   * registration form via "Quero Visitar" even when the page's main focus stays on exhibitors. */
+  canRegisterAsVisitor: boolean;
 }
 
 export default function CityTemplate({
@@ -67,6 +70,7 @@ export default function CityTemplate({
   transportLinks,
   exhibitorBrands,
   registrationOpen,
+  canRegisterAsVisitor,
 }: CityTemplateProps) {
   const router = useRouter();
   const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit" | "whatsapp" | "bypass" | "registration">("none");
@@ -81,18 +85,24 @@ export default function CityTemplate({
   // Fast entry for marketing links (?cadastro=1): skip straight to the form instead of
   // making the visitor scroll or click through the landing page.
   useEffect(() => {
-    if (typeof window === "undefined" || !registrationOpen) return;
+    if (typeof window === "undefined" || !canRegisterAsVisitor) return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("cadastro") !== "1") return;
     const t = setTimeout(() => setActiveModal("registration"), 0);
     return () => clearTimeout(t);
-  }, [registrationOpen]);
+  }, [canRegisterAsVisitor]);
 
   const handleExposeClick = () => {
     router.push("/quero-expor?target=stands");
   };
 
+  // "QUERO VISITAR" always means visitor intent: if there's a real edition to register for,
+  // go straight to the form — even when the page's main focus (hero/CTA) stays on exhibitors.
   const handleNavbarVisit = () => {
+    if (canRegisterAsVisitor) {
+      setActiveModal("registration");
+      return;
+    }
     const section = document.getElementById("registration-cta");
     if (section) {
       section.scrollIntoView({ behavior: "smooth" });
