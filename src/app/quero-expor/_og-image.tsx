@@ -1,14 +1,44 @@
 import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { fetchFairs, type FairListItem } from "@/lib/fairsApi";
 
-export const ogImageAlt = "Expo MultiMix 2026 — Seja um Expositor. Reserve seu stand em Belém e Manaus.";
+export const ogImageAlt = "Expo MultiMix — Seja um Expositor. Reserve seu stand na maior feira de negócios do Norte do Brasil.";
 export const ogImageSize = { width: 1200, height: 630 };
 export const ogImageContentType = "image/png";
 
+const PT_MONTH_ABBR = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+
+// Same rule as QueroExporContent.tsx: only fairs still open for reservation (not past editions).
+function isFairActive(fair: FairListItem) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  return new Date(fair.endDate + "T23:59:59") >= today;
+}
+
+function formatBadgeDate(startDate: string, endDate: string) {
+  const start = new Date(startDate + "T12:00:00");
+  const end = new Date(endDate + "T12:00:00");
+  const month = PT_MONTH_ABBR[start.getMonth()];
+  const dayRange = start.getDate() === end.getDate() ? `${start.getDate()}` : `${start.getDate()}-${end.getDate()}`;
+  return `${dayRange} ${month}`;
+}
+
+async function getActiveFairBadges() {
+  const fairs = await fetchFairs();
+  return fairs
+    .filter((f) => f.status === "upcoming" || f.status === "ongoing")
+    .filter(isFairActive)
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+    .map((f) => ({ city: f.city, dateLabel: formatBadgeDate(f.startDate, f.endDate) }));
+}
+
 async function loadGoogleFont(weight: 700 | 900) {
   const css = await (
-    await fetch(`https://fonts.googleapis.com/css2?family=Inter:wght@${weight}&text=SejaumExpositorGaranteStandExpoMultiMix2026VagasLimitadasApresentesuamarcaparamilhareslojistasCNPJevendadiretonoatacadoBELÉMAGOMANAUSJUNwww.expomultimix.com.br→1819202119`)
+    await fetch(
+      `https://fonts.googleapis.com/css2?family=Inter:wght@${weight}&text=${encodeURIComponent(
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÀÁÂÃÉÊÍÓÔÕÚÇàáâãéêíóôõúç0123456789 ·-→."
+      )}`
+    )
   ).text();
   const match = css.match(/src: url\(([^)]+)\) format\('(?:opentype|truetype)'\)/);
   if (!match) throw new Error(`failed to resolve font url for weight ${weight}`);
@@ -17,11 +47,12 @@ async function loadGoogleFont(weight: 700 | 900) {
 }
 
 export async function renderQueroExporOgImage() {
-  const [interBold, interBlack, backgroundBuffer, logoBuffer] = await Promise.all([
+  const [interBold, interBlack, backgroundBuffer, logoBuffer, fairBadges] = await Promise.all([
     loadGoogleFont(700),
     loadGoogleFont(900),
     readFile(join(process.cwd(), "public/assets/fachada-manaus-2.jpeg")),
     readFile(join(process.cwd(), "public/assets/logo EMM_Prancheta 1.png")),
+    getActiveFairBadges(),
   ]);
 
   const backgroundSrc = `data:image/jpeg;base64,${backgroundBuffer.toString("base64")}`;
@@ -102,7 +133,7 @@ export async function renderQueroExporOgImage() {
                 textTransform: "uppercase",
               }}
             >
-              Vagas limitadas
+              {fairBadges.length > 0 ? "Vagas limitadas" : "Reserve sua vaga"}
             </div>
           </div>
 
@@ -133,38 +164,28 @@ export async function renderQueroExporOgImage() {
               Apresente sua marca para milhares de lojistas com CNPJ e venda direto no atacado.
             </div>
 
-            <div style={{ display: "flex", gap: 16, marginTop: 34 }}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  background: "rgba(255,255,255,0.12)",
-                  border: "2px solid rgba(255,255,255,0.35)",
-                  borderRadius: 999,
-                  padding: "10px 24px",
-                  color: "#FFFFFF",
-                  fontSize: 22,
-                  fontWeight: 700,
-                }}
-              >
-                Belém · 18-20 ago
+            {fairBadges.length > 0 && (
+              <div style={{ display: "flex", gap: 16, marginTop: 34 }}>
+                {fairBadges.map((badge) => (
+                  <div
+                    key={badge.city}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      background: "rgba(255,255,255,0.12)",
+                      border: "2px solid rgba(255,255,255,0.35)",
+                      borderRadius: 999,
+                      padding: "10px 24px",
+                      color: "#FFFFFF",
+                      fontSize: 22,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {badge.city} · {badge.dateLabel}
+                  </div>
+                ))}
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  background: "rgba(255,255,255,0.12)",
-                  border: "2px solid rgba(255,255,255,0.35)",
-                  borderRadius: 999,
-                  padding: "10px 24px",
-                  color: "#FFFFFF",
-                  fontSize: 22,
-                  fontWeight: 700,
-                }}
-              >
-                Manaus · 9-11 jun
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Bottom bar */}
