@@ -87,13 +87,11 @@ export default function QueroExporContent() {
 
   useEffect(() => {
     fetchFairs().then(async (fairs) => {
-      const currentYear = new Date().getFullYear();
       const sorted = [...fairs]
-        .filter((f) => new Date(f.startDate + "T12:00:00").getFullYear() === currentYear)
+        .filter((f) => f.status === "upcoming" || f.status === "ongoing")
         .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
       setAllFairs(sorted);
 
-      const today = new Date(); today.setHours(0, 0, 0, 0);
       const active = sorted.filter(isFairActive);
       setActiveFairs(active);
 
@@ -119,6 +117,9 @@ export default function QueroExporContent() {
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
 
   const hasMultipleActiveFairs = activeFairs.length >= 2;
+  const calendarYearsLabel = [
+    ...new Set(allFairs.map((f) => new Date(f.startDate + "T12:00:00").getFullYear())),
+  ].join(" / ");
 
   return (
     <main className="min-h-screen bg-brand-blue selection:bg-brand-cyan/30 selection:text-white">
@@ -217,7 +218,9 @@ export default function QueroExporContent() {
       <section className="py-20 bg-brand-blue border-b border-white/5">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-12">
-            <span className="text-brand-cyan font-bold tracking-widest text-sm uppercase">Calendário 2026</span>
+            <span className="text-brand-cyan font-bold tracking-widest text-sm uppercase">
+              Calendário {calendarYearsLabel || new Date().getFullYear()}
+            </span>
             <h2 className="text-3xl md:text-4xl font-black text-white mt-2">
               {activeFairs.length > 0 ? "RESERVE SEU STAND" : "NOSSAS EDIÇÕES"}
             </h2>
