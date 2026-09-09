@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useScroll, useTransform, useInView } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Modal from "@/components/Modal";
@@ -11,14 +11,18 @@ import WhatsAppFloating from "@/components/WhatsAppFloating";
 import { useState, useRef, useEffect } from "react";
 import {
   CheckCircle2, TrendingUp, Users, Package, ArrowRight, Rocket,
-  ShieldCheck, Handshake, Calendar, MapPin, Zap, Star, Clock,
+  Calendar, MapPin, Zap, Star, Clock, Building2, Store,
   ChevronRight, AlertTriangle,
 } from "lucide-react";
 import Image from "next/image";
-import { fetchFairs, fetchFair, formatFairDates, formatStandDimensions, type StandOption, type FairListItem } from "@/lib/fairsApi";
+import {
+  fetchFairs, fetchFair, formatFairDates, formatFairLocation, formatStandDimensions, buildMapEmbedUrl,
+  type StandOption, type FairListItem, type FairDetail,
+} from "@/lib/fairsApi";
 import LogosCarousel from "@/components/LogosCarousel";
 import FairHistoryTimeline from "@/components/FairHistoryTimeline";
 import StickyMobileCTA from "@/components/StickyMobileCTA";
+import AnimatedNumber from "@/components/AnimatedNumber";
 
 /* ─── helpers ─────────────────────────────────────────────────── */
 
@@ -39,6 +43,7 @@ function formatPrice(value: number): string {
 type StandOptionWithMeta = StandOption & { durationDays: number | null };
 
 const INSTALLMENTS = 12;
+const INSTALLMENT_INTEREST_RATE = 0.1; // juros do parcelamento no cartão — Pix à vista é o valor real, sem essa taxa
 
 const CITY_META: Record<string, { color: string; borderColor: string; state: string; slug: string; icon: string }> = {
   manaus:  { color: "text-brand-pink",  borderColor: "border-brand-pink",  state: "Amazonas", slug: "manaus", icon: "🏙️" },
@@ -46,6 +51,9 @@ const CITY_META: Record<string, { color: string; borderColor: string; state: str
   belém:   { color: "text-brand-cyan",  borderColor: "border-brand-cyan",  state: "Pará",     slug: "belem",  icon: "⚓" },
   belem:   { color: "text-brand-cyan",  borderColor: "border-brand-cyan",  state: "Pará",     slug: "belem",  icon: "⚓" },
 };
+
+// Estimativa de comércio varejista ativo em Manaus (fonte: base de CNPJs ativos, CNAE G-47) — arredondado, não é dado da API da feira.
+const MANAUS_LOJISTAS_ESTIMATE = 46000;
 
 function normCity(city: string) {
   return city.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -74,6 +82,7 @@ export default function QueroExporContent() {
   const [standOptions, setStandOptions] = useState<StandOptionWithMeta[]>([]);
   const [allFairs, setAllFairs] = useState<FairListItem[]>([]);
   const [activeFairs, setActiveFairs] = useState<FairListItem[]>([]);
+  const [fairDetails, setFairDetails] = useState<Record<string, FairDetail>>({});
 
   const openWhatsApp = (filter?: string) => { setWhatsAppFilter(filter); setActiveModal("whatsapp"); };
   const closeModal = () => setActiveModal("none");
@@ -95,8 +104,15 @@ export default function QueroExporContent() {
       const active = sorted.filter(isFairActive);
       setActiveFairs(active);
 
-      // Fetch stand options only for active fairs
+      // Fetch full detail (address, map, stand options) only for active fairs
       const details = await Promise.all(active.map((f) => fetchFair(f.id)));
+
+      const detailsById: Record<string, FairDetail> = {};
+      details.forEach((detail, i) => {
+        if (detail) detailsById[active[i].id] = detail;
+      });
+      setFairDetails(detailsById);
+
       const seen = new Set<string>();
       const combined: StandOptionWithMeta[] = [];
       for (const detail of details) {
@@ -120,6 +136,11 @@ export default function QueroExporContent() {
   const calendarYearsLabel = [
     ...new Set(allFairs.map((f) => new Date(f.startDate + "T12:00:00").getFullYear())),
   ].join(" / ");
+
+  const pricedStands = standOptions.filter((s) => s.totalPrice > 0);
+  const cheapestStand = pricedStands.length > 0
+    ? pricedStands.reduce((min, s) => (s.totalPrice < min.totalPrice ? s : min))
+    : null;
 
   return (
     <main className="min-h-screen bg-brand-blue selection:bg-brand-cyan/30 selection:text-white">
@@ -186,6 +207,20 @@ export default function QueroExporContent() {
               FALAR COM CONSULTOR
             </button>
           </motion.div>
+
+          {cheapestStand && (
+            <motion.button
+              type="button"
+              onClick={scrollToStands}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="mt-6 inline-flex items-center gap-1.5 text-sm text-gray-300 hover:text-white transition-colors"
+            >
+              Stands a partir de <span className="text-brand-orange font-black">{formatPrice(cheapestStand.totalPrice)}</span> à vista no Pix
+              <ChevronRight size={14} />
+            </motion.button>
+          )}
         </div>
       </section>
 
@@ -194,10 +229,10 @@ export default function QueroExporContent() {
         <div className="max-w-5xl mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {[
-              { value: "+1.000", label: "Lojistas por edição", color: "text-brand-cyan" },
-              { value: "+70",    label: "Marcas expositoras",  color: "text-brand-pink" },
-              { value: "3 dias", label: "De pura negociação",  color: "text-brand-orange" },
-              { value: "2",      label: "Capitais do Norte",   color: "text-brand-cyan" },
+              { animatedValue: 1000, prefix: "+", label: "Lojistas por edição", color: "text-brand-cyan" },
+              { animatedValue: 70,   prefix: "+", label: "Marcas expositoras",  color: "text-brand-pink" },
+              { value: "3 dias",                  label: "De pura negociação",  color: "text-brand-orange" },
+              { value: "2",                       label: "Capitais do Norte",   color: "text-brand-cyan" },
             ].map((stat, i) => (
               <motion.div
                 key={i}
@@ -206,7 +241,11 @@ export default function QueroExporContent() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08 }}
               >
-                <p className={`text-3xl md:text-4xl font-black ${stat.color}`}>{stat.value}</p>
+                <p className={`text-3xl md:text-4xl font-black ${stat.color}`}>
+                  {stat.animatedValue != null
+                    ? <AnimatedNumber value={stat.animatedValue} prefix={stat.prefix} />
+                    : stat.value}
+                </p>
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">{stat.label}</p>
               </motion.div>
             ))}
@@ -215,130 +254,206 @@ export default function QueroExporContent() {
       </section>
 
       {/* ── Calendar (dinâmico via API) ─────────────────────── */}
-      <section className="py-20 bg-brand-blue border-b border-white/5">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <span className="text-brand-cyan font-bold tracking-widest text-sm uppercase">
-              Calendário {calendarYearsLabel || new Date().getFullYear()}
-            </span>
-            <h2 className="text-3xl md:text-4xl font-black text-white mt-2">
-              {activeFairs.length > 0 ? "RESERVE SEU STAND" : "NOSSAS EDIÇÕES"}
-            </h2>
-            {activeFairs.length > 0 && (
-              <p className="text-gray-400 mt-2">
-                {activeFairs.length === 1
-                  ? "Últimas vagas disponíveis — garanta sua posição no pavilhão."
-                  : "Escolha uma ou duas edições para maximizar sua presença na região."}
-              </p>
-            )}
-          </div>
+      <section className="pt-20 pb-12 bg-brand-blue">
+        <div className="max-w-6xl mx-auto px-6 text-center">
+          <span className="text-brand-cyan font-bold tracking-widest text-sm uppercase">
+            Calendário {calendarYearsLabel || new Date().getFullYear()}
+          </span>
+          <h2 className="text-3xl md:text-4xl font-black text-white mt-2">
+            {activeFairs.length > 0 ? "RESERVE SEU STAND" : "NOSSAS EDIÇÕES"}
+          </h2>
+          {activeFairs.length > 0 && (
+            <p className="text-gray-400 mt-2">
+              {activeFairs.length === 1
+                ? "Últimas vagas disponíveis — garanta sua posição no pavilhão."
+                : "Escolha uma ou duas edições para maximizar sua presença na região."}
+            </p>
+          )}
+        </div>
+      </section>
 
-          {allFairs.length === 0 ? (
-            /* Fallback enquanto carrega */
-            <div className="grid md:grid-cols-2 gap-8">
-              <FallbackFairCard
-                city="MANAUS" state="Amazonas" date="09, 10 e 11 de Junho" location="Centro de Convenções Vasco Vasques"
-                color="text-brand-pink" borderColor="border-brand-pink" active={false}
-                onContact={() => openWhatsApp("Comercial")}
-              />
-              <FallbackFairCard
-                city="BELÉM" state="Pará" date="18, 19 e 20 de Agosto" location="Estação das Docas — Pavilhão de Feiras"
-                color="text-brand-cyan" borderColor="border-brand-cyan" active={true}
-                onContact={() => openWhatsApp("Comercial")}
-              />
-            </div>
-          ) : (
-            <div className={`grid gap-8 ${allFairs.length === 1 ? "max-w-lg mx-auto" : "md:grid-cols-2"}`}>
-              {allFairs.map((fair) => {
-                const meta = getCityMeta(fair.city);
-                const active = isFairActive(fair);
-                const happening = isFairHappening(fair);
-                return (
-                  <motion.div
-                    key={fair.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    className={`relative p-5 md:p-8 rounded-3xl border-l-4 transition-all group ${meta.borderColor} ${
-                      active ? "glass hover:bg-white/5" : "bg-white/2 opacity-70"
-                    }`}
-                  >
-                    {happening && (
-                      <span className="absolute top-4 right-4 inline-flex items-center gap-1.5 bg-green-500/15 border border-green-500/30 text-green-400 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> Em andamento
-                      </span>
-                    )}
-                    {!active && (
-                      <span className="absolute top-4 right-4 text-[10px] font-bold uppercase text-gray-600 border border-white/10 rounded-full px-3 py-1">
-                        Encerrada
-                      </span>
-                    )}
+      {allFairs.length === 0 ? (
+        /* Fallback enquanto carrega */
+        <div className="max-w-6xl mx-auto px-6 space-y-8 pb-12">
+          <FallbackFairCard
+            city="MANAUS" state="Amazonas" date="09, 10 e 11 de Junho" location="Centro de Convenções Vasco Vasques"
+            color="text-brand-pink" borderColor="border-brand-pink" active={false}
+            onContact={() => openWhatsApp("Comercial")}
+          />
+          <FallbackFairCard
+            city="BELÉM" state="Pará" date="18, 19 e 20 de Agosto" location="Estação das Docas — Pavilhão de Feiras"
+            color="text-brand-cyan" borderColor="border-brand-cyan" active={true}
+            onContact={() => openWhatsApp("Comercial")}
+          />
+        </div>
+      ) : (
+        <>
+          {allFairs.map((fair) => {
+            const meta = getCityMeta(fair.city);
+            const active = isFairActive(fair);
+            const happening = isFairHappening(fair);
+            const detail = fairDetails[fair.id];
+            const mapUrl = detail ? buildMapEmbedUrl(detail.coordinates, detail.address?.venue, fair.city) : "";
+            const isManaus = normCity(fair.city).startsWith("mana");
+            return (
+              <motion.section
+                key={fair.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className={`relative border-t-4 border-b border-b-white/5 transition-all group ${meta.borderColor} ${
+                  active ? "bg-black/10" : "bg-white/2 opacity-70"
+                }`}
+              >
+                <div className="relative max-w-6xl mx-auto px-6 py-14 md:py-16">
+                  {happening && (
+                    <span className="absolute top-6 right-6 z-10 inline-flex items-center gap-1.5 bg-green-500/15 border border-green-500/30 text-green-400 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> Em andamento
+                    </span>
+                  )}
+                  {!active && (
+                    <span className="absolute top-6 right-6 z-10 text-[10px] font-bold uppercase text-gray-600 border border-white/10 rounded-full px-3 py-1">
+                      Encerrada
+                    </span>
+                  )}
 
-                    <div className="flex justify-between items-start mb-6">
-                      <div>
-                        <span className={`text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${meta.color} bg-white/5`}>
-                          {meta.state}
-                        </span>
-                        <h3 className="text-3xl font-black text-white mt-2">{fair.city.toUpperCase()}</h3>
-                      </div>
-                      <div className={`w-12 h-12 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform text-xl`}>
-                        {meta.icon}
-                      </div>
-                    </div>
-
-                    <div className="space-y-3 mb-6">
-                      <div className="flex items-center gap-3 text-gray-300">
-                        <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center ${meta.color}`}>
-                          <Calendar size={16} />
+                  <div className="grid md:grid-cols-2 gap-8 md:gap-12">
+                    {/* Info */}
+                    <div>
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className={`w-12 h-12 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform text-xl shrink-0`}>
+                          {meta.icon}
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-gray-500 uppercase">Data</p>
-                          <p className="font-bold text-white">{formatFairDates(fair.startDate, fair.endDate)}</p>
+                          <span className={`text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${meta.color} bg-white/5`}>
+                            {meta.state}
+                          </span>
+                          <h3 className="text-3xl md:text-4xl font-black text-white mt-1">{fair.city.toUpperCase()}</h3>
                         </div>
                       </div>
-                      {fair.city && (
+
+                      <div className="space-y-3 mb-6">
                         <div className="flex items-center gap-3 text-gray-300">
                           <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center ${meta.color}`}>
-                            <MapPin size={16} />
+                            <Calendar size={16} />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-gray-500 uppercase">Cidade</p>
-                            <p className="font-bold text-white">{fair.city} — {fair.state}</p>
+                            <p className="text-xs font-bold text-gray-500 uppercase">Data</p>
+                            <p className="font-bold text-white">{formatFairDates(fair.startDate, fair.endDate)}</p>
                           </div>
+                        </div>
+                        {fair.city && (
+                          <div className="flex items-center gap-3 text-gray-300">
+                            <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center ${meta.color}`}>
+                              <MapPin size={16} />
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-gray-500 uppercase">Local</p>
+                              <p className="font-bold text-white">
+                                {detail?.address ? formatFairLocation(detail.address) : `${fair.city} — ${fair.state}`}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {(fair.expectedVisitors || fair.expectedExhibitors || (fair.standsAvailable ?? 0) > 0) && (
+                        <div className="grid grid-cols-3 gap-2 mb-6">
+                          {!!fair.expectedVisitors && (
+                            <div className="text-center bg-white/5 rounded-xl py-3">
+                              <Users size={16} className={`mx-auto mb-1 ${meta.color}`} />
+                              <p className="text-lg font-black text-white leading-none">
+                                <AnimatedNumber value={fair.expectedVisitors} suffix="+" />
+                              </p>
+                              <p className="text-[9px] text-gray-500 uppercase font-bold mt-1 leading-tight">Visitantes</p>
+                            </div>
+                          )}
+                          {!!fair.expectedExhibitors && (
+                            <div className="text-center bg-white/5 rounded-xl py-3">
+                              <Building2 size={16} className={`mx-auto mb-1 ${meta.color}`} />
+                              <p className="text-lg font-black text-white leading-none">
+                                <AnimatedNumber value={fair.expectedExhibitors} suffix="+" />
+                              </p>
+                              <p className="text-[9px] text-gray-500 uppercase font-bold mt-1 leading-tight">Expositores</p>
+                            </div>
+                          )}
+                          {!!fair.standsAvailable && (
+                            <div className="text-center bg-white/5 rounded-xl py-3">
+                              <Store size={16} className={`mx-auto mb-1 ${meta.color}`} />
+                              <p className="text-lg font-black text-white leading-none">
+                                <AnimatedNumber value={fair.standsAvailable} />
+                              </p>
+                              <p className="text-[9px] text-gray-500 uppercase font-bold mt-1 leading-tight">Stands livres</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {isManaus && (
+                        <div className="flex items-center gap-3 bg-brand-pink/10 border border-brand-pink/20 rounded-xl px-4 py-3">
+                          <TrendingUp className="text-brand-pink shrink-0" size={20} />
+                          <p className="text-xs text-gray-300 leading-snug">
+                            <span className="text-white font-black">
+                              <AnimatedNumber value={Math.round(MANAUS_LOJISTAS_ESTIMATE / 1000)} prefix="+" suffix=" mil lojistas" />
+                            </span>{" "}
+                            ativos no varejo de Manaus (estimativa) — seu público em potencial na região.
+                          </p>
                         </div>
                       )}
                     </div>
 
-                    {active ? (
-                      <button
-                        type="button"
-                        onClick={scrollToStands}
-                        className={`w-full py-3 rounded-xl font-black text-sm uppercase tracking-wide transition-all flex items-center justify-center gap-2 ${
-                          happening
-                            ? "bg-green-500/20 border border-green-500/30 text-green-400 hover:bg-green-500/30"
-                            : "bg-brand-orange/10 border border-brand-orange/30 text-brand-orange hover:bg-brand-orange hover:text-white"
-                        }`}
-                      >
-                        {happening ? "VAGAS ABERTAS — VER STANDS" : "RESERVAR STAND NESTA EDIÇÃO"} <ChevronRight size={16} />
-                      </button>
-                    ) : (
-                      <p className="text-center text-xs text-gray-600 font-bold uppercase tracking-widest pt-2">
-                        Próxima edição em breve
-                      </p>
+                    {/* Mapa */}
+                    {mapUrl && (
+                      <div className="relative rounded-2xl overflow-hidden border border-white/10 min-h-55 h-full">
+                        <iframe
+                          src={mapUrl}
+                          width="100%"
+                          height="100%"
+                          style={{ border: 0 }}
+                          loading="lazy"
+                          referrerPolicy="no-referrer-when-downgrade"
+                          className="absolute inset-0 grayscale hover:grayscale-0 transition-all duration-500"
+                        />
+                        <span className="absolute top-3 left-3 bg-slate-900/85 backdrop-blur text-white text-[10px] font-black uppercase tracking-wide px-3 py-1.5 rounded-full border border-white/10 pointer-events-none">
+                          📍 {detail?.address?.venue || fair.city}
+                        </span>
+                      </div>
                     )}
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
+                  </div>
+                </div>
 
-          {/* Kit 2 cidades — aparece apenas quando há 2+ feiras ativas */}
-          {hasMultipleActiveFairs && (
+                {active ? (
+                  <button
+                    type="button"
+                    onClick={scrollToStands}
+                    className={`w-full py-5 md:py-6 font-black text-sm md:text-base uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+                      happening
+                        ? "bg-green-500 text-white hover:bg-green-600"
+                        : "bg-brand-orange text-white hover:bg-brand-orange/90"
+                    }`}
+                  >
+                    {happening ? "VAGAS ABERTAS — VER STANDS" : "RESERVAR STAND NESTA EDIÇÃO"} <ArrowRight size={18} />
+                  </button>
+                ) : (
+                  <p className="text-center text-xs text-gray-600 font-bold uppercase tracking-widest py-4 border-t border-white/5">
+                    Próxima edição em breve
+                  </p>
+                )}
+              </motion.section>
+            );
+          })}
+        </>
+      )}
+
+      {/* Kit 2 cidades — aparece apenas quando há 2+ feiras ativas */}
+      {hasMultipleActiveFairs && (
+        <section className="py-12 bg-brand-blue border-b border-white/5">
+          <div className="max-w-6xl mx-auto px-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="mt-8 p-6 md:p-8 rounded-3xl bg-linear-to-r from-brand-pink/10 to-brand-cyan/10 border border-white/10 flex flex-col md:flex-row items-center gap-6"
+              className="p-6 md:p-8 rounded-3xl bg-linear-to-r from-brand-pink/10 to-brand-cyan/10 border border-white/10 flex flex-col md:flex-row items-center gap-6"
             >
               <div className="flex-1">
                 <span className="text-brand-orange text-xs font-black uppercase tracking-widest">Oferta exclusiva</span>
@@ -355,9 +470,9 @@ export default function QueroExporContent() {
                 CONSULTAR COMBO <ArrowRight size={18} />
               </button>
             </motion.div>
-          )}
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
 
       <LogosCarousel title="QUEM JÁ EXPÕE COM A GENTE" subtitle="Marcas presentes nas edições anteriores" direction="left" />
 
@@ -417,12 +532,33 @@ export default function QueroExporContent() {
                     <div className="absolute inset-0 bg-brand-orange/20 blur-xl rounded-full" />
                     <Rocket size={64} className="text-brand-orange mx-auto relative z-10" />
                   </div>
-                  <h3 className="text-3xl font-black mb-4 text-white">SUCESSO REGIONAL</h3>
+                  <h3 className="text-3xl font-black mb-4 text-white">+15 ANOS DE MERCADO</h3>
                   <p className="text-gray-200 text-base leading-relaxed">
                     "A maior concentração de compradores B2B da Região Norte — em um único pavilhão, por 3 dias."
                   </p>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Tudo incluso — reforço do "Zero Burocracia" acima */}
+          <div className="mt-20 pt-16 border-t border-white/10 text-center">
+            <p className="text-brand-cyan font-bold tracking-widest text-sm uppercase mb-3">Sem surpresas</p>
+            <h3 className="text-2xl md:text-3xl font-black mb-8">TUDO INCLUSO NO STAND</h3>
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 text-left max-w-4xl mx-auto">
+              {[
+                "Estrutura completa com prateleiras, mesa e cadeiras",
+                "Iluminação embutida",
+                "Identificação visual da marca",
+                "Piso acarpetado",
+                "Ponto de energia 110v/220v",
+                "Segurança e limpeza inclusas",
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3 text-gray-300 p-3 rounded-xl glass">
+                  <CheckCircle2 className="text-brand-cyan shrink-0" size={20} />
+                  <span className="text-sm font-medium">{item}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -446,35 +582,6 @@ export default function QueroExporContent() {
           >
             VERIFICAR DISPONIBILIDADE AGORA <ArrowRight size={20} />
           </button>
-        </div>
-      </section>
-
-      {/* ── Scrolltelling ──────────────────────────────────── */}
-      <FairScrollTelling />
-
-      {/* ── O que está incluso ─────────────────────────────── */}
-      <section className="py-24">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <p className="text-brand-cyan font-bold tracking-widest text-sm uppercase mb-3">Sem surpresas</p>
-          <h2 className="text-3xl md:text-5xl font-black mb-6">TUDO INCLUSO NO STAND</h2>
-          <p className="text-xl text-gray-400 mb-12 leading-relaxed max-w-2xl mx-auto">
-            Nossos stands chegam prontos para vender. Você foca no que importa: apresentar seus produtos e fechar pedidos.
-          </p>
-          <div className="grid md:grid-cols-2 gap-4 text-left max-w-2xl mx-auto">
-            {[
-              "Estrutura completa com prateleiras, mesa e cadeiras",
-              "Iluminação embutida",
-              "Identificação visual da marca",
-              "Piso acarpetado",
-              "Ponto de energia 110v/220v",
-              "Segurança e limpeza inclusas",
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 text-gray-300 p-3 rounded-xl glass">
-                <CheckCircle2 className="text-brand-cyan shrink-0" size={20} />
-                <span className="text-sm font-medium">{item}</span>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -513,7 +620,10 @@ export default function QueroExporContent() {
           {standOptions.length > 0 ? (
             <div className={`grid gap-8 max-w-4xl mx-auto ${standOptions.length === 1 ? "max-w-md" : "md:grid-cols-2"}`}>
               {standOptions.map((stand, i) => {
-                const isHighlighted = i === standOptions.length - 1;
+                const has3x3 = standOptions.some((s) => formatStandDimensions(s).toLowerCase().includes("3x3"));
+                const isHighlighted = has3x3
+                  ? formatStandDimensions(stand).toLowerCase().includes("3x3")
+                  : i === standOptions.length - 1;
                 return (
                   <div
                     key={stand.id || i}
@@ -529,59 +639,77 @@ export default function QueroExporContent() {
                       </span>
                     )}
 
-                    <div className="aspect-video bg-white/5 rounded-2xl mb-6 relative overflow-hidden">
+                    <div className="aspect-video bg-white/5 rounded-2xl mb-5 relative overflow-hidden">
                       <Image
                         src={getStandImage(formatStandDimensions(stand))}
                         alt={stand.name}
                         fill
                         className="object-cover group-hover:scale-110 transition-transform duration-500"
                       />
+                      {stand.quantity > 0 && (
+                        <span className="absolute top-3 right-3 flex items-center gap-1 bg-slate-900/80 backdrop-blur text-brand-orange text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border border-brand-orange/30">
+                          <Clock size={12} /> {stand.quantity} disponíveis
+                        </span>
+                      )}
                     </div>
 
-                    <h3 className="text-2xl font-black text-white mb-1">{stand.name.toUpperCase()}</h3>
+                    <div className="flex items-start justify-between gap-3 mb-1">
+                      <h3 className="text-2xl font-black text-white leading-tight">{stand.name.toUpperCase()}</h3>
+                      {stand.area > 0 && (
+                        <span className="shrink-0 text-xs font-bold text-brand-cyan bg-brand-cyan/10 border border-brand-cyan/20 rounded-full px-3 py-1 mt-1">
+                          {stand.area}m²
+                        </span>
+                      )}
+                    </div>
                     {stand.description && (
-                      <p className="text-gray-400 mb-4 text-sm">{stand.description}</p>
+                      <p className="text-gray-400 mb-3 text-sm">{stand.description}</p>
                     )}
 
-                    <ul className="space-y-2 mb-6 flex-1">
-                      {stand.area > 0 && (
-                        <li className="flex items-center gap-2 text-sm text-gray-300">
-                          <CheckCircle2 size={16} className="text-brand-cyan shrink-0" /> {stand.area}m² de área total
-                        </li>
-                      )}
-                      <li className="flex items-center gap-2 text-sm text-gray-300">
-                        <CheckCircle2 size={16} className="text-brand-cyan shrink-0" /> Montagem e estrutura completa
-                      </li>
-                      <li className="flex items-center gap-2 text-sm text-gray-300">
-                        <CheckCircle2 size={16} className="text-brand-cyan shrink-0" /> Iluminação, tomada e carpete
-                      </li>
-                      {stand.quantity > 0 && (
-                        <li className="flex items-center gap-2 text-sm text-brand-orange font-bold">
-                          <Clock size={16} className="shrink-0" /> Apenas {stand.quantity} unidades disponíveis
-                        </li>
-                      )}
-                    </ul>
+                    <p className="flex items-center gap-1.5 text-xs text-gray-400 mb-6">
+                      <CheckCircle2 size={14} className="text-brand-cyan shrink-0" />
+                      Montagem, iluminação, tomada e carpete inclusos
+                    </p>
 
-                    {stand.totalPrice > 0 && (
-                      <div className="mb-6">
-                        {stand.anchorPrice != null && stand.anchorPrice > stand.totalPrice && (
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-gray-500 line-through text-sm">{formatPrice(stand.anchorPrice)}</span>
-                            <span className="text-green-400 text-xs font-black uppercase tracking-wide bg-green-500/10 border border-green-500/20 rounded-full px-2 py-0.5">
-                              Economize {formatPrice(stand.anchorPrice - stand.totalPrice)}
+                    {stand.totalPrice > 0 && (() => {
+                      const installmentTotal = stand.totalPrice * (1 + INSTALLMENT_INTEREST_RATE);
+                      const installmentValue = installmentTotal / INSTALLMENTS;
+                      const pixDiscountPct = Math.round(INSTALLMENT_INTEREST_RATE * 100);
+                      return (
+                        <div className="mb-6 space-y-2.5 flex-1">
+                          {stand.anchorPrice != null && stand.anchorPrice > stand.totalPrice && (
+                            <span className="text-gray-500 line-through text-xs">De {formatPrice(stand.anchorPrice)}</span>
+                          )}
+
+                          <div>
+                            <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1">
+                              Parcelado em até {INSTALLMENTS}x
+                            </p>
+                            <p className="text-brand-orange font-black text-3xl leading-none">
+                              {formatPrice(installmentValue)}
+                              <span className="text-sm font-bold text-gray-400">/mês</span>
+                            </p>
+                            <p className="text-gray-500 text-xs mt-1">
+                              Valor cheio {formatPrice(installmentTotal)}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-xl px-3 py-2.5">
+                            <span className="shrink-0 text-green-400 text-[10px] font-black uppercase tracking-wide bg-green-500/20 rounded-full px-2 py-1">
+                              {pixDiscountPct}% OFF
+                            </span>
+                            <span className="text-gray-200 text-sm font-bold">
+                              {formatPrice(stand.totalPrice)} <span className="text-gray-400 font-medium">à vista no Pix</span>
                             </span>
                           </div>
-                        )}
-                        <p className="text-xs text-gray-500 uppercase font-bold tracking-widest">Valor da reserva</p>
-                        <p className="text-brand-orange font-black text-3xl">{formatPrice(stand.totalPrice)}</p>
-                        <p className="text-gray-400 text-sm mt-1">
-                          ou {INSTALLMENTS}x de {formatPrice(stand.totalPrice / INSTALLMENTS)}
+
                           {stand.durationDays && stand.durationDays > 0 && (
-                            <> · {formatPrice(stand.totalPrice / stand.durationDays)}/dia de exposição</>
+                            <p className="text-[11px] text-gray-500 px-1">
+                              Equivale a {formatPrice(stand.totalPrice / stand.durationDays)}/dia de exposição no Pix
+                            </p>
                           )}
-                        </p>
-                      </div>
-                    )}
+                        </div>
+                      );
+                    })()}
 
                     <button
                       type="button"
@@ -757,78 +885,3 @@ function StandFallbackCard({
   );
 }
 
-/* ─── Scrolltelling ───────────────────────────────────────────── */
-function FairScrollTelling() {
-  const steps = [
-    {
-      title: "CONFIABILIDADE",
-      desc: "Mais de 15 anos de história conectando grandes marcas a lojistas qualificados. Um evento consolidado no calendário do varejo — seus clientes já esperam por você lá.",
-      img: "/assets/gallery-1.jpg",
-      icon: <ShieldCheck size={32} className="text-brand-cyan" />,
-    },
-    {
-      title: "NETWORKING REAL",
-      desc: "Corredores movimentados, aperto de mão e olho no olho. O ambiente ideal para fechar negócios que duram o ano inteiro — não é clique, é relação.",
-      img: "/assets/gallery-2.jpg",
-      icon: <Handshake size={32} className="text-brand-pink" />,
-    },
-    {
-      title: "ESTRUTURA DE PONTA",
-      desc: "Pavilhões climatizados, segurança completa e organização impecável. Tudo para que você receba seus clientes com a profissionalismo que sua marca merece.",
-      img: "/assets/gallery-3.jpg",
-      icon: <Rocket size={32} className="text-brand-orange" />,
-    },
-  ];
-
-  return (
-    <div className="py-12 md:py-24 bg-brand-blue relative">
-      <div className="text-center mb-12 md:mb-20 px-6">
-        <p className="text-brand-cyan font-bold tracking-widest mb-4 uppercase text-sm">A feira na prática</p>
-        <h2 className="text-3xl md:text-5xl font-black text-white">
-          VEJA COMO É <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-cyan to-brand-pink">PARTICIPAR</span>
-        </h2>
-      </div>
-      <div className="max-w-7xl mx-auto px-6">
-        {steps.map((step, i) => (
-          <ScrollStep key={i} step={step} index={i} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ScrollStep({ step, index }: { step: { title: string; desc: string; img: string; icon: React.ReactNode }; index: number }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { margin: "-50% 0px -50% 0px" });
-  return (
-    <div ref={ref} className={`flex flex-col md:flex-row items-center gap-8 md:gap-12 py-10 md:py-24 ${index % 2 === 1 ? "md:flex-row-reverse" : ""}`}>
-      <div className="flex-1 space-y-6">
-        <motion.div
-          initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8 }}
-          className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center border border-white/10"
-        >
-          {step.icon}
-        </motion.div>
-        <motion.h3 initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} className="text-3xl font-black text-white">
-          {step.title}
-        </motion.h3>
-        <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} className="text-base md:text-xl text-gray-400 leading-relaxed">
-          {step.desc}
-        </motion.p>
-      </div>
-      <div className="flex-1 w-full">
-        <motion.div
-          className="relative aspect-video rounded-3xl overflow-hidden shadow-2xl"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0.5, scale: 0.95 }}
-          transition={{ duration: 0.8 }}
-        >
-          <Image src={step.img} alt={step.title} fill className="object-cover hover:scale-105 transition-transform duration-700" />
-          <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent opacity-60" />
-        </motion.div>
-      </div>
-    </div>
-  );
-}
