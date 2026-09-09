@@ -199,10 +199,10 @@ export default function VisitorReuseFlow({ cityName, fairId, onBack }: VisitorRe
           </div>
           <h4 className="text-2xl font-bold text-white mb-4">Verifique seu email</h4>
           <p className="text-gray-400">
-            Enviamos um link de confirmação para <strong className="text-white font-mono">{match.maskedEmail}</strong>.
+            Enviamos um email de confirmação para <strong className="text-white font-mono">{match.maskedEmail}</strong>.
             <br />
-            Abra sua caixa de entrada e clique no link pra concluir seu credenciamento na{" "}
-            <strong>Expo MultiMix {cityName}</strong>.
+            Abra sua caixa de entrada (e a pasta de spam, por garantia) e clique no link pra concluir seu
+            credenciamento na <strong>Expo MultiMix {cityName}</strong>.
           </p>
         </div>
       )}

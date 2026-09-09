@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, CheckCircle, Loader2, AlertCircle, Plus, Trash2, MapPin, ArrowRight } from "lucide-react";
+import { X, CheckCircle, Loader2, AlertCircle, Plus, Trash2, MapPin, ArrowRight, MailCheck } from "lucide-react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +10,7 @@ import { z } from "zod";
 import { useGeoLocation } from "@/hooks/useGeoLocation";
 import { cityFromDDD, cityFromLocality, CITY_LABELS, type FairCity } from "@/lib/cityGuardrail";
 import VisitorReuseFlow from "@/components/VisitorReuseFlow";
+import { checkExistingVisitor, requestVisitorReuse, type CheckExistingVisitorResponse } from "@/lib/visitorReuseApi";
 
 interface RegistrationFormModalProps {
   cityName: string;
@@ -82,6 +83,11 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
   const [mounted, setMounted] = useState(false);
   const [cnpjFlow, setCnpjFlow] = useState<CnpjFlow>("input");
   const [cnpjLookupStatus, setCnpjLookupStatus] = useState<"idle" | "loading" | "found" | "not-found" | "error">("idle");
+  const [existingCheckStatus, setExistingCheckStatus] = useState<"idle" | "checking">("idle");
+  const [existingMatch, setExistingMatch] = useState<CheckExistingVisitorResponse | null>(null);
+  const [reusePhase, setReusePhase] = useState<"none" | "choice" | "sent">("none");
+  const [isRequestingReuse, setIsRequestingReuse] = useState(false);
+  const [reuseError, setReuseError] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -146,15 +152,55 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
     ? `O CEP informado é de ${CITY_LABELS[mismatchCity]}`
     : `Identificamos que você está em ${CITY_LABELS[mismatchCity] ?? detectedCity}`;
 
+  // A CNPJ can have several people registering under it — check by email whether THIS
+  // person already has a registration before deciding between reuse and a fresh one.
+  const handleStep1Continue = async () => {
+    setExistingCheckStatus("checking");
+    try {
+      const result = await checkExistingVisitor(watch("email"));
+      if (result.exists) {
+        setExistingMatch(result);
+        setReusePhase("choice");
+        setExistingCheckStatus("idle");
+        return;
+      }
+    } catch {
+      // Lookup failure shouldn't block a fresh registration.
+    }
+    setExistingCheckStatus("idle");
+    setCurrentStep(2);
+  };
+
+  const handleReuseConfirm = async () => {
+    setReuseError(null);
+    setIsRequestingReuse(true);
+    try {
+      await requestVisitorReuse({ identifier: watch("email"), fairId, phone: watch("phone") });
+      setReusePhase("sent");
+    } catch (err) {
+      setReuseError(err instanceof Error ? err.message : "Erro inesperado. Tente novamente.");
+    } finally {
+      setIsRequestingReuse(false);
+    }
+  };
+
+  const handleNewRegistrationInstead = () => {
+    setReusePhase("none");
+    setExistingMatch(null);
+    setCurrentStep(2);
+  };
+
   // Navigation Logic
   const nextStep = async () => {
-    let isValid = false;
-
     if (currentStep === 1) {
-       isValid = await trigger("ingresso");
-    } 
-    else if (currentStep === 2) {
-       isValid = await trigger(["name", "company", "email", "phone", "cnpj"]);
+      const isValid = await trigger(["ingresso", "cnpj", "email", "phone"]);
+      if (isValid) await handleStep1Continue();
+      return;
+    }
+
+    let isValid = false;
+    if (currentStep === 2) {
+       isValid = await trigger(["name", "company"]);
     }
     else if (currentStep === 3) {
        isValid = await trigger(["zipCode", "street", "number", "neighborhood", "city", "state"]);
@@ -377,7 +423,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
             />
         </div>
 
-        {currentStep === 1 && (
+        {currentStep === 1 && reusePhase === "none" && (
           <button
             type="button"
             onClick={() => setMode("reuse")}
@@ -404,7 +450,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
       >
         <AnimatePresence mode="wait">
         
-        {/* STEP 1: CNPJ */}
+        {/* STEP 1: CNPJ + CONTATO */}
         {currentStep === 1 && (
             <motion.div
                 key="step1"
@@ -414,7 +460,67 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                 transition={{ duration: 0.3 }}
                 className="space-y-4"
             >
-                {cnpjFlow === "input" && (
+                {reusePhase === "choice" && existingMatch && (
+                    <div className="space-y-4">
+                        <div className="bg-white/5 border border-white/10 p-4 rounded-xl space-y-2">
+                            <p className="text-xs font-bold text-gray-500 uppercase">Já encontramos um cadastro seu</p>
+                            <p className="text-white font-mono text-sm">{existingMatch.maskedEmail}</p>
+                            {existingMatch.maskedPhone && (
+                                <p className="text-gray-400 font-mono text-sm">{existingMatch.maskedPhone}</p>
+                            )}
+                        </div>
+                        <p className="text-gray-300 text-sm">Quer reaproveitar seus dados (mais rápido) ou preencher um cadastro novo?</p>
+                        <div className="flex flex-col gap-3">
+                            <button
+                                type="button"
+                                onClick={handleReuseConfirm}
+                                disabled={isRequestingReuse}
+                                className="py-3 rounded-lg font-bold flex items-center justify-center gap-2 bg-brand-cyan hover:bg-brand-cyan/90 text-brand-blue transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isRequestingReuse ? <Loader2 className="animate-spin" size={18} /> : null}
+                                {isRequestingReuse ? "ENVIANDO..." : "REAPROVEITAR MEUS DADOS"}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleNewRegistrationInstead}
+                                disabled={isRequestingReuse}
+                                className="py-3 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 font-bold transition-all"
+                            >
+                                FAZER CADASTRO NOVO
+                            </button>
+                        </div>
+                        {reuseError && (
+                            <div className="bg-red-500/10 border border-red-500/20 text-red-200 p-3 rounded-lg text-xs flex items-start gap-2 animate-fade-in">
+                                <AlertCircle className="shrink-0 mt-0.5 text-red-400" size={16} />
+                                <span>{reuseError}</span>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {reusePhase === "sent" && existingMatch && (
+                    <div className="text-center py-6">
+                        <div className="w-20 h-20 bg-brand-cyan/20 text-brand-cyan rounded-full flex items-center justify-center mx-auto mb-6">
+                            <MailCheck size={40} />
+                        </div>
+                        <h4 className="text-2xl font-bold text-white mb-4">Verifique seu email</h4>
+                        <p className="text-gray-400">
+                            Enviamos um email de confirmação para <strong className="text-white font-mono">{existingMatch.maskedEmail}</strong>.
+                            <br />
+                            Abra sua caixa de entrada (e a pasta de spam, por garantia) e clique no link pra concluir seu
+                            credenciamento na <strong>Expo MultiMix {cityName}</strong>.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="mt-8 bg-brand-cyan text-brand-blue px-8 py-3 rounded-full font-bold hover:bg-brand-cyan/90 transition-all"
+                        >
+                            FECHAR
+                        </button>
+                    </div>
+                )}
+
+                {reusePhase === "none" && cnpjFlow === "input" && (
                     <>
                         <p className="text-gray-300 text-sm mb-4">Para começar, informe o CNPJ da sua loja.</p>
                         <div className="space-y-1">
@@ -462,7 +568,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                     </>
                 )}
 
-                {cnpjFlow === "asking" && (
+                {reusePhase === "none" && cnpjFlow === "asking" && (
                     <div className="space-y-4">
                         <p className="text-gray-300 text-sm">Você é representante comercial de uma indústria/importadora, ou pessoa física?</p>
                         <div className="grid grid-cols-1 gap-3">
@@ -498,7 +604,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                     </div>
                 )}
 
-                {cnpjFlow === "representative" && (
+                {reusePhase === "none" && cnpjFlow === "representative" && (
                     <div className="space-y-4">
                         <div className="bg-brand-cyan/10 border border-brand-cyan/20 p-4 rounded-xl flex items-start gap-3">
                             <CheckCircle size={18} className="text-brand-cyan shrink-0 mt-0.5" />
@@ -516,7 +622,33 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                     </div>
                 )}
 
-                {cnpjFlow === "blocked" && (
+                {reusePhase === "none" && (cnpjFlow === "input" || cnpjFlow === "representative") && (
+                    <div className="space-y-4 pt-2 border-t border-white/10">
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-gray-500 uppercase">Email</label>
+                            <input
+                                {...register("email")}
+                                type="email"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-cyan transition-colors"
+                                placeholder="seu@email.com"
+                            />
+                            {errors.email && <span className="text-red-400 text-xs">{errors.email.message}</span>}
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-gray-500 uppercase">WhatsApp</label>
+                            <input
+                                {...register("phone")}
+                                onChange={handlePhoneChange}
+                                type="tel"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-cyan transition-colors"
+                                placeholder="(00) 00000-0000"
+                            />
+                            {errors.phone && <span className="text-red-400 text-xs">{errors.phone.message}</span>}
+                        </div>
+                    </div>
+                )}
+
+                {reusePhase === "none" && cnpjFlow === "blocked" && (
                     <div className="space-y-4">
                         <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl flex items-start gap-3">
                             <AlertCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
@@ -559,18 +691,6 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                     <input {...register("company")} type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-cyan transition-colors" placeholder="Nome da empresa" />
                     {errors.company && <span className="text-red-400 text-xs">{errors.company.message}</span>}
                 </div>
-
-                 <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase">Email Corporativo</label>
-                    <input {...register("email")} type="email" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-cyan transition-colors" placeholder="seu@email.com" />
-                    {errors.email && <span className="text-red-400 text-xs">{errors.email.message}</span>}
-                 </div>
-
-                 <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase">WhatsApp</label>
-                    <input {...register("phone")} onChange={handlePhoneChange} type="tel" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-cyan transition-colors" placeholder="(00) 00000-0000" />
-                    {errors.phone && <span className="text-red-400 text-xs">{errors.phone.message}</span>}
-                 </div>
             </motion.div>
         )}
 
@@ -844,8 +964,8 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
             </div>
         )}
 
-        {/* FOOTER ACTIONS — hidden on step 1 while the CNPJ sub-flow has its own action buttons */}
-        {!(currentStep === 1 && (cnpjFlow === "asking" || cnpjFlow === "blocked")) && (
+        {/* FOOTER ACTIONS — hidden on step 1 while the CNPJ/reuse sub-flows have their own action buttons */}
+        {!(currentStep === 1 && (cnpjFlow === "asking" || cnpjFlow === "blocked" || reusePhase !== "none")) && (
         <div className="pt-4 flex gap-3">
              {currentStep > 1 && (
                <button
@@ -861,14 +981,22 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                <button
                  type="button"
                  onClick={nextStep}
-                 disabled={isLocationMismatch && !locationWarningConfirmed}
-                 className={`flex-1 py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-all 
-                    ${isLocationMismatch && !locationWarningConfirmed 
-                        ? "bg-gray-600 cursor-not-allowed opacity-50" 
+                 disabled={(isLocationMismatch && !locationWarningConfirmed) || existingCheckStatus === "checking"}
+                 className={`flex-1 py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-all
+                    ${(isLocationMismatch && !locationWarningConfirmed) || existingCheckStatus === "checking"
+                        ? "bg-gray-600 cursor-not-allowed opacity-50"
                         : "bg-brand-pink hover:bg-brand-pink/90 text-white shadow-lg hover:shadow-brand-pink/20"
                     }`}
                >
-                 CONTINUAR <ArrowRight size={18} />
+                 {existingCheckStatus === "checking" ? (
+                   <>
+                     <Loader2 className="animate-spin" size={18} /> VERIFICANDO...
+                   </>
+                 ) : (
+                   <>
+                     CONTINUAR <ArrowRight size={18} />
+                   </>
+                 )}
                </button>
              ) : (
                 <button
