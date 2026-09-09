@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useGeoLocation } from "@/hooks/useGeoLocation";
 import { cityFromDDD, cityFromLocality, CITY_LABELS, type FairCity } from "@/lib/cityGuardrail";
+import VisitorReuseFlow from "@/components/VisitorReuseFlow";
 
 interface RegistrationFormModalProps {
   cityName: string;
@@ -56,6 +57,7 @@ export const credenciamentoSchema = z.object({
 export type CredenciamentoFormData = z.infer<typeof credenciamentoSchema>;
 
 export default function RegistrationFormModal({ cityName, fairId, industries = [], onClose }: RegistrationFormModalProps) {
+  const [mode, setMode] = useState<"form" | "reuse">("form");
   const [isSuccess, setIsSuccess] = useState(false);
   const [submitSuccessCount, setSubmitSuccessCount] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -264,6 +266,10 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
   }
 
 
+  if (mode === "reuse") {
+    return <VisitorReuseFlow cityName={cityName} fairId={fairId} onBack={() => setMode("form")} />;
+  }
+
   if (isSuccess) {
     return (
       <div className="text-center py-12 px-6">
@@ -315,15 +321,25 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
 
         {/* Progress Bar */}
         <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden mb-6">
-            <motion.div 
+            <motion.div
                 className="h-full bg-brand-cyan"
                 animate={{ width: `${(currentStep / totalSteps) * 100}%` }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
             />
         </div>
+
+        {currentStep === 1 && (
+          <button
+            type="button"
+            onClick={() => setMode("reuse")}
+            className="w-full text-center text-xs font-bold text-brand-cyan hover:text-white underline decoration-dotted transition-colors"
+          >
+            Já se cadastrou antes? Reaproveitar meus dados
+          </button>
+        )}
       </div>
 
-      <form 
+      <form
         onSubmit={handleSubmit(onSubmit)} 
         onKeyDown={(e) => {
           if (e.key === "Enter" && e.target instanceof HTMLInputElement) {
