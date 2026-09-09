@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X, CheckCircle, Loader2, AlertCircle, Plus, Trash2, MapPin, ArrowRight, MailCheck } from "lucide-react";
 import { useForm, useFieldArray } from "react-hook-form";
@@ -85,6 +85,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
   const [cnpjLookupStatus, setCnpjLookupStatus] = useState<"idle" | "loading" | "found" | "not-found" | "error">("idle");
   const [existingCheckStatus, setExistingCheckStatus] = useState<"idle" | "checking">("idle");
   const [existingMatch, setExistingMatch] = useState<CheckExistingVisitorResponse | null>(null);
+  const [matchedIdentifier, setMatchedIdentifier] = useState("");
   const [reusePhase, setReusePhase] = useState<"none" | "choice" | "sent">("none");
   const [isRequestingReuse, setIsRequestingReuse] = useState(false);
   const [reuseError, setReuseError] = useState<string | null>(null);
@@ -129,6 +130,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
   });
 
   const phoneValue = watch("phone") || "";
+  const emailValue = watch("email") || "";
 
   // Three independent city signals, most to least confident:
   // DDD (only 91/92 are unambiguous) > CEP entered in the address step > IP-based geolocation.
@@ -152,30 +154,65 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
     ? `O CEP informado é de ${CITY_LABELS[mismatchCity]}`
     : `Identificamos que você está em ${CITY_LABELS[mismatchCity] ?? detectedCity}`;
 
-  // A CNPJ can have several people registering under it — check by email whether THIS
-  // person already has a registration before deciding between reuse and a fresh one.
-  const handleStep1Continue = async () => {
+  // A CNPJ can have several people registering under it — search by email/phone (never CNPJ)
+  // to identify THIS specific person before deciding between reuse and a fresh registration.
+  // The in-flight guard lives in a ref (not state) so this callback keeps a stable identity —
+  // otherwise the debounced effects below would re-fire on every "checking"/"idle" transition.
+  const checkInFlightRef = useRef(false);
+
+  const runExistingCheck = useCallback(async (identifier: string): Promise<boolean> => {
+    if (!identifier || checkInFlightRef.current) return false;
+    checkInFlightRef.current = true;
     setExistingCheckStatus("checking");
     try {
-      const result = await checkExistingVisitor(watch("email"));
+      const result = await checkExistingVisitor(identifier);
       if (result.exists) {
         setExistingMatch(result);
+        setMatchedIdentifier(identifier);
         setReusePhase("choice");
-        setExistingCheckStatus("idle");
-        return;
+        return true;
       }
+      return false;
     } catch {
-      // Lookup failure shouldn't block a fresh registration.
+      // Best-effort lookup — a failure here shouldn't block typing or a fresh registration.
+      return false;
+    } finally {
+      checkInFlightRef.current = false;
+      setExistingCheckStatus("idle");
     }
-    setExistingCheckStatus("idle");
-    setCurrentStep(2);
+  }, []);
+
+  // Instant existing-visitor check: fires the moment email or phone looks complete,
+  // so the "found your data" screen can appear without waiting for a "Continuar" click.
+  useEffect(() => {
+    if (currentStep !== 1 || reusePhase !== "none") return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) return;
+    const t = setTimeout(() => runExistingCheck(emailValue), 500);
+    return () => clearTimeout(t);
+  }, [emailValue, currentStep, reusePhase, runExistingCheck]);
+
+  useEffect(() => {
+    if (currentStep !== 1 || reusePhase !== "none") return;
+    if (phoneValue.replace(/\D/g, "").length < 10) return;
+    const t = setTimeout(() => runExistingCheck(phoneValue), 500);
+    return () => clearTimeout(t);
+  }, [phoneValue, currentStep, reusePhase, runExistingCheck]);
+
+  const handleStep1Continue = async () => {
+    const found = await runExistingCheck(watch("email"));
+    if (!found) setCurrentStep(2);
   };
 
   const handleReuseConfirm = async () => {
+    const phoneDigits = watch("phone").replace(/\D/g, "");
+    if (phoneDigits.length < 10) {
+      setReuseError("Informe um telefone válido.");
+      return;
+    }
     setReuseError(null);
     setIsRequestingReuse(true);
     try {
-      await requestVisitorReuse({ identifier: watch("email"), fairId, phone: watch("phone") });
+      await requestVisitorReuse({ identifier: matchedIdentifier, fairId, phone: watch("phone") });
       setReusePhase("sent");
     } catch (err) {
       setReuseError(err instanceof Error ? err.message : "Erro inesperado. Tente novamente.");
@@ -405,23 +442,29 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                 {cityName} 2026
                 </p>
                 <h3 className="text-xl md:text-2xl font-black text-white leading-tight">
-                GARANTA SUA VAGA
+                {currentStep === 1 && reusePhase !== "none"
+                    ? "ENCONTRAMOS SEUS DADOS!"
+                    : "GARANTA SUA VAGA"}
                 </h3>
              </div>
              {/* Simple Step Indicator */}
-             <div className="bg-white/5 rounded-full px-3 py-1 text-xs font-mono text-gray-400 border border-white/10">
-                {currentStep} / {totalSteps}
-             </div>
+             {!(currentStep === 1 && reusePhase !== "none") && (
+                <div className="bg-white/5 rounded-full px-3 py-1 text-xs font-mono text-gray-400 border border-white/10">
+                    {currentStep} / {totalSteps}
+                </div>
+             )}
         </div>
 
         {/* Progress Bar */}
-        <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden mb-6">
-            <motion.div
-                className="h-full bg-brand-cyan"
-                animate={{ width: `${(currentStep / totalSteps) * 100}%` }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-            />
-        </div>
+        {!(currentStep === 1 && reusePhase !== "none") && (
+            <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden mb-6">
+                <motion.div
+                    className="h-full bg-brand-cyan"
+                    animate={{ width: `${(currentStep / totalSteps) * 100}%` }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                />
+            </div>
+        )}
 
         {currentStep === 1 && reusePhase === "none" && (
           <button
@@ -463,13 +506,27 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                 {reusePhase === "choice" && existingMatch && (
                     <div className="space-y-4">
                         <div className="bg-white/5 border border-white/10 p-4 rounded-xl space-y-2">
-                            <p className="text-xs font-bold text-gray-500 uppercase">Já encontramos um cadastro seu</p>
+                            <p className="text-xs font-bold text-gray-500 uppercase">Cadastro encontrado</p>
                             <p className="text-white font-mono text-sm">{existingMatch.maskedEmail}</p>
                             {existingMatch.maskedPhone && (
                                 <p className="text-gray-400 font-mono text-sm">{existingMatch.maskedPhone}</p>
                             )}
                         </div>
-                        <p className="text-gray-300 text-sm">Quer reaproveitar seus dados (mais rápido) ou preencher um cadastro novo?</p>
+
+                        {watch("phone").replace(/\D/g, "").length < 10 && (
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-500 uppercase">Confirme seu telefone atual</label>
+                                <input
+                                    {...register("phone")}
+                                    onChange={handlePhoneChange}
+                                    type="tel"
+                                    autoFocus
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-cyan transition-colors"
+                                    placeholder="(00) 00000-0000"
+                                />
+                            </div>
+                        )}
+
                         <div className="flex flex-col gap-3">
                             <button
                                 type="button"
@@ -478,7 +535,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                                 className="py-3 rounded-lg font-bold flex items-center justify-center gap-2 bg-brand-cyan hover:bg-brand-cyan/90 text-brand-blue transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isRequestingReuse ? <Loader2 className="animate-spin" size={18} /> : null}
-                                {isRequestingReuse ? "ENVIANDO..." : "REAPROVEITAR MEUS DADOS"}
+                                {isRequestingReuse ? "ENVIANDO..." : "USAR DADOS DA ÚLTIMA FEIRA"}
                             </button>
                             <button
                                 type="button"
@@ -486,7 +543,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                                 disabled={isRequestingReuse}
                                 className="py-3 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 font-bold transition-all"
                             >
-                                FAZER CADASTRO NOVO
+                                FAZER NOVO CADASTRO
                             </button>
                         </div>
                         {reuseError && (
