@@ -26,9 +26,13 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     url: "https://www.expomultimix.com.br/quero-expor",
-    title: "Seja um Expositor na Expo MultiMix 2026",
-    description: "Reserve seu stand e apresente sua marca para milhares de lojistas em Belém e Manaus.",
-    images: [{ url: "/assets/fachada-manaus-2.jpeg", width: 1200, height: 630, alt: "Expo MultiMix — Seja um Expositor" }],
+    title: "Garanta seu Stand de Expositor — Expo MultiMix 2026",
+    description: "Vagas limitadas em Belém e Manaus. Apresente sua marca para milhares de lojistas com CNPJ e venda direto no atacado.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Garanta seu Stand de Expositor — Expo MultiMix 2026",
+    description: "Vagas limitadas em Belém e Manaus. Apresente sua marca para milhares de lojistas com CNPJ e venda direto no atacado.",
   },
 };
 
