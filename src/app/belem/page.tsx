@@ -3,13 +3,12 @@ import { Sparkles, Handshake, BadgeDollarSign } from "lucide-react";
 import { Metadata } from "next";
 import JsonLd from "@/components/JsonLd";
 import {
-  fetchFair,
   formatFairDates,
   formatFairSchedule,
   formatFairLocation,
   buildMapEmbedUrl,
 } from "@/lib/fairsApi";
-import { getSiteMode } from "@/lib/siteMode";
+import { resolveCityFair } from "@/lib/resolveCityFair";
 
 export const metadata: Metadata = {
   title: "Feira de Negócios em Belém 2026 — Comprar Direto da Fábrica no Pará",
@@ -46,8 +45,10 @@ export const metadata: Metadata = {
 };
 
 export default async function BelemPage() {
-  const fairId = process.env.NEXT_PUBLIC_FAIR_ID_BELEM || "";
-  const fair = await fetchFair(fairId);
+  const { fair, fairId, registrationOpen } = await resolveCityFair(
+    "Belem",
+    process.env.NEXT_PUBLIC_FAIR_ID_BELEM || ""
+  );
 
   const dates = fair
     ? formatFairDates(fair.startDate, fair.endDate) || "18, 19 E 20 DE AGOSTO DE 2026"
@@ -67,8 +68,6 @@ export default async function BelemPage() {
     : "https://maps.google.com/maps?q=Estação+das+Docas,Belém&t=&z=15&ie=UTF8&iwloc=&output=embed";
 
   const heroImage = fair?.bannerUrl || "/assets/fachada-belem-emm.jpeg";
-
-  const registrationOpen = fair ? getSiteMode([fair]) === "visitantes" : false;
 
   const aboutText = fair?.description ||
     "A Estação das Docas receberá milhares de lojistas para o maior encontro de negócios da região. A Expo MultiMix é o ponto de encontro estratégico para quem busca renovar estoques com qualidade e prazos imbatíveis. Prepare-se para renovar seu estoque e fortalecer sua marca.";

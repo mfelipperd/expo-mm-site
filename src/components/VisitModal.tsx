@@ -83,7 +83,7 @@ export default function VisitModalContent({ detectedCity }: VisitModalContentPro
           return (
             <a
               key={city.slug}
-              href={city.link}
+              href={`${city.link}?cadastro=1`}
               className="group p-6 rounded-2xl glass hover:bg-white/10 border border-white/5 transition-all flex items-center justify-between"
             >
               <div className="flex items-center gap-4">

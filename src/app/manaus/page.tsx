@@ -3,13 +3,12 @@ import { Sparkles, Handshake, BadgeDollarSign } from "lucide-react";
 import { Metadata } from "next";
 import JsonLd from "@/components/JsonLd";
 import {
-  fetchFair,
   formatFairDates,
   formatFairSchedule,
   formatFairLocation,
   buildMapEmbedUrl,
 } from "@/lib/fairsApi";
-import { getSiteMode } from "@/lib/siteMode";
+import { resolveCityFair } from "@/lib/resolveCityFair";
 
 export const metadata: Metadata = {
   title: "Feira de Negócios em Manaus 2026 — Fornecedores e Atacado no Amazonas",
@@ -47,8 +46,10 @@ export const metadata: Metadata = {
 };
 
 export default async function ManausPage() {
-  const fairId = process.env.NEXT_PUBLIC_FAIR_ID_MANAUS || "";
-  const fair = await fetchFair(fairId);
+  const { fair, fairId, registrationOpen } = await resolveCityFair(
+    "Manaus",
+    process.env.NEXT_PUBLIC_FAIR_ID_MANAUS || ""
+  );
 
   const dates = fair
     ? formatFairDates(fair.startDate, fair.endDate) || "09, 10 E 11 DE JUNHO"
@@ -68,8 +69,6 @@ export default async function ManausPage() {
     : "https://maps.google.com/maps?q=Centro+de+Convenções+Vasco+Vasques,Manaus&t=&z=15&ie=UTF8&iwloc=&output=embed";
 
   const heroImage = fair?.bannerUrl || "/assets/fachada-manaus-emm.jpeg";
-
-  const registrationOpen = fair ? getSiteMode([fair]) === "visitantes" : false;
 
   const aboutText = fair?.description ||
     "A Expo MultiMix chegou em Manaus! Com as maiores marcas e indústrias de todo o Brasil, a EMM 2025 está repleta de novidades para os lojistas e empreendedores do Amazonas. É uma oportunidade única de ver e testar os produtos em primeira mão e descobrir novas possibilidades.";
