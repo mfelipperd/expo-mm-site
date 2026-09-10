@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { useScrollPastThreshold } from "@/hooks/useScrollPastThreshold";
 
 interface NavbarProps {
   onVisitClick: () => void;
@@ -31,16 +32,8 @@ export default function Navbar({
   mobileQuickCta,
 }: NavbarProps) {
   const pathname = usePathname();
-  const [isScrolled, setIsScrolled] = useState(false);
+  const isScrolled = useScrollPastThreshold(20);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   /* 
     Standard Navigation Links
@@ -115,14 +108,14 @@ export default function Navbar({
         </div>
 
         {/* Mobile: quick CTA pill + hamburger */}
-        <div className="md:hidden flex items-center gap-2">
+        <div className="md:hidden flex items-center gap-3">
           <button
             type="button"
             onClick={mobileQuickCta?.onClick ?? onVisitClick}
             className={
               mobileQuickCta?.className ??
               cn(
-                "px-4 py-2 rounded-full text-xs font-black",
+                "px-4 py-2.5 rounded-full text-xs font-black",
                 visitButtonColor === "cyan"
                   ? "bg-brand-cyan text-brand-blue"
                   : "bg-brand-pink text-white"
@@ -133,7 +126,7 @@ export default function Navbar({
           </button>
           <button
             type="button"
-            className="text-white p-1"
+            className="text-white p-2.5 -mr-2.5"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Menu"
           >

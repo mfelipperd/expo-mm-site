@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useScrollPastThreshold } from "@/hooks/useScrollPastThreshold";
 
 interface StickyMobileCTAProps {
   onLeftClick: () => void;
@@ -20,13 +20,7 @@ export default function StickyMobileCTA({
   leftColor = "bg-brand-pink shadow-[0_0_24px_rgba(233,30,99,0.25)]",
   rightColor = "bg-brand-orange shadow-[0_0_24px_rgba(251,146,60,0.25)]",
 }: StickyMobileCTAProps) {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setVisible(window.scrollY > 280);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  const visible = useScrollPastThreshold(280);
 
   return (
     <AnimatePresence>

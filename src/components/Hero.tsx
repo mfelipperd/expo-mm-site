@@ -214,7 +214,7 @@ export default function Hero({
               type="button"
               onClick={() => { setCurrent(i); setProgress(0); }}
               aria-label={`Ir para slide ${i + 1}`}
-              className="p-2 focus:outline-none"
+              className="min-h-11 min-w-11 flex items-center justify-center focus:outline-none"
             >
               <span
                 className={`relative block h-2 rounded-full overflow-hidden transition-all duration-300 bg-white/20 ${i === current ? "w-12" : "w-4"}`}

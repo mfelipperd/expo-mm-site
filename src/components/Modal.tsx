@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface ModalProps {
   isOpen: boolean;
@@ -12,6 +12,8 @@ interface ModalProps {
 }
 
 export default function Modal({ isOpen, onClose, children, title }: ModalProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -21,6 +23,24 @@ export default function Modal({ isOpen, onClose, children, title }: ModalProps) 
     return () => {
       document.body.style.overflow = "unset";
     };
+  }, [isOpen]);
+
+  // On mobile, the virtual keyboard can cover a focused field near the bottom of a step —
+  // scroll it back into view once the keyboard has had time to open.
+  useEffect(() => {
+    if (!isOpen) return;
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (!["INPUT", "SELECT", "TEXTAREA"].includes(target.tagName)) return;
+      setTimeout(() => target.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
+    };
+
+    container.addEventListener("focusin", handleFocusIn);
+    return () => container.removeEventListener("focusin", handleFocusIn);
   }, [isOpen]);
 
   return (
@@ -38,7 +58,7 @@ export default function Modal({ isOpen, onClose, children, title }: ModalProps) 
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative w-full h-full md:h-auto md:max-h-[90vh] md:max-w-lg glass-dark border-0 md:border md:border-white/10 rounded-none md:rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden"
+            className="relative w-full h-dvh md:h-auto md:max-h-[90vh] md:max-w-lg glass-dark border-0 md:border md:border-white/10 rounded-none md:rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header / Fixed Actions */}
             <div className="flex-none p-6 md:p-8 md:pb-0 flex justify-end absolute top-0 right-0 z-50 w-full pointer-events-none">
@@ -51,7 +71,7 @@ export default function Modal({ isOpen, onClose, children, title }: ModalProps) 
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-6 md:p-12 pt-12 md:pt-12 custom-scrollbar">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-12 pt-12 md:pt-12 custom-scrollbar">
                 {title && (
                 <h3 className="text-2xl md:text-3xl font-black mb-8 pr-8 leading-tight">
                     {title}

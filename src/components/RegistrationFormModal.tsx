@@ -520,7 +520,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
             }
           }
         }}
-        className="space-y-6 relative overflow-hidden min-h-[400px] p-1"
+        className="space-y-6 relative overflow-x-hidden min-h-[400px] p-1"
       >
         <AnimatePresence mode="wait">
         
@@ -794,7 +794,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
             >
                 <h4 className="text-lg font-bold text-white mb-4">Endereço da Empresa</h4>
 
-                 <div className="grid grid-cols-[120px_1fr] gap-4">
+                 <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr] gap-4">
                      <div className="space-y-1 relative">
                         <label className="text-xs font-bold text-gray-500 uppercase">CEP</label>
                         <div className="relative">
@@ -821,7 +821,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                      </div>
                 </div>
 
-                <div className="grid grid-cols-[100px_1fr] gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-[100px_1fr] gap-4">
                     <div className="space-y-1">
                         <label className="text-xs font-bold text-gray-500 uppercase">Número</label>
                         <input {...register("number")} type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-cyan transition-colors" />
@@ -920,7 +920,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                      
                      {fields.map((field, index) => (
                         <div key={field.id} className="space-y-2 p-3 rounded-xl bg-white/5 border border-white/10 animate-fade-in">
-                            <div className="flex gap-2 items-start">
+                            <div className="flex gap-3 items-start">
                                 <div className="w-full space-y-1">
                                     <input
                                         {...register(`guests.${index}.name` as const)}
