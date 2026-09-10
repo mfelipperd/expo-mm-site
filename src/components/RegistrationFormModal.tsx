@@ -44,7 +44,9 @@ export const credenciamentoSchema = z.object({
   
   // Guests
   guests: z.array(z.object({
-    name: z.string().min(1, "Nome do convidado é obrigatório")
+    name: z.string().min(1, "Nome do convidado é obrigatório"),
+    email: z.string().email("Email inválido"),
+    phone: z.string().min(1, "Telefone é obrigatório").min(14, "Telefone incompleto"),
   })).optional()
 }).superRefine((data, ctx) => {
   // CNPJ is mandatory for lojistas; representantes comerciais without a CNPJ skip this.
@@ -55,6 +57,33 @@ export const credenciamentoSchema = z.object({
       path: ["cnpj"],
     });
   }
+
+  // Each visitor being registered (main + guests) needs their own email/phone — no duplicates.
+  const guests = data.guests ?? [];
+  const mainEmail = data.email.toLowerCase();
+  const mainPhone = data.phone.replace(/\D/g, "");
+
+  guests.forEach((guest, index) => {
+    const guestEmail = guest.email.toLowerCase();
+    const guestPhone = guest.phone.replace(/\D/g, "");
+
+    if (guestEmail === mainEmail) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Esse email já é o seu", path: ["guests", index, "email"] });
+    }
+    if (guestPhone === mainPhone) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Esse telefone já é o seu", path: ["guests", index, "phone"] });
+    }
+
+    for (let otherIndex = 0; otherIndex < index; otherIndex++) {
+      const other = guests[otherIndex];
+      if (other.email.toLowerCase() === guestEmail) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Email repetido de outro convidado", path: ["guests", index, "email"] });
+      }
+      if (other.phone.replace(/\D/g, "") === guestPhone) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Telefone repetido de outro convidado", path: ["guests", index, "phone"] });
+      }
+    }
+  });
 });
 
 export type CredenciamentoFormData = z.infer<typeof credenciamentoSchema>;
@@ -279,7 +308,12 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
 
     const peopleToRegister = [
         { ...basePayload }, // Main user
-        ...(data.guests?.map(g => ({ ...basePayload, name: g.name.toLowerCase() })) || []) // Guests
+        ...(data.guests?.map(g => ({
+            ...basePayload,
+            name: g.name.toLowerCase(),
+            email: g.email.toLowerCase(),
+            phone: g.phone.replace(/\D/g, ""),
+        })) || []) // Guests — each with their own email/phone, same company data
     ];
 
     try {
@@ -313,15 +347,22 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
   const [isLoadingCep, setIsLoadingCep] = useState(false);
 
   // Masks and Address Lookup
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, "");
-    if (value.length > 11) value = value.slice(0, 11);
-    
+  const formatPhoneMask = (value: string) => {
+    let digits = value.replace(/\D/g, "");
+    if (digits.length > 11) digits = digits.slice(0, 11);
+
     // (11) 99999-9999
-    value = value.replace(/^(\d{2})(\d)/g, "($1) $2");
-    value = value.replace(/(\d)(\d{4})$/, "$1-$2");
-    
-    setValue("phone", value);
+    digits = digits.replace(/^(\d{2})(\d)/g, "($1) $2");
+    digits = digits.replace(/(\d)(\d{4})$/, "$1-$2");
+    return digits;
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue("phone", formatPhoneMask(e.target.value));
+  };
+
+  const handleGuestPhoneChange = (index: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue(`guests.${index}.phone`, formatPhoneMask(e.target.value));
   };
 
   const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -860,7 +901,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                          </div>
                          <button 
                             type="button" 
-                            onClick={() => append({ name: "" })}
+                            onClick={() => append({ name: "", email: "", phone: "" })}
                             className="bg-white/5 hover:bg-white/10 border border-white/10 text-brand-cyan text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-2 transition-all"
                          >
                             <Plus size={14} /> ADICIONAR
@@ -868,22 +909,55 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
                      </div>
                      
                      {fields.map((field, index) => (
-                        <div key={field.id} className="flex gap-2 items-center animate-fade-in">
-                            <input
-                                {...register(`guests.${index}.name` as const)}
-                                type="text"
-                                placeholder={`Nome do Convidado ${index + 1}`}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-cyan transition-colors"
-                            />
-                            <button 
-                                type="button" 
-                                onClick={() => remove(index)}
-                                title="Remover convidado"
-                                aria-label="Remover convidado"
-                                className="p-3 text-red-500 hover:bg-red-500/10 rounded-xl transition-colors"
-                            >
-                                <Trash2 size={18} />
-                            </button>
+                        <div key={field.id} className="space-y-2 p-3 rounded-xl bg-white/5 border border-white/10 animate-fade-in">
+                            <div className="flex gap-2 items-start">
+                                <div className="w-full space-y-1">
+                                    <input
+                                        {...register(`guests.${index}.name` as const)}
+                                        type="text"
+                                        placeholder={`Nome do Convidado ${index + 1}`}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-cyan transition-colors"
+                                    />
+                                    {errors.guests?.[index]?.name && (
+                                        <span className="text-red-400 text-xs">{errors.guests[index]?.name?.message}</span>
+                                    )}
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => remove(index)}
+                                    title="Remover convidado"
+                                    aria-label="Remover convidado"
+                                    className="p-3 text-red-500 hover:bg-red-500/10 rounded-xl transition-colors shrink-0"
+                                >
+                                    <Trash2 size={18} />
+                                </button>
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                    <input
+                                        {...register(`guests.${index}.email` as const)}
+                                        type="email"
+                                        placeholder="Email do convidado"
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-cyan transition-colors"
+                                    />
+                                    {errors.guests?.[index]?.email && (
+                                        <span className="text-red-400 text-xs">{errors.guests[index]?.email?.message}</span>
+                                    )}
+                                </div>
+                                <div className="space-y-1">
+                                    <input
+                                        {...register(`guests.${index}.phone` as const)}
+                                        onChange={handleGuestPhoneChange(index)}
+                                        type="tel"
+                                        placeholder="WhatsApp do convidado"
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-cyan transition-colors"
+                                    />
+                                    {errors.guests?.[index]?.phone && (
+                                        <span className="text-red-400 text-xs">{errors.guests[index]?.phone?.message}</span>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                      ))}
                 </div>
