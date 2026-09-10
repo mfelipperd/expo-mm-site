@@ -14,6 +14,7 @@ const geistMono = Geist_Mono({
 
 import NotificationProvider from "@/components/NotificationProvider";
 import JsonLd from "@/components/JsonLd";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.expomultimix.com.br"),
@@ -92,6 +93,7 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <GoogleAnalytics />
         <NotificationProvider>
           {children}
         </NotificationProvider>
