@@ -12,13 +12,13 @@ import Footer from "@/components/Footer";
 import Modal from "@/components/Modal";
 import LeadModalContent from "@/components/LeadModal";
 import VisitModalContent from "@/components/VisitModal";
-import WhatsAppModalContent from "@/components/WhatsAppModal";
 import ExhibitorBypassModalContent from "@/components/ExhibitorBypassModal";
 import RegistrationFormModal from "@/components/RegistrationFormModal";
 import WhatsAppFloating from "@/components/WhatsAppFloating";
 import CTASection from "@/components/CTASection";
 import ExhibitorsSection from "@/components/ExhibitorsSection";
 import LogosCarousel from "@/components/LogosCarousel";
+import { openWhatsApp } from "@/lib/whatsapp";
 
 interface Benefit {
   title: string;
@@ -73,11 +73,11 @@ export default function CityTemplate({
   canRegisterAsVisitor,
 }: CityTemplateProps) {
   const router = useRouter();
-  const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit" | "whatsapp" | "bypass" | "registration">("none");
+  const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit" | "bypass" | "registration">("none");
 
   const openVisitModal = () => setActiveModal("visit");
   const openLeadModal = () => setActiveModal("lead");
-  const openWhatsAppModal = () => setActiveModal("whatsapp");
+  const handleWhatsAppClick = () => openWhatsApp("Olá! Gostaria de falar com a equipe da Expo MultiMix.");
   const openBypassModal = () => setActiveModal("bypass");
   const openRegistrationModal = () => setActiveModal("registration");
   const closeModal = () => setActiveModal("none");
@@ -127,7 +127,7 @@ export default function CityTemplate({
       <Navbar
         onVisitClick={handleNavbarVisit}
         onExposeClick={registrationOpen ? openLeadModal : handleExposeClick}
-        onContactClick={openWhatsAppModal}
+        onContactClick={handleWhatsAppClick}
         visitButtonColor={colorVariant as "cyan" | "pink"}
         exposeButtonText={registrationOpen ? "FAZER MEU CREDENCIAMENTO" : "RESERVE SEU STAND"}
         mobileQuickCta={
@@ -198,7 +198,7 @@ export default function CityTemplate({
                   SOU INDÚSTRIA — RESERVAR STAND
                 </Link>
                 <button
-                  onClick={openWhatsAppModal}
+                  onClick={handleWhatsAppClick}
                   className="glass hover:bg-white/10 text-white px-8 py-4 rounded-full font-bold transition-all"
                 >
                   QUERO SER AVISADO DA PRÓXIMA EDIÇÃO
@@ -409,7 +409,7 @@ export default function CityTemplate({
         >
           <button
             type="button"
-            onClick={openWhatsAppModal}
+            onClick={handleWhatsAppClick}
             className="inline-block border-b border-white/30 pb-1 text-sm text-gray-300 hover:text-white hover:border-white transition-colors"
           >
             Quero ser avisado quando o credenciamento abrir
@@ -467,8 +467,8 @@ export default function CityTemplate({
         apiExhibitors={exhibitorBrands}
       />
 
-      <Footer onWhatsAppClick={openWhatsAppModal} />
-      <WhatsAppFloating onClick={openWhatsAppModal} />
+      <Footer onWhatsAppClick={handleWhatsAppClick} />
+      <WhatsAppFloating onClick={handleWhatsAppClick} />
 
       {/* Modals */}
       <Modal 
@@ -496,17 +496,9 @@ export default function CityTemplate({
         title="QUALIFICAÇÃO DE EXPOSITOR"
       >
         <ExhibitorBypassModalContent 
-          onConfirmExpositor={openWhatsAppModal}
+          onConfirmExpositor={handleWhatsAppClick}
           onSelectLojista={openVisitModal}
         />
-      </Modal>
-
-      <Modal 
-        isOpen={activeModal === "whatsapp"} 
-        onClose={closeModal} 
-        title="FALE COM UM CONSULTOR"
-      >
-        <WhatsAppModalContent />
       </Modal>
 
       {/* City Specific Registration Modal */}

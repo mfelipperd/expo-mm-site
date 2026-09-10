@@ -97,7 +97,7 @@ const FAQ_SCHEMA_DATA = [
   {
     question: "Como entrar em contato com a organização da Expo MultiMix?",
     answer:
-      "Pelo WhatsApp: (91) 98130-6900, em dias úteis. Para expositores: expomultimix.com.br/quero-expor.",
+      "Pelo WhatsApp: (91) 98635-7418, em dias úteis. Para expositores: expomultimix.com.br/quero-expor.",
   },
 ];
 

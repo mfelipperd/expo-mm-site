@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { CheckCircle2, MessageCircle, QrCode } from "lucide-react";
 import Footer from "@/components/Footer";
+import { openWhatsApp } from "@/lib/whatsapp";
 
 export default function CredenciamentoConfirmadoContent() {
   const [cidade, setCidade] = useState<string | null>(null);
@@ -21,9 +22,7 @@ export default function CredenciamentoConfirmadoContent() {
     return () => clearTimeout(t);
   }, []);
 
-  const handleWhatsAppClick = () => {
-    window.open("https://wa.me/5591981306900", "_blank", "noopener,noreferrer");
-  };
+  const handleWhatsAppClick = () => openWhatsApp("Olá! Gostaria de falar com a equipe da Expo MultiMix.");
 
   return (
     <main className="min-h-screen bg-brand-blue flex flex-col">

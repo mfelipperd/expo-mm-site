@@ -9,7 +9,7 @@ import Navbar from "@/components/Navbar";
 import Modal from "@/components/Modal";
 import LeadModalContent from "@/components/LeadModal";
 import VisitModalContent from "@/components/VisitModal";
-import WhatsAppModalContent from "@/components/WhatsAppModal";
+import { openWhatsApp } from "@/lib/whatsapp";
 
 type Category = "todos" | "visitantes" | "expositores" | "datas-local" | "geral";
 
@@ -159,7 +159,7 @@ const FAQ_DATA: FaqItem[] = [
     category: "geral",
     question: "Como entrar em contato com a organização da Expo MultiMix?",
     answer:
-      "Você pode entrar em contato pelo WhatsApp: (91) 98130-6900. O atendimento está disponível em dias úteis. Para dúvidas sobre credenciamento de visitantes, acesse a página da cidade desejada no site. Para interesse em expor, acesse expomultimix.com.br/quero-expor.",
+      "Você pode entrar em contato pelo WhatsApp: (91) 98635-7418. O atendimento está disponível em dias úteis. Para dúvidas sobre credenciamento de visitantes, acesse a página da cidade desejada no site. Para interesse em expor, acesse expomultimix.com.br/quero-expor.",
   },
   {
     id: 20,
@@ -274,11 +274,11 @@ export default function FaqContent() {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<Category>("todos");
   const [openId, setOpenId] = useState<number | null>(1);
-  const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit" | "whatsapp">("none");
+  const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit">("none");
 
   const openVisitModal = () => setActiveModal("visit");
   const openLeadModal = () => setActiveModal("lead");
-  const openWhatsAppModal = () => setActiveModal("whatsapp");
+  const handleWhatsAppClick = () => openWhatsApp("Olá! Tenho uma dúvida sobre a Expo MultiMix.");
   const closeModal = () => setActiveModal("none");
   const handleExposeClick = () => router.push("/quero-expor?target=stands");
 
@@ -301,7 +301,7 @@ export default function FaqContent() {
 
   return (
     <main className="min-h-screen bg-brand-blue text-white">
-      <Navbar onVisitClick={openVisitModal} onExposeClick={openLeadModal} onContactClick={openWhatsAppModal} />
+      <Navbar onVisitClick={openVisitModal} onExposeClick={openLeadModal} onContactClick={handleWhatsAppClick} />
       {/* Hero */}
       <section className="relative pt-32 pb-16 px-6 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-brand-cyan/10 rounded-full blur-[120px] pointer-events-none" />
@@ -497,10 +497,9 @@ export default function FaqContent() {
                 Nossa equipe está pronta para responder qualquer dúvida sobre credenciamento, stands ou o evento.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <a
-                  href="https://wa.me/5591981306900?text=Olá!%20Tenho%20uma%20dúvida%20sobre%20a%20Expo%20MultiMix."
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={handleWhatsAppClick}
                   className="inline-flex items-center justify-center gap-2 bg-brand-cyan text-brand-blue px-8 py-4 rounded-full font-black transition-all hover:scale-105 shadow-[0_0_20px_rgba(0,188,212,0.3)]"
                 >
                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
@@ -508,7 +507,7 @@ export default function FaqContent() {
                     <path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.112 1.524 5.84L0 24l6.341-1.498A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.51-5.17-1.4l-.37-.22-3.765.889.908-3.672-.242-.379A9.953 9.953 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
                   </svg>
                   FALAR NO WHATSAPP
-                </a>
+                </button>
                 <Link
                   href="/quero-expor"
                   className="inline-flex items-center justify-center gap-2 glass border border-white/15 text-white px-8 py-4 rounded-full font-bold transition-all hover:scale-105 hover:bg-white/8"
@@ -539,14 +538,6 @@ export default function FaqContent() {
         title="QUERO VISITAR"
       >
         <VisitModalContent />
-      </Modal>
-
-      <Modal
-        isOpen={activeModal === "whatsapp"}
-        onClose={closeModal}
-        title="FALE COM UM CONSULTOR"
-      >
-        <WhatsAppModalContent />
       </Modal>
     </main>
   );

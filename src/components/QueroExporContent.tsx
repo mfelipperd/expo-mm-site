@@ -4,10 +4,10 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Modal from "@/components/Modal";
-import WhatsAppModalContent from "@/components/WhatsAppModal";
 import ExhibitorBypassModalContent from "@/components/ExhibitorBypassModal";
 import VisitModalContent from "@/components/VisitModal";
 import WhatsAppFloating from "@/components/WhatsAppFloating";
+import { openWhatsApp as sendWhatsAppMessage } from "@/lib/whatsapp";
 import { useState, useRef, useEffect } from "react";
 import {
   CheckCircle2, TrendingUp, Users, Package, ArrowRight, Rocket,
@@ -77,14 +77,18 @@ function isFairHappening(fair: FairListItem) {
 /* ─── main component ──────────────────────────────────────────── */
 
 export default function QueroExporContent() {
-  const [activeModal, setActiveModal] = useState<"none" | "whatsapp" | "bypass" | "visit">("none");
-  const [whatsAppFilter, setWhatsAppFilter] = useState<string | undefined>(undefined);
+  const [activeModal, setActiveModal] = useState<"none" | "bypass" | "visit">("none");
   const [standOptions, setStandOptions] = useState<StandOptionWithMeta[]>([]);
   const [allFairs, setAllFairs] = useState<FairListItem[]>([]);
   const [activeFairs, setActiveFairs] = useState<FairListItem[]>([]);
   const [fairDetails, setFairDetails] = useState<Record<string, FairDetail>>({});
 
-  const openWhatsApp = (filter?: string) => { setWhatsAppFilter(filter); setActiveModal("whatsapp"); };
+  const openWhatsApp = (filter?: string) => {
+    const message = filter === "Comercial"
+      ? "Olá! Tenho interesse em saber mais sobre vendas e stands na Expo MultiMix."
+      : "Olá! Gostaria de falar com a equipe da Expo MultiMix.";
+    sendWhatsAppMessage(message);
+  };
   const closeModal = () => setActiveModal("none");
   const scrollToStands = () => document.getElementById("modelos-stands")?.scrollIntoView({ behavior: "smooth" });
 
@@ -803,9 +807,6 @@ export default function QueroExporContent() {
       </Modal>
       <Modal isOpen={activeModal === "visit"} onClose={closeModal} title="QUERO VISITAR">
         <VisitModalContent />
-      </Modal>
-      <Modal isOpen={activeModal === "whatsapp"} onClose={closeModal} title="FALE COM UM CONSULTOR">
-        <WhatsAppModalContent filterRole={whatsAppFilter} />
       </Modal>
     </main>
   );

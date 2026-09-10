@@ -10,7 +10,6 @@ import Footer from "@/components/Footer";
 import Modal from "@/components/Modal";
 import LeadModalContent from "@/components/LeadModal";
 import VisitModalContent from "@/components/VisitModal";
-import WhatsAppModalContent from "@/components/WhatsAppModal";
 import ExhibitorBypassModalContent from "@/components/ExhibitorBypassModal";
 import AboutSection from "@/components/AboutSection";
 import WhatsAppFloating from "@/components/WhatsAppFloating";
@@ -23,9 +22,10 @@ import StickyMobileCTA from "@/components/StickyMobileCTA";
 import { useFairRouting } from "@/hooks/useFairRouting";
 import { useRouter } from "next/navigation";
 import { getSiteMode } from "@/lib/siteMode";
+import { openWhatsApp } from "@/lib/whatsapp";
 
 export default function HomeContent() {
-  const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit" | "whatsapp" | "bypass" | "crossCity">("none");
+  const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit" | "bypass" | "crossCity">("none");
   const [pendingTargetCity, setPendingTargetCity] = useState<string | null>(null);
   const router = useRouter();
 
@@ -47,7 +47,7 @@ export default function HomeContent() {
     }
   };
   const openLeadModal = () => setActiveModal("lead");
-  const openWhatsAppModal = () => setActiveModal("whatsapp");
+  const handleWhatsAppClick = () => openWhatsApp("Olá! Gostaria de falar com a equipe da Expo MultiMix.");
   const closeModal = () => setActiveModal("none");
 
   const handleExposeClick = () => router.push("/quero-expor?target=stands");
@@ -80,7 +80,7 @@ export default function HomeContent() {
       <Navbar
         onVisitClick={openVisitModal}
         onExposeClick={primaryExposeAction}
-        onContactClick={openWhatsAppModal}
+        onContactClick={handleWhatsAppClick}
         visitButtonColor={detectedCity === "manaus" ? "pink" : detectedCity === "belem" ? "cyan" : undefined}
         exposeButtonText={isStandsMode ? "RESERVE SEU STAND" : "FAZER MEU CREDENCIAMENTO"}
         mobileQuickCta={
@@ -147,9 +147,9 @@ export default function HomeContent() {
 
       <FairHistoryTimeline />
 
-      <Footer onWhatsAppClick={openWhatsAppModal} />
+      <Footer onWhatsAppClick={handleWhatsAppClick} />
 
-      <WhatsAppFloating onClick={openWhatsAppModal} />
+      <WhatsAppFloating onClick={handleWhatsAppClick} />
 
       {/* Modals */}
       <Modal
@@ -177,17 +177,9 @@ export default function HomeContent() {
         title="QUALIFICAÇÃO DE EXPOSITOR"
       >
         <ExhibitorBypassModalContent
-          onConfirmExpositor={openWhatsAppModal}
+          onConfirmExpositor={handleWhatsAppClick}
           onSelectLojista={openVisitModal}
         />
-      </Modal>
-
-      <Modal
-        isOpen={activeModal === "whatsapp"}
-        onClose={closeModal}
-        title="FALE COM UM CONSULTOR"
-      >
-        <WhatsAppModalContent />
       </Modal>
 
       <Modal
@@ -216,7 +208,7 @@ export default function HomeContent() {
       {isStandsMode ? (
         <StickyMobileCTA
           onLeftClick={handleExposeClick}
-          onRightClick={openWhatsAppModal}
+          onRightClick={handleWhatsAppClick}
           leftLabel="RESERVAR STAND"
           rightLabel="CONSULTOR"
           leftColor="bg-brand-orange shadow-[0_0_24px_rgba(251,146,60,0.25)]"
