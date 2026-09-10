@@ -19,6 +19,7 @@ import CTASection from "@/components/CTASection";
 import ExhibitorsSection from "@/components/ExhibitorsSection";
 import LogosCarousel from "@/components/LogosCarousel";
 import { openWhatsApp } from "@/lib/whatsapp";
+import { trackEvent } from "@/lib/analytics";
 
 interface Benefit {
   title: string;
@@ -79,7 +80,10 @@ export default function CityTemplate({
   const openLeadModal = () => setActiveModal("lead");
   const handleWhatsAppClick = () => openWhatsApp("Olá! Gostaria de falar com a equipe da Expo MultiMix.");
   const openBypassModal = () => setActiveModal("bypass");
-  const openRegistrationModal = () => setActiveModal("registration");
+  const openRegistrationModal = () => {
+    trackEvent("cta_click", { label: "fazer_credenciamento", city: cityName });
+    setActiveModal("registration");
+  };
   const closeModal = () => setActiveModal("none");
 
   // Fast entry for marketing links (?cadastro=1): skip straight to the form instead of
@@ -93,6 +97,7 @@ export default function CityTemplate({
   }, [canRegisterAsVisitor]);
 
   const handleExposeClick = () => {
+    trackEvent("cta_click", { label: "reservar_stand", city: cityName });
     router.push("/quero-expor?target=stands");
   };
 

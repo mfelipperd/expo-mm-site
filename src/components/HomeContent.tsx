@@ -23,8 +23,17 @@ import { useFairRouting } from "@/hooks/useFairRouting";
 import { useRouter } from "next/navigation";
 import { getSiteMode } from "@/lib/siteMode";
 import { openWhatsApp } from "@/lib/whatsapp";
+import { trackEvent } from "@/lib/analytics";
+import type { FairListItem } from "@/lib/fairsApi";
 
-export default function HomeContent() {
+interface HomeContentProps {
+  /** Server-resolved active fairs (see src/app/page.tsx) — lets the hero render the right
+   * mode/copy on first paint instead of flashing the stands-mode default while the client
+   * fetch is in flight. */
+  initialActiveFairs?: FairListItem[];
+}
+
+export default function HomeContent({ initialActiveFairs = [] }: HomeContentProps) {
   const [activeModal, setActiveModal] = useState<"none" | "lead" | "visit" | "bypass" | "crossCity">("none");
   const [pendingTargetCity, setPendingTargetCity] = useState<string | null>(null);
   const router = useRouter();
@@ -34,12 +43,13 @@ export default function HomeContent() {
     detectedCity,
     hasChosenCity,
     setCity,
-  } = useFairRouting();
+  } = useFairRouting(initialActiveFairs);
 
   const siteMode = getSiteMode(activeFairs);
   const isStandsMode = siteMode === "stands";
 
   const openVisitModal = () => {
+    trackEvent("cta_click", { label: "quero_visitar" });
     if (detectedCity) {
       router.push(`/${detectedCity}`);
     } else {
@@ -50,7 +60,10 @@ export default function HomeContent() {
   const handleWhatsAppClick = () => openWhatsApp("Olá! Gostaria de falar com a equipe da Expo MultiMix.");
   const closeModal = () => setActiveModal("none");
 
-  const handleExposeClick = () => router.push("/quero-expor?target=stands");
+  const handleExposeClick = () => {
+    trackEvent("cta_click", { label: "reservar_stand" });
+    router.push("/quero-expor?target=stands");
+  };
 
   // Fora da janela de credenciamento, o CTA de expositor vai direto pro quero-expor —
   // não faz sentido perguntar "lojista ou expositor" quando não há inscrição de visitante aberta.

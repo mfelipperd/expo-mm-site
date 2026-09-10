@@ -82,13 +82,28 @@ export async function fetchFair(id: string): Promise<FairDetail | null> {
 export async function fetchFairs(): Promise<FairListItem[]> {
   if (!API_BASE) return [];
   try {
-    const res = await fetch(`${API_BASE}/public/fairs`);
+    const res = await fetch(`${API_BASE}/public/fairs`, { next: { revalidate: 3600 } });
     if (!res.ok) return [];
     const data = await res.json();
     return Array.isArray(data) ? data : [];
   } catch {
     return [];
   }
+}
+
+function isFairActive(fair: FairListItem): boolean {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return new Date(fair.endDate + "T23:59:59") >= today;
+}
+
+/** Fairs that haven't ended yet, soonest first — the set the home hero and its
+ * site-mode decision (stands vs. visitantes) are computed from. */
+export async function fetchActiveFairs(): Promise<FairListItem[]> {
+  const fairs = await fetchFairs();
+  return fairs
+    .filter(isFairActive)
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
 }
 
 const PT_MONTHS = [

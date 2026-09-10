@@ -13,6 +13,7 @@ import { cityFromDDD, cityFromLocality, CITY_LABELS, type FairCity } from "@/lib
 import VisitorReuseFlow from "@/components/VisitorReuseFlow";
 import { checkExistingVisitor, requestVisitorReuse, type CheckExistingVisitorResponse } from "@/lib/visitorReuseApi";
 import { openWhatsApp } from "@/lib/whatsapp";
+import { trackEvent } from "@/lib/analytics";
 
 interface RegistrationFormModalProps {
   cityName: string;
@@ -137,6 +138,10 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
 
+  useEffect(() => {
+    trackEvent("credenciamento_step_view", { step: currentStep, city: cityName });
+  }, [currentStep, cityName]);
+
   const {
     register,
     handleSubmit,
@@ -200,6 +205,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
         setExistingMatch(result);
         setMatchedIdentifier(identifier);
         setReusePhase("choice");
+        trackEvent("reuse_check_found", { city: cityName });
         return true;
       }
       return false;
@@ -210,7 +216,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
       checkInFlightRef.current = false;
       setExistingCheckStatus("idle");
     }
-  }, []);
+  }, [cityName]);
 
   // Instant existing-visitor check: fires the moment email or phone looks complete,
   // so the "found your data" screen can appear without waiting for a "Continuar" click.
@@ -244,6 +250,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
     try {
       await requestVisitorReuse({ identifier: matchedIdentifier, fairId, phone: watch("phone") });
       setReusePhase("sent");
+      trackEvent("reuse_requested", { city: cityName });
     } catch (err) {
       setReuseError(err instanceof Error ? err.message : "Erro inesperado. Tente novamente.");
     } finally {
@@ -333,6 +340,8 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
             successCount++;
         }
 
+        trackEvent("credenciamento_submit_success", { city: cityName, visitantes: successCount });
+
         const confirmationParams = new URLSearchParams();
         confirmationParams.set("cidade", cityName);
         if (successCount > 1) confirmationParams.set("visitantes", String(successCount));
@@ -340,6 +349,7 @@ export default function RegistrationFormModal({ cityName, fairId, industries = [
 
     } catch (error) {
       console.error("Erro no credenciamento:", error);
+      trackEvent("credenciamento_submit_error", { city: cityName });
       setSubmitError("Ocorreu um erro ao processar o credenciamento. Verifique os dados e tente novamente.");
     }
   };

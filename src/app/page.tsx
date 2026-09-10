@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import HomeContent from "@/components/HomeContent";
+import { fetchActiveFairs } from "@/lib/fairsApi";
 
 export const metadata: Metadata = {
   title: "Fornecedores Atacado e Feira de Negócios em Belém e Manaus",
@@ -24,6 +25,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Home() {
-  return <HomeContent />;
+export default async function Home() {
+  const activeFairs = await fetchActiveFairs();
+  return <HomeContent initialActiveFairs={activeFairs} />;
 }

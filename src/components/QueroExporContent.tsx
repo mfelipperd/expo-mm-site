@@ -8,6 +8,7 @@ import ExhibitorBypassModalContent from "@/components/ExhibitorBypassModal";
 import VisitModalContent from "@/components/VisitModal";
 import WhatsAppFloating from "@/components/WhatsAppFloating";
 import { openWhatsApp as sendWhatsAppMessage } from "@/lib/whatsapp";
+import { trackEvent } from "@/lib/analytics";
 import { useState, useRef, useEffect } from "react";
 import {
   CheckCircle2, TrendingUp, Users, Package, ArrowRight, Rocket,
@@ -84,6 +85,7 @@ export default function QueroExporContent() {
   const [fairDetails, setFairDetails] = useState<Record<string, FairDetail>>({});
 
   const openWhatsApp = (filter?: string) => {
+    trackEvent("cta_click", { label: filter === "Comercial" ? "reservar_stand_whatsapp" : "fale_conosco" });
     const message = filter === "Comercial"
       ? "Olá! Tenho interesse em saber mais sobre vendas e stands na Expo MultiMix."
       : "Olá! Gostaria de falar com a equipe da Expo MultiMix.";

@@ -1,3 +1,5 @@
+import { trackEvent } from "@/lib/analytics";
+
 // Único contato de WhatsApp do site — Emmelly, comercial.
 const WHATSAPP_NUMBER = "5591986357418";
 
@@ -32,6 +34,8 @@ export function isIOSSafari(): boolean {
  * every other browser opens WhatsApp in a new tab.
  */
 export function openWhatsApp(message?: string): void {
+  // Never send the message body: it can carry PII typed into forms (name, company).
+  trackEvent("whatsapp_click");
   const link = buildWhatsAppLink(message);
   if (isIOSSafari()) {
     window.location.href = link;

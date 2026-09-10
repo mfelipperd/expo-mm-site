@@ -59,13 +59,25 @@ export default function Hero({
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!apiUrl) return;
-    fetch(`${apiUrl}/finance/clients/images`)
-      .then((r) => (r.ok ? r.json() : []))
-      .then((data) => {
-        const items: LogoItem[] = Array.isArray(data) ? data : (data.data ?? []);
-        setLogos(items.filter(resolveLogoUrl).slice(0, 16));
-      })
-      .catch(() => {});
+
+    const loadLogos = () => {
+      fetch(`${apiUrl}/finance/clients/images`)
+        .then((r) => (r.ok ? r.json() : []))
+        .then((data) => {
+          const items: LogoItem[] = Array.isArray(data) ? data : (data.data ?? []);
+          setLogos(items.filter(resolveLogoUrl).slice(0, 16));
+        })
+        .catch(() => {});
+    };
+
+    // Only the 2nd of 3 slides needs these — defer past the first paint instead of
+    // competing with the hero image/text for bandwidth on the critical path.
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(loadLogos, { timeout: 2000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const t = setTimeout(loadLogos, 300);
+    return () => clearTimeout(t);
   }, []);
 
   const next = useCallback(() => {
