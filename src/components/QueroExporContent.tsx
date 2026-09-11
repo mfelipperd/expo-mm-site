@@ -22,20 +22,32 @@ import {
   type StandOption, type FairListItem, type FairDetail,
 } from "@/lib/fairsApi";
 import LogosCarousel from "@/components/LogosCarousel";
+import { StandImageCarousel } from "@/components/StandImageCarousel";
 import FairHistoryTimeline from "@/components/FairHistoryTimeline";
 import StickyMobileCTA from "@/components/StickyMobileCTA";
 import AnimatedNumber from "@/components/AnimatedNumber";
 
 /* ─── helpers ─────────────────────────────────────────────────── */
 
-const STAND_IMAGES: Record<string, string> = {
-  "2x3": "/assets/Stand-2-3.jpeg",
-  "3x3": "/assets/stand-3-3.jpeg",
+const STAND_IMAGE_GALLERIES: Record<string, string[]> = {
+  "2x3": [
+    "/assets/stands/2x3-real.jpg",
+    "/assets/stands/2x3-1.jpg",
+    "/assets/stands/2x3-2.jpg",
+    "/assets/stands/ambiente.jpg",
+  ],
+  "3x3": [
+    "/assets/stands/3x3-real.jpg",
+    "/assets/stands/3x3-real-2.jpg",
+    "/assets/stands/3x3-1.jpg",
+    "/assets/stands/3x3-2.jpg",
+    "/assets/stands/ambiente.jpg",
+  ],
 };
 
-function getStandImage(dimensions: string): string {
-  const key = Object.keys(STAND_IMAGES).find((k) => dimensions.toLowerCase().includes(k));
-  return key ? STAND_IMAGES[key] : "/assets/Stand-2-3.jpeg";
+function getStandImages(dimensions: string): string[] {
+  const key = Object.keys(STAND_IMAGE_GALLERIES).find((k) => dimensions.toLowerCase().includes(k));
+  return key ? STAND_IMAGE_GALLERIES[key] : STAND_IMAGE_GALLERIES["2x3"];
 }
 
 function formatPrice(value: number): string {
@@ -296,11 +308,9 @@ export default function QueroExporContent() {
                     )}
 
                     <div className="aspect-video bg-white/5 rounded-2xl mb-5 relative overflow-hidden">
-                      <Image
-                        src={getStandImage(formatStandDimensions(stand))}
+                      <StandImageCarousel
+                        images={getStandImages(formatStandDimensions(stand))}
                         alt={stand.name}
-                        fill
-                        className="object-cover group-hover:scale-110 transition-transform duration-500"
                       />
                       {stand.quantity > 0 && (
                         <span className="absolute top-3 right-3 flex items-center gap-1 bg-slate-900/80 backdrop-blur text-brand-orange text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border border-brand-orange/30">

@@ -134,6 +134,45 @@ export function StandFloorPlan({
     };
   }, [svgUrl]);
 
+  // No mobile a planta é bem mais larga que alta (paisagem) e sobra pouca
+  // altura útil pra cada stand. Giramos o conjunto 90° pra usar a largura
+  // toda da tela como altura — o wrapper fica com a proporção já invertida
+  // (medida via ResizeObserver) e o conteúdo, do tamanho exato pra preencher
+  // esse wrapper depois de rotacionado.
+  const mobileWrapperRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [portraitSize, setPortraitSize] = useState<{ w: number; h: number } | null>(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile) {
+      const timer = setTimeout(() => setPortraitSize(null), 0);
+      return () => clearTimeout(timer);
+    }
+    const el = mobileWrapperRef.current;
+    if (!el) return;
+
+    const [, , vbWidth, vbHeight] = viewBox.split(" ").map(Number);
+    const landscapeRatio = vbWidth / vbHeight;
+
+    const measure = () => {
+      const w = el.clientWidth;
+      setPortraitSize({ w, h: w * landscapeRatio });
+    };
+    measure();
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [isMobile, viewBox]);
+
   // Animação de "tutorial": assim que a planta carrega, seleciona e desseleciona
   // vários stands aleatórios sozinha (só estado — nada de DOM manual), pra
   // deixar claro que dá pra clicar neles, e só então mostra a dica em texto.
@@ -194,42 +233,16 @@ export function StandFloorPlan({
     );
   }
 
-  return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-4 text-xs text-gray-300">
-        <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-sm" style={{ background: COLOR_AVAILABLE_3X3 }} />
-          3x3 (mais escolhido)
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-sm" style={{ background: COLOR_AVAILABLE_2X3 }} />
-          2x3
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-sm" style={{ background: COLOR_AVAILABLE_OTHER }} />
-          Outro tipo
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-sm" style={{ background: COLOR_SELECTED }} />
-          Selecionado
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-sm" style={{ background: COLOR_UNAVAILABLE }} />
-          Ocupado
-        </span>
-      </div>
+  const plantInner = (
+    <>
+      {/* Fundo estático da planta: paredes, estrutura e demais elementos decorativos */}
+      <div
+        className="[&_svg]:h-auto [&_svg]:w-full"
+        dangerouslySetInnerHTML={{ __html: svgMarkup }}
+      />
 
-      <div className="relative">
-        <div className="w-full overflow-x-auto rounded-xl border border-white/10 bg-white">
-          <div className="min-w-140 relative p-3">
-            {/* Fundo estático da planta: paredes, estrutura e demais elementos decorativos */}
-            <div
-              className="[&_svg]:h-auto [&_svg]:w-full"
-              dangerouslySetInnerHTML={{ __html: svgMarkup }}
-            />
-
-            {/* Camada interativa: cada stand é um <g> React comum, controlado por estado */}
-            <svg
+      {/* Camada interativa: cada stand é um <g> React comum, controlado por estado */}
+      <svg
               viewBox={viewBox}
               className="absolute inset-0 h-full w-full"
               style={{ top: "0.75rem", left: "0.75rem", width: "calc(100% - 1.5rem)", height: "calc(100% - 1.5rem)" }}
@@ -339,9 +352,60 @@ export function StandFloorPlan({
                   </g>
                 );
               })}
-            </svg>
+      </svg>
+    </>
+  );
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-4 text-xs text-gray-300">
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-sm" style={{ background: COLOR_AVAILABLE_3X3 }} />
+          3x3 (mais escolhido)
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-sm" style={{ background: COLOR_AVAILABLE_2X3 }} />
+          2x3
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-sm" style={{ background: COLOR_AVAILABLE_OTHER }} />
+          Outro tipo
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-sm" style={{ background: COLOR_SELECTED }} />
+          Selecionado
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-sm" style={{ background: COLOR_UNAVAILABLE }} />
+          Ocupado
+        </span>
+      </div>
+
+      <div className="relative">
+        {isMobile ? (
+          <div
+            ref={mobileWrapperRef}
+            className="relative w-full overflow-hidden rounded-xl border border-white/10 bg-white"
+            style={{ height: portraitSize ? portraitSize.h : 400 }}
+          >
+            {portraitSize && (
+              <div
+                className="absolute top-1/2 left-1/2 p-3"
+                style={{
+                  width: portraitSize.h,
+                  height: portraitSize.w,
+                  transform: "translate(-50%, -50%) rotate(90deg)",
+                }}
+              >
+                {plantInner}
+              </div>
+            )}
           </div>
-        </div>
+        ) : (
+          <div className="w-full overflow-x-auto rounded-xl border border-white/10 bg-white">
+            <div className="min-w-140 relative p-3">{plantInner}</div>
+          </div>
+        )}
 
         <div
           aria-hidden={!hintVisible}
