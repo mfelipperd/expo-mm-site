@@ -64,6 +64,19 @@ export interface FairDetail extends FairListItem {
   dailySchedule?: FairScheduleEntry[];
   exhibitorBrands?: ExhibitorBrand[];
   standOptions?: StandOption[];
+  floorPlanUrl?: string | null;
+}
+
+export interface StandMapItem {
+  id: number;
+  standNumber: number;
+  isAvailable: boolean;
+  standConfigurationId?: string | null;
+  standConfigurationName?: string | null;
+  standConfigurationArea?: number | null;
+  standConfigurationPrice?: number | null;
+  exhibitorName?: string | null;
+  exhibitorLogoUrl?: string | null;
 }
 
 export async function fetchFair(id: string): Promise<FairDetail | null> {
@@ -76,6 +89,20 @@ export async function fetchFair(id: string): Promise<FairDetail | null> {
     return res.json();
   } catch {
     return null;
+  }
+}
+
+export async function fetchStandMap(fairId: string): Promise<StandMapItem[]> {
+  if (!fairId || !API_BASE) return [];
+  try {
+    const res = await fetch(`${API_BASE}/public/fairs/${fairId}/stand-map`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
   }
 }
 

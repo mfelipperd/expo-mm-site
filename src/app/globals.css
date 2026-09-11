@@ -120,3 +120,21 @@ body {
   width: max-content;
   animation: var(--carousel-animation) var(--carousel-duration) linear infinite;
 }
+
+/* Destaque de tipo de stand na planta interativa (StandFloorPlan) */
+@keyframes stand-pulse {
+  0%, 100% {
+    stroke: #fbbf24;
+    stroke-width: 3px;
+    filter: drop-shadow(0 0 3px rgba(251, 191, 36, 0.9));
+  }
+  50% {
+    stroke: #fbbf24;
+    stroke-width: 6px;
+    filter: drop-shadow(0 0 8px rgba(251, 191, 36, 1));
+  }
+}
+
+.stand-pulse-highlight {
+  animation: stand-pulse 1.1s ease-in-out infinite;
+}

@@ -16,6 +16,7 @@ import {
   ChevronRight, AlertTriangle,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   fetchFairs, fetchFair, formatFairDates, formatFairLocation, formatStandDimensions, buildMapEmbedUrl,
   type StandOption, type FairListItem, type FairDetail,
@@ -41,7 +42,7 @@ function formatPrice(value: number): string {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-type StandOptionWithMeta = StandOption & { durationDays: number | null };
+type StandOptionWithMeta = StandOption & { durationDays: number | null; fairId: string };
 
 const INSTALLMENTS = 12;
 const INSTALLMENT_INTEREST_RATE = 0.1; // juros do parcelamento no cartão — Pix à vista é o valor real, sem essa taxa
@@ -124,9 +125,9 @@ export default function QueroExporContent() {
       for (const detail of details) {
         for (const stand of detail?.standOptions ?? []) {
           const key = formatStandDimensions(stand);
-          if (!seen.has(key)) {
+          if (!seen.has(key) && detail) {
             seen.add(key);
-            combined.push({ ...stand, durationDays: detail?.durationDays ?? null });
+            combined.push({ ...stand, durationDays: detail.durationDays ?? null, fairId: detail.id });
           }
         }
       }
@@ -256,6 +257,148 @@ export default function QueroExporContent() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── Modelos de stands ──────────────────────────────── */}
+      <section id="modelos-stands" className="py-20 bg-brand-blue/30 border-t border-white/5">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <span className="text-brand-orange font-bold tracking-widest text-sm uppercase">Escolha o seu modelo</span>
+            <h2 className="text-3xl md:text-5xl font-black text-white mt-2">MODELOS DISPONÍVEIS</h2>
+            <p className="text-gray-400 mt-3 max-w-xl mx-auto text-sm">
+              Preços e disponibilidade referentes às edições com vagas abertas. Sujeito a alteração sem aviso.
+            </p>
+          </div>
+
+          {standOptions.length > 0 ? (
+            <div className={`grid gap-8 max-w-4xl mx-auto ${standOptions.length === 1 ? "max-w-md" : "md:grid-cols-2"}`}>
+              {standOptions.map((stand, i) => {
+                const has3x3 = standOptions.some((s) => formatStandDimensions(s).toLowerCase().includes("3x3"));
+                const isHighlighted = has3x3
+                  ? formatStandDimensions(stand).toLowerCase().includes("3x3")
+                  : i === standOptions.length - 1;
+                return (
+                  <Link
+                    key={stand.id || i}
+                    href={`/reservar-stand/${stand.fairId}`}
+                    onClick={() => trackEvent("cta_click", { label: "reservar_stand_mapa" })}
+                    className={`relative flex flex-col rounded-3xl border transition-all group ${
+                      isHighlighted
+                        ? "glass-card border-brand-orange/50 shadow-[0_0_40px_rgba(255,130,0,0.15)] hover:shadow-[0_0_50px_rgba(255,130,0,0.25)] p-5 md:p-8"
+                        : "glass border-white/10 hover:border-brand-orange/30 hover:bg-white/5 p-5 md:p-8"
+                    }`}
+                  >
+                    {isHighlighted && (
+                      <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand-orange text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full whitespace-nowrap">
+                        ⭐ Mais escolhido
+                      </span>
+                    )}
+
+                    <div className="aspect-video bg-white/5 rounded-2xl mb-5 relative overflow-hidden">
+                      <Image
+                        src={getStandImage(formatStandDimensions(stand))}
+                        alt={stand.name}
+                        fill
+                        className="object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                      {stand.quantity > 0 && (
+                        <span className="absolute top-3 right-3 flex items-center gap-1 bg-slate-900/80 backdrop-blur text-brand-orange text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border border-brand-orange/30">
+                          <Clock size={12} /> {stand.quantity} disponíveis
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-start justify-between gap-3 mb-1">
+                      <h3 className="text-2xl font-black text-white leading-tight">{stand.name.toUpperCase()}</h3>
+                      {stand.area > 0 && (
+                        <span className="shrink-0 text-xs font-bold text-brand-cyan bg-brand-cyan/10 border border-brand-cyan/20 rounded-full px-3 py-1 mt-1">
+                          {stand.area}m²
+                        </span>
+                      )}
+                    </div>
+                    {stand.description && (
+                      <p className="text-gray-400 mb-3 text-sm">{stand.description}</p>
+                    )}
+
+                    <p className="flex items-center gap-1.5 text-xs text-gray-400 mb-6">
+                      <CheckCircle2 size={14} className="text-brand-cyan shrink-0" />
+                      Montagem, iluminação, tomada e carpete inclusos
+                    </p>
+
+                    {stand.totalPrice > 0 && (() => {
+                      const installmentTotal = stand.totalPrice * (1 + INSTALLMENT_INTEREST_RATE);
+                      const installmentValue = installmentTotal / INSTALLMENTS;
+                      const pixDiscountPct = Math.round(INSTALLMENT_INTEREST_RATE * 100);
+                      return (
+                        <div className="mb-6 space-y-2.5 flex-1">
+                          {stand.anchorPrice != null && stand.anchorPrice > stand.totalPrice && (
+                            <span className="text-gray-500 line-through text-xs">De {formatPrice(stand.anchorPrice)}</span>
+                          )}
+
+                          <div>
+                            <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1">
+                              Parcelado em até {INSTALLMENTS}x
+                            </p>
+                            <p className="text-brand-orange font-black text-3xl leading-none">
+                              {formatPrice(installmentValue)}
+                              <span className="text-sm font-bold text-gray-400">/mês</span>
+                            </p>
+                            <p className="text-gray-500 text-xs mt-1">
+                              Valor cheio {formatPrice(installmentTotal)}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-xl px-3 py-2.5">
+                            <span className="shrink-0 text-green-400 text-[10px] font-black uppercase tracking-wide bg-green-500/20 rounded-full px-2 py-1">
+                              {pixDiscountPct}% OFF
+                            </span>
+                            <span className="text-gray-200 text-sm font-bold">
+                              {formatPrice(stand.totalPrice)} <span className="text-gray-400 font-medium">à vista no Pix</span>
+                            </span>
+                          </div>
+
+                          {stand.durationDays && stand.durationDays > 0 && (
+                            <p className="text-[11px] text-gray-500 px-1">
+                              Equivale a {formatPrice(stand.totalPrice / stand.durationDays)}/dia de exposição no Pix
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    <div
+                      className={`w-full font-black py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wide pointer-events-none ${
+                        isHighlighted
+                          ? "bg-brand-orange text-white group-hover:scale-105 shadow-lg shadow-brand-orange/20"
+                          : "bg-white/5 group-hover:bg-brand-orange group-hover:text-white text-brand-orange border border-brand-orange/30 group-hover:border-brand-orange"
+                      }`}
+                    >
+                      QUERO ESTE STAND <ArrowRight size={18} />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            /* Fallback */
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              <StandFallbackCard
+                img="/assets/Stand-2-3.jpeg" name="STAND STANDARD 2x3m"
+                desc="Ideal para apresentação focada de produtos e ativação de marca." area="6"
+                highlighted={false} onBuy={() => openWhatsApp("Comercial")}
+              />
+              <StandFallbackCard
+                img="/assets/stand-3-3.jpeg" name="STAND STANDARD 3x3m"
+                desc="Mais espaço para linha completa de produtos e equipe de atendimento." area="9"
+                highlighted={true} onBuy={() => openWhatsApp("Comercial")}
+              />
+            </div>
+          )}
+
+          <p className="text-center text-xs text-gray-600 mt-10">
+            * Preços e disponibilidade sujeitos a confirmação pela equipe comercial.
+          </p>
         </div>
       </section>
 
@@ -612,148 +755,6 @@ export default function QueroExporContent() {
         </div>
       )}
 
-      {/* ── Modelos de stands ──────────────────────────────── */}
-      <section id="modelos-stands" className="py-20 bg-brand-blue/30 border-t border-white/5">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <span className="text-brand-orange font-bold tracking-widest text-sm uppercase">Escolha o seu modelo</span>
-            <h2 className="text-3xl md:text-5xl font-black text-white mt-2">MODELOS DISPONÍVEIS</h2>
-            <p className="text-gray-400 mt-3 max-w-xl mx-auto text-sm">
-              Preços e disponibilidade referentes às edições com vagas abertas. Sujeito a alteração sem aviso.
-            </p>
-          </div>
-
-          {standOptions.length > 0 ? (
-            <div className={`grid gap-8 max-w-4xl mx-auto ${standOptions.length === 1 ? "max-w-md" : "md:grid-cols-2"}`}>
-              {standOptions.map((stand, i) => {
-                const has3x3 = standOptions.some((s) => formatStandDimensions(s).toLowerCase().includes("3x3"));
-                const isHighlighted = has3x3
-                  ? formatStandDimensions(stand).toLowerCase().includes("3x3")
-                  : i === standOptions.length - 1;
-                return (
-                  <div
-                    key={stand.id || i}
-                    className={`relative flex flex-col rounded-3xl border transition-all group ${
-                      isHighlighted
-                        ? "glass-card border-brand-orange/50 shadow-[0_0_40px_rgba(255,130,0,0.15)] p-5 md:p-8"
-                        : "glass border-white/10 hover:border-brand-orange/30 p-5 md:p-8"
-                    }`}
-                  >
-                    {isHighlighted && (
-                      <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand-orange text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full whitespace-nowrap">
-                        ⭐ Mais escolhido
-                      </span>
-                    )}
-
-                    <div className="aspect-video bg-white/5 rounded-2xl mb-5 relative overflow-hidden">
-                      <Image
-                        src={getStandImage(formatStandDimensions(stand))}
-                        alt={stand.name}
-                        fill
-                        className="object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                      {stand.quantity > 0 && (
-                        <span className="absolute top-3 right-3 flex items-center gap-1 bg-slate-900/80 backdrop-blur text-brand-orange text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border border-brand-orange/30">
-                          <Clock size={12} /> {stand.quantity} disponíveis
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-start justify-between gap-3 mb-1">
-                      <h3 className="text-2xl font-black text-white leading-tight">{stand.name.toUpperCase()}</h3>
-                      {stand.area > 0 && (
-                        <span className="shrink-0 text-xs font-bold text-brand-cyan bg-brand-cyan/10 border border-brand-cyan/20 rounded-full px-3 py-1 mt-1">
-                          {stand.area}m²
-                        </span>
-                      )}
-                    </div>
-                    {stand.description && (
-                      <p className="text-gray-400 mb-3 text-sm">{stand.description}</p>
-                    )}
-
-                    <p className="flex items-center gap-1.5 text-xs text-gray-400 mb-6">
-                      <CheckCircle2 size={14} className="text-brand-cyan shrink-0" />
-                      Montagem, iluminação, tomada e carpete inclusos
-                    </p>
-
-                    {stand.totalPrice > 0 && (() => {
-                      const installmentTotal = stand.totalPrice * (1 + INSTALLMENT_INTEREST_RATE);
-                      const installmentValue = installmentTotal / INSTALLMENTS;
-                      const pixDiscountPct = Math.round(INSTALLMENT_INTEREST_RATE * 100);
-                      return (
-                        <div className="mb-6 space-y-2.5 flex-1">
-                          {stand.anchorPrice != null && stand.anchorPrice > stand.totalPrice && (
-                            <span className="text-gray-500 line-through text-xs">De {formatPrice(stand.anchorPrice)}</span>
-                          )}
-
-                          <div>
-                            <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1">
-                              Parcelado em até {INSTALLMENTS}x
-                            </p>
-                            <p className="text-brand-orange font-black text-3xl leading-none">
-                              {formatPrice(installmentValue)}
-                              <span className="text-sm font-bold text-gray-400">/mês</span>
-                            </p>
-                            <p className="text-gray-500 text-xs mt-1">
-                              Valor cheio {formatPrice(installmentTotal)}
-                            </p>
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-xl px-3 py-2.5">
-                            <span className="shrink-0 text-green-400 text-[10px] font-black uppercase tracking-wide bg-green-500/20 rounded-full px-2 py-1">
-                              {pixDiscountPct}% OFF
-                            </span>
-                            <span className="text-gray-200 text-sm font-bold">
-                              {formatPrice(stand.totalPrice)} <span className="text-gray-400 font-medium">à vista no Pix</span>
-                            </span>
-                          </div>
-
-                          {stand.durationDays && stand.durationDays > 0 && (
-                            <p className="text-[11px] text-gray-500 px-1">
-                              Equivale a {formatPrice(stand.totalPrice / stand.durationDays)}/dia de exposição no Pix
-                            </p>
-                          )}
-                        </div>
-                      );
-                    })()}
-
-                    <button
-                      type="button"
-                      onClick={() => openWhatsApp("Comercial")}
-                      className={`w-full font-black py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wide ${
-                        isHighlighted
-                          ? "bg-brand-orange text-white hover:scale-105 shadow-lg shadow-brand-orange/20"
-                          : "bg-white/5 hover:bg-brand-orange hover:text-white text-brand-orange border border-brand-orange/30 hover:border-brand-orange"
-                      }`}
-                    >
-                      QUERO ESTE STAND <ArrowRight size={18} />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            /* Fallback */
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              <StandFallbackCard
-                img="/assets/Stand-2-3.jpeg" name="STAND STANDARD 2x3m"
-                desc="Ideal para apresentação focada de produtos e ativação de marca." area="6"
-                highlighted={false} onBuy={() => openWhatsApp("Comercial")}
-              />
-              <StandFallbackCard
-                img="/assets/stand-3-3.jpeg" name="STAND STANDARD 3x3m"
-                desc="Mais espaço para linha completa de produtos e equipe de atendimento." area="9"
-                highlighted={true} onBuy={() => openWhatsApp("Comercial")}
-              />
-            </div>
-          )}
-
-          <p className="text-center text-xs text-gray-600 mt-10">
-            * Preços e disponibilidade sujeitos a confirmação pela equipe comercial.
-          </p>
-        </div>
-      </section>
-
       <LogosCarousel title="FAÇA PARTE DESSE TIME" subtitle="Expositores confirmados 2026" direction="right" />
 
       <FairHistoryTimeline />
@@ -861,7 +862,11 @@ function StandFallbackCard({
   img, name, desc, area, highlighted, onBuy,
 }: { img: string; name: string; desc: string; area: string; highlighted: boolean; onBuy: () => void }) {
   return (
-    <div className={`relative flex flex-col rounded-3xl border transition-all group p-5 md:p-8 ${highlighted ? "glass-card border-brand-orange/50 shadow-[0_0_40px_rgba(255,130,0,0.15)]" : "glass border-white/10 hover:border-brand-orange/30"}`}>
+    <button
+      type="button"
+      onClick={onBuy}
+      className={`relative flex flex-col text-left rounded-3xl border transition-all group p-5 md:p-8 ${highlighted ? "glass-card border-brand-orange/50 shadow-[0_0_40px_rgba(255,130,0,0.15)] hover:shadow-[0_0_50px_rgba(255,130,0,0.25)]" : "glass border-white/10 hover:border-brand-orange/30 hover:bg-white/5"}`}
+    >
       {highlighted && (
         <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand-orange text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full whitespace-nowrap">
           ⭐ Mais escolhido
@@ -877,14 +882,12 @@ function StandFallbackCard({
         <li className="flex items-center gap-2 text-sm text-gray-300"><CheckCircle2 size={16} className="text-brand-cyan shrink-0" /> Montagem e estrutura completa</li>
         <li className="flex items-center gap-2 text-sm text-gray-300"><CheckCircle2 size={16} className="text-brand-cyan shrink-0" /> Iluminação, tomada e carpete</li>
       </ul>
-      <button
-        type="button"
-        onClick={onBuy}
-        className={`w-full font-black py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wide ${highlighted ? "bg-brand-orange text-white hover:scale-105 shadow-lg shadow-brand-orange/20" : "bg-white/5 hover:bg-brand-orange hover:text-white text-brand-orange border border-brand-orange/30"}`}
+      <div
+        className={`w-full font-black py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wide ${highlighted ? "bg-brand-orange text-white group-hover:scale-105 shadow-lg shadow-brand-orange/20" : "bg-white/5 group-hover:bg-brand-orange group-hover:text-white text-brand-orange border border-brand-orange/30"}`}
       >
         QUERO ESTE STAND <ArrowRight size={18} />
-      </button>
-    </div>
+      </div>
+    </button>
   );
 }
 

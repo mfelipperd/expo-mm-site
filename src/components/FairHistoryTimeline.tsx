@@ -23,7 +23,7 @@ export default function FairHistoryTimeline() {
   useEffect(() => {
     fetchFairs().then((data) => {
       const sorted = [...data].sort(
-        (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+        (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
       );
       setFairs(sorted);
     });
