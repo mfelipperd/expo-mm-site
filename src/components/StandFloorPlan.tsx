@@ -26,6 +26,12 @@ interface StandGeometry {
 
 const STAND_GROUP_ID_REGEX = /^stand_(\d+)$/i;
 
+// Precisa bater exatamente com o padding (p-3 = 0.75rem) do wrapper que
+// envolve o fundo + a camada interativa — é o que alinha os dois. Sem
+// contar esse padding na conta do tamanho rotacionado no mobile, o mapa
+// clicável fica com uma proporção levemente diferente do fundo e desalinha.
+const PLANT_PADDING_PX = 12;
+
 const COLOR_AVAILABLE_2X3 = "#00BCD4"; // brand-cyan
 const COLOR_AVAILABLE_3X3 = "#E91E63"; // brand-pink — o mais escolhido
 const COLOR_AVAILABLE_OTHER = "#8B5CF6"; // violeta — qualquer outro tipo (nem 2x3, nem 3x3)
@@ -160,11 +166,16 @@ export function StandFloorPlan({
     if (!el) return;
 
     const [, , vbWidth, vbHeight] = viewBox.split(" ").map(Number);
-    const landscapeRatio = vbWidth / vbHeight;
+    const landscapeRatio = vbWidth / vbHeight; // W/H
 
+    // O conteúdo real (dentro do padding) precisa manter a proporção W:H da
+    // planta. Resolvendo pra h dado w = clientWidth medido (ver comentário
+    // de PLANT_PADDING_PX): h = 2P + (w - 2P) × (W/H).
     const measure = () => {
       const w = el.clientWidth;
-      setPortraitSize({ w, h: w * landscapeRatio });
+      const pad = PLANT_PADDING_PX * 2;
+      const h = pad + (w - pad) * landscapeRatio;
+      setPortraitSize({ w, h });
     };
     measure();
 
