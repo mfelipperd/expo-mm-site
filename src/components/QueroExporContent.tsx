@@ -131,9 +131,9 @@ export default function QueroExporContent() {
       const withStands = active.filter((f) => (detailsById[f.id]?.standOptions?.length ?? 0) > 0);
       const requestedCity = new URLSearchParams(window.location.search).get("cidade");
       const requestedFair = requestedCity
-        ? withStands.find((f) => normalizeCity(f.city) === normalizeCity(requestedCity))
+        ? active.find((f) => normalizeCity(f.city) === normalizeCity(requestedCity))
         : undefined;
-      setSelectedFairId((requestedFair ?? withStands[0])?.id ?? null);
+      setSelectedFairId((requestedFair ?? withStands[0] ?? active[0])?.id ?? null);
     });
   }, []);
 
@@ -147,7 +147,7 @@ export default function QueroExporContent() {
   ].join(" / ");
 
   const fairsWithStands = activeFairs.filter((f) => (fairDetails[f.id]?.standOptions?.length ?? 0) > 0);
-  const selectedFair = fairsWithStands.find((f) => f.id === selectedFairId) ?? null;
+  const selectedFair = activeFairs.find((f) => f.id === selectedFairId) ?? null;
   const selectedDetail = selectedFair ? fairDetails[selectedFair.id] : null;
   const selectedMeta = selectedFair ? getCityMeta(selectedFair.city) : null;
   const standOptions: StandOptionWithMeta[] = (selectedDetail?.standOptions ?? [])
@@ -166,7 +166,7 @@ export default function QueroExporContent() {
   const cheapestOverall = cheapestPrice(fairsWithStands.flatMap((f) => fairDetails[f.id]?.standOptions ?? []));
 
   const selectFairAndScroll = (fairId: string) => {
-    if (fairsWithStands.some((f) => f.id === fairId)) setSelectedFairId(fairId);
+    if (activeFairs.some((f) => f.id === fairId)) setSelectedFairId(fairId);
     scrollToStands();
   };
 
@@ -288,15 +288,15 @@ export default function QueroExporContent() {
             <span className="text-brand-orange font-bold tracking-widest text-sm uppercase">Escolha o seu modelo</span>
             <h2 className="text-3xl md:text-5xl font-black text-white mt-2">MODELOS DISPONÍVEIS</h2>
             <p className="text-gray-400 mt-3 max-w-xl mx-auto text-sm">
-              {fairsWithStands.length > 1
-                ? "Escolha a cidade e veja os modelos, preços e disponibilidade de cada edição. Sujeito a alteração sem aviso."
+              {activeFairs.length > 1
+                ? "Escolha a cidade e veja modelos, preços e informações completas de cada edição. Sujeito a alteração sem aviso."
                 : "Preços e disponibilidade referentes às edições com vagas abertas. Sujeito a alteração sem aviso."}
             </p>
           </div>
 
-          {fairsWithStands.length > 1 && (
+          {activeFairs.length > 1 && (
             <div role="tablist" aria-label="Cidade da feira" className="grid grid-cols-2 gap-3 md:gap-4 max-w-2xl mx-auto mb-10">
-              {fairsWithStands.map((fair) => {
+              {activeFairs.map((fair) => {
                 const meta = getCityMeta(fair.city);
                 const isSelected = fair.id === selectedFairId;
                 const fromPrice = cheapestPrice(fairDetails[fair.id]?.standOptions);
@@ -333,6 +333,15 @@ export default function QueroExporContent() {
                   </button>
                 );
               })}
+            </div>
+          )}
+
+          {selectedFair && selectedMeta && (
+            <div className="max-w-4xl mx-auto mb-10 grid md:grid-cols-2 gap-6 md:gap-8 items-stretch">
+              <div className={`glass-card rounded-2xl p-6 md:p-8 border-l-4 ${selectedMeta.borderColor}`}>
+                <FairInfoCard fair={selectedFair} detail={selectedDetail} meta={selectedMeta} />
+              </div>
+              <FairMapEmbed fair={selectedFair} detail={selectedDetail} />
             </div>
           )}
 
@@ -429,8 +438,6 @@ export default function QueroExporContent() {
             const active = isFairActive(fair);
             const happening = isFairHappening(fair);
             const detail = fairDetails[fair.id];
-            const mapUrl = detail ? buildMapEmbedUrl(detail.coordinates, detail.address?.venue, fair.city) : "";
-            const isManaus = normalizeCity(fair.city).startsWith("mana");
             return (
               <motion.section
                 key={fair.id}
@@ -454,107 +461,8 @@ export default function QueroExporContent() {
                   )}
 
                   <div className="grid md:grid-cols-2 gap-8 md:gap-12">
-                    {/* Info */}
-                    <div>
-                      <div className="flex items-center gap-4 mb-6">
-                        <div className={`w-12 h-12 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform text-xl shrink-0`}>
-                          {meta.icon}
-                        </div>
-                        <div>
-                          <span className={`text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${meta.color} bg-white/5`}>
-                            {meta.state}
-                          </span>
-                          <h3 className="text-3xl md:text-4xl font-black text-white mt-1">{meta.label.toUpperCase()}</h3>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3 mb-6">
-                        <div className="flex items-center gap-3 text-gray-300">
-                          <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center ${meta.color}`}>
-                            <Calendar size={16} />
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-gray-500 uppercase">Data</p>
-                            <p className="font-bold text-white">{formatFairDates(fair.startDate, fair.endDate)}</p>
-                          </div>
-                        </div>
-                        {fair.city && (
-                          <div className="flex items-center gap-3 text-gray-300">
-                            <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center ${meta.color}`}>
-                              <MapPin size={16} />
-                            </div>
-                            <div>
-                              <p className="text-xs font-bold text-gray-500 uppercase">Local</p>
-                              <p className="font-bold text-white">
-                                {detail?.address ? formatFairLocation(detail.address) : `${fair.city} — ${fair.state}`}
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {(fair.expectedVisitors || fair.expectedExhibitors || (fair.standsAvailable ?? 0) > 0) && (
-                        <div className="grid grid-cols-3 gap-2 mb-6">
-                          {!!fair.expectedVisitors && (
-                            <div className="text-center bg-white/5 rounded-xl py-3">
-                              <Users size={16} className={`mx-auto mb-1 ${meta.color}`} />
-                              <p className="text-lg font-black text-white leading-none">
-                                <AnimatedNumber value={fair.expectedVisitors} suffix="+" />
-                              </p>
-                              <p className="text-[9px] text-gray-500 uppercase font-bold mt-1 leading-tight">Visitantes</p>
-                            </div>
-                          )}
-                          {!!fair.expectedExhibitors && (
-                            <div className="text-center bg-white/5 rounded-xl py-3">
-                              <Building2 size={16} className={`mx-auto mb-1 ${meta.color}`} />
-                              <p className="text-lg font-black text-white leading-none">
-                                <AnimatedNumber value={fair.expectedExhibitors} suffix="+" />
-                              </p>
-                              <p className="text-[9px] text-gray-500 uppercase font-bold mt-1 leading-tight">Expositores</p>
-                            </div>
-                          )}
-                          {!!fair.standsAvailable && (
-                            <div className="text-center bg-white/5 rounded-xl py-3">
-                              <Store size={16} className={`mx-auto mb-1 ${meta.color}`} />
-                              <p className="text-lg font-black text-white leading-none">
-                                <AnimatedNumber value={fair.standsAvailable} />
-                              </p>
-                              <p className="text-[9px] text-gray-500 uppercase font-bold mt-1 leading-tight">Stands livres</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {isManaus && (
-                        <div className="flex items-center gap-3 bg-brand-pink/10 border border-brand-pink/20 rounded-xl px-4 py-3">
-                          <TrendingUp className="text-brand-pink shrink-0" size={20} />
-                          <p className="text-xs text-gray-300 leading-snug">
-                            <span className="text-white font-black">
-                              <AnimatedNumber value={Math.round(MANAUS_LOJISTAS_ESTIMATE / 1000)} prefix="+" suffix=" mil lojistas" />
-                            </span>{" "}
-                            ativos no varejo de Manaus (estimativa) — seu público em potencial na região.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Mapa */}
-                    {mapUrl && (
-                      <div className="relative rounded-2xl overflow-hidden border border-white/10 min-h-55 h-full">
-                        <iframe
-                          src={mapUrl}
-                          width="100%"
-                          height="100%"
-                          style={{ border: 0 }}
-                          loading="lazy"
-                          referrerPolicy="no-referrer-when-downgrade"
-                          className="absolute inset-0 grayscale hover:grayscale-0 transition-all duration-500"
-                        />
-                        <span className="absolute top-3 left-3 max-w-[calc(100%-1.5rem)] truncate block bg-slate-900/85 backdrop-blur text-white text-[10px] font-black uppercase tracking-wide px-3 py-1.5 rounded-full border border-white/10 pointer-events-none">
-                          📍 {detail?.address?.venue || fair.city}
-                        </span>
-                      </div>
-                    )}
+                    <FairInfoCard fair={fair} detail={detail} meta={meta} />
+                    <FairMapEmbed fair={fair} detail={detail} />
                   </div>
                 </div>
 
@@ -996,6 +904,118 @@ function StandFallbackCard({
         QUERO ESTE STAND <ArrowRight size={18} />
       </div>
     </button>
+  );
+}
+
+/* ─── Card de informações da feira (data, local, estatísticas) ─── */
+function FairInfoCard({
+  fair, detail, meta,
+}: { fair: FairListItem; detail?: FairDetail | null; meta: ReturnType<typeof getCityMeta> }) {
+  return (
+    <div>
+      <div className="flex items-center gap-4 mb-6">
+        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-xl shrink-0">
+          {meta.icon}
+        </div>
+        <div>
+          <span className={`text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${meta.color} bg-white/5`}>
+            {meta.state}
+          </span>
+          <h3 className="text-3xl md:text-4xl font-black text-white mt-1">{meta.label.toUpperCase()}</h3>
+        </div>
+      </div>
+
+      <div className="space-y-3 mb-6">
+        <div className="flex items-center gap-3 text-gray-300">
+          <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center ${meta.color}`}>
+            <Calendar size={16} />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-gray-500 uppercase">Data</p>
+            <p className="font-bold text-white">{formatFairDates(fair.startDate, fair.endDate)}</p>
+          </div>
+        </div>
+        {fair.city && (
+          <div className="flex items-center gap-3 text-gray-300">
+            <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center ${meta.color}`}>
+              <MapPin size={16} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-gray-500 uppercase">Local</p>
+              <p className="font-bold text-white">
+                {detail?.address ? formatFairLocation(detail.address) : `${fair.city} — ${fair.state}`}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {(fair.expectedVisitors || fair.expectedExhibitors || (fair.standsAvailable ?? 0) > 0) && (
+        <div className="grid grid-cols-3 gap-2 mb-6">
+          {!!fair.expectedVisitors && (
+            <div className="text-center bg-white/5 rounded-xl py-3">
+              <Users size={16} className={`mx-auto mb-1 ${meta.color}`} />
+              <p className="text-lg font-black text-white leading-none">
+                <AnimatedNumber value={fair.expectedVisitors} suffix="+" />
+              </p>
+              <p className="text-[9px] text-gray-500 uppercase font-bold mt-1 leading-tight">Visitantes</p>
+            </div>
+          )}
+          {!!fair.expectedExhibitors && (
+            <div className="text-center bg-white/5 rounded-xl py-3">
+              <Building2 size={16} className={`mx-auto mb-1 ${meta.color}`} />
+              <p className="text-lg font-black text-white leading-none">
+                <AnimatedNumber value={fair.expectedExhibitors} suffix="+" />
+              </p>
+              <p className="text-[9px] text-gray-500 uppercase font-bold mt-1 leading-tight">Expositores</p>
+            </div>
+          )}
+          {!!fair.standsAvailable && (
+            <div className="text-center bg-white/5 rounded-xl py-3">
+              <Store size={16} className={`mx-auto mb-1 ${meta.color}`} />
+              <p className="text-lg font-black text-white leading-none">
+                <AnimatedNumber value={fair.standsAvailable} />
+              </p>
+              <p className="text-[9px] text-gray-500 uppercase font-bold mt-1 leading-tight">Stands livres</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {normalizeCity(fair.city).startsWith("mana") && (
+        <div className="flex items-center gap-3 bg-brand-pink/10 border border-brand-pink/20 rounded-xl px-4 py-3">
+          <TrendingUp className="text-brand-pink shrink-0" size={20} />
+          <p className="text-xs text-gray-300 leading-snug">
+            <span className="text-white font-black">
+              <AnimatedNumber value={Math.round(MANAUS_LOJISTAS_ESTIMATE / 1000)} prefix="+" suffix=" mil lojistas" />
+            </span>{" "}
+            ativos no varejo de Manaus (estimativa) — seu público em potencial na região.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Mapa embutido da feira ───────────────────────────────────── */
+function FairMapEmbed({ fair, detail }: { fair: FairListItem; detail?: FairDetail | null }) {
+  const mapUrl = detail ? buildMapEmbedUrl(detail.coordinates, detail.address?.venue, fair.city) : "";
+  if (!mapUrl) return null;
+  return (
+    <div className="relative rounded-2xl overflow-hidden border border-white/10 min-h-55 h-full">
+      <iframe
+        src={mapUrl}
+        width="100%"
+        height="100%"
+        style={{ border: 0 }}
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+        className="absolute inset-0 grayscale hover:grayscale-0 transition-all duration-500"
+      />
+      <span className="absolute top-3 left-3 max-w-[calc(100%-1.5rem)] truncate block bg-slate-900/85 backdrop-blur text-white text-[10px] font-black uppercase tracking-wide px-3 py-1.5 rounded-full border border-white/10 pointer-events-none">
+        📍 {detail?.address?.venue || fair.city}
+      </span>
+    </div>
   );
 }
 

@@ -110,6 +110,11 @@ export default function HomeContent({ initialActiveFairs = [] }: HomeContentProp
         activeFairs={activeFairs}
       />
 
+      <InfoSection
+        detectedCity={detectedCity}
+        onEventClick={handleEventClick}
+      />
+
       <LogosCarousel
         title="QUEM ESTARÁ NA FEIRA"
         subtitle="Expositores confirmados"
@@ -117,11 +122,6 @@ export default function HomeContent({ initialActiveFairs = [] }: HomeContentProp
       />
 
       <AboutSection onVisitClick={openVisitModal} />
-
-      <InfoSection
-        detectedCity={detectedCity}
-        onEventClick={handleEventClick}
-      />
 
       <CTASection
         title="O SUCESSO DO SEU NEGÓCIO"
