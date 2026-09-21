@@ -177,6 +177,10 @@ export function formatStandDimensions(stand: Pick<StandOption, "width" | "height
   return `${stand.width}x${stand.height}`;
 }
 
+export function normalizeCity(city: string): string {
+  return city.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
 export function formatFairLocation(address: FairAddress): string {
   if (address.venue) return address.venue.toUpperCase();
   const parts = [address.street, address.number].filter(Boolean);

@@ -18,7 +18,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import {
-  fetchFairs, fetchFair, formatFairDates, formatFairLocation, formatStandDimensions, buildMapEmbedUrl,
+  fetchFairs, fetchFair, formatFairDates, formatFairLocation, formatStandDimensions, buildMapEmbedUrl, normalizeCity,
   type StandOption, type FairListItem, type FairDetail,
 } from "@/lib/fairsApi";
 import LogosCarousel from "@/components/LogosCarousel";
@@ -59,23 +59,19 @@ type StandOptionWithMeta = StandOption & { durationDays: number | null; fairId: 
 const INSTALLMENTS = 12;
 const INSTALLMENT_INTEREST_RATE = 0.1; // juros do parcelamento no cartão — Pix à vista é o valor real, sem essa taxa
 
-const CITY_META: Record<string, { color: string; borderColor: string; state: string; slug: string; icon: string }> = {
-  manaus:  { color: "text-brand-pink",  borderColor: "border-brand-pink",  state: "Amazonas", slug: "manaus", icon: "🏙️" },
-  manaos:  { color: "text-brand-pink",  borderColor: "border-brand-pink",  state: "Amazonas", slug: "manaus", icon: "🏙️" },
-  belém:   { color: "text-brand-cyan",  borderColor: "border-brand-cyan",  state: "Pará",     slug: "belem",  icon: "⚓" },
-  belem:   { color: "text-brand-cyan",  borderColor: "border-brand-cyan",  state: "Pará",     slug: "belem",  icon: "⚓" },
+const CITY_META: Record<string, { color: string; borderColor: string; state: string; slug: string; icon: string; label: string }> = {
+  manaus:  { color: "text-brand-pink",  borderColor: "border-brand-pink",  state: "Amazonas", slug: "manaus", icon: "🏙️", label: "Manaus" },
+  manaos:  { color: "text-brand-pink",  borderColor: "border-brand-pink",  state: "Amazonas", slug: "manaus", icon: "🏙️", label: "Manaus" },
+  belém:   { color: "text-brand-cyan",  borderColor: "border-brand-cyan",  state: "Pará",     slug: "belem",  icon: "⚓", label: "Belém" },
+  belem:   { color: "text-brand-cyan",  borderColor: "border-brand-cyan",  state: "Pará",     slug: "belem",  icon: "⚓", label: "Belém" },
 };
 
 // Estimativa de comércio varejista ativo em Manaus (fonte: base de CNPJs ativos, CNAE G-47) — arredondado, não é dado da API da feira.
 const MANAUS_LOJISTAS_ESTIMATE = 46000;
 
-function normCity(city: string) {
-  return city.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-}
-
 function getCityMeta(city: string) {
-  const key = normCity(city);
-  return CITY_META[key] ?? { color: "text-brand-orange", borderColor: "border-brand-orange", state: "", slug: key, icon: "📍" };
+  const key = normalizeCity(city);
+  return CITY_META[key] ?? { color: "text-brand-orange", borderColor: "border-brand-orange", state: "", slug: key, icon: "📍", label: city };
 }
 
 function isFairActive(fair: FairListItem) {
@@ -92,7 +88,7 @@ function isFairHappening(fair: FairListItem) {
 
 export default function QueroExporContent() {
   const [activeModal, setActiveModal] = useState<"none" | "bypass" | "visit">("none");
-  const [standOptions, setStandOptions] = useState<StandOptionWithMeta[]>([]);
+  const [selectedFairId, setSelectedFairId] = useState<string | null>(null);
   const [allFairs, setAllFairs] = useState<FairListItem[]>([]);
   const [activeFairs, setActiveFairs] = useState<FairListItem[]>([]);
   const [fairDetails, setFairDetails] = useState<Record<string, FairDetail>>({});
@@ -132,18 +128,12 @@ export default function QueroExporContent() {
       });
       setFairDetails(detailsById);
 
-      const seen = new Set<string>();
-      const combined: StandOptionWithMeta[] = [];
-      for (const detail of details) {
-        for (const stand of detail?.standOptions ?? []) {
-          const key = formatStandDimensions(stand);
-          if (!seen.has(key) && detail) {
-            seen.add(key);
-            combined.push({ ...stand, durationDays: detail.durationDays ?? null, fairId: detail.id });
-          }
-        }
-      }
-      if (combined.length > 0) setStandOptions(combined);
+      const withStands = active.filter((f) => (detailsById[f.id]?.standOptions?.length ?? 0) > 0);
+      const requestedCity = new URLSearchParams(window.location.search).get("cidade");
+      const requestedFair = requestedCity
+        ? withStands.find((f) => normalizeCity(f.city) === normalizeCity(requestedCity))
+        : undefined;
+      setSelectedFairId((requestedFair ?? withStands[0])?.id ?? null);
     });
   }, []);
 
@@ -156,10 +146,29 @@ export default function QueroExporContent() {
     ...new Set(allFairs.map((f) => new Date(f.startDate + "T12:00:00").getFullYear())),
   ].join(" / ");
 
-  const pricedStands = standOptions.filter((s) => s.totalPrice > 0);
-  const cheapestStand = pricedStands.length > 0
-    ? pricedStands.reduce((min, s) => (s.totalPrice < min.totalPrice ? s : min))
-    : null;
+  const fairsWithStands = activeFairs.filter((f) => (fairDetails[f.id]?.standOptions?.length ?? 0) > 0);
+  const selectedFair = fairsWithStands.find((f) => f.id === selectedFairId) ?? null;
+  const selectedDetail = selectedFair ? fairDetails[selectedFair.id] : null;
+  const selectedMeta = selectedFair ? getCityMeta(selectedFair.city) : null;
+  const standOptions: StandOptionWithMeta[] = (selectedDetail?.standOptions ?? [])
+    .map((stand) => ({
+      ...stand,
+      durationDays: selectedDetail?.durationDays ?? null,
+      fairId: selectedDetail?.id ?? "",
+    }))
+    .sort((a, b) => b.area - a.area);
+  const hasFloorPlan = !!selectedDetail?.floorPlanUrl;
+
+  const cheapestPrice = (options: StandOption[] | undefined) => {
+    const priced = (options ?? []).filter((s) => s.totalPrice > 0);
+    return priced.length > 0 ? Math.min(...priced.map((s) => s.totalPrice)) : null;
+  };
+  const cheapestOverall = cheapestPrice(fairsWithStands.flatMap((f) => fairDetails[f.id]?.standOptions ?? []));
+
+  const selectFairAndScroll = (fairId: string) => {
+    if (fairsWithStands.some((f) => f.id === fairId)) setSelectedFairId(fairId);
+    scrollToStands();
+  };
 
   return (
     <main className="min-h-screen bg-brand-blue selection:bg-brand-cyan/30 selection:text-white">
@@ -227,7 +236,7 @@ export default function QueroExporContent() {
             </button>
           </motion.div>
 
-          {cheapestStand && (
+          {cheapestOverall !== null && (
             <motion.button
               type="button"
               onClick={scrollToStands}
@@ -236,7 +245,7 @@ export default function QueroExporContent() {
               transition={{ delay: 0.3 }}
               className="mt-6 inline-flex flex-wrap items-center justify-center gap-1.5 text-center text-sm text-gray-300 hover:text-white transition-colors"
             >
-              Stands a partir de <span className="text-brand-orange font-black">{formatPrice(cheapestStand.totalPrice)}</span> à vista no Pix
+              Stands a partir de <span className="text-brand-orange font-black">{formatPrice(cheapestOverall)}</span> à vista no Pix
               <ChevronRight size={14} />
             </motion.button>
           )}
@@ -279,11 +288,65 @@ export default function QueroExporContent() {
             <span className="text-brand-orange font-bold tracking-widest text-sm uppercase">Escolha o seu modelo</span>
             <h2 className="text-3xl md:text-5xl font-black text-white mt-2">MODELOS DISPONÍVEIS</h2>
             <p className="text-gray-400 mt-3 max-w-xl mx-auto text-sm">
-              Preços e disponibilidade referentes às edições com vagas abertas. Sujeito a alteração sem aviso.
+              {fairsWithStands.length > 1
+                ? "Escolha a cidade e veja os modelos, preços e disponibilidade de cada edição. Sujeito a alteração sem aviso."
+                : "Preços e disponibilidade referentes às edições com vagas abertas. Sujeito a alteração sem aviso."}
             </p>
           </div>
 
-          {standOptions.length > 0 ? (
+          {fairsWithStands.length > 1 && (
+            <div role="tablist" aria-label="Cidade da feira" className="grid grid-cols-2 gap-3 md:gap-4 max-w-2xl mx-auto mb-10">
+              {fairsWithStands.map((fair) => {
+                const meta = getCityMeta(fair.city);
+                const isSelected = fair.id === selectedFairId;
+                const fromPrice = cheapestPrice(fairDetails[fair.id]?.standOptions);
+                return (
+                  <button
+                    key={fair.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={isSelected}
+                    onClick={() => {
+                      setSelectedFairId(fair.id);
+                      trackEvent("cta_click", { label: "selecionar_cidade_stand", city: meta.label });
+                    }}
+                    className={`text-left rounded-2xl border-2 p-4 md:p-5 transition-all ${
+                      isSelected
+                        ? `${meta.borderColor} bg-white/10 shadow-lg`
+                        : "border-white/10 glass hover:bg-white/5"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">{meta.icon}</span>
+                      <span className={`text-xl md:text-2xl font-black uppercase ${isSelected ? meta.color : "text-white"}`}>
+                        {meta.label}
+                      </span>
+                    </div>
+                    <p className="text-[11px] md:text-xs font-bold text-gray-400 uppercase tracking-wide">
+                      {formatFairDates(fair.startDate, fair.endDate)}
+                    </p>
+                    {fromPrice !== null && (
+                      <p className="text-xs text-gray-300 mt-2">
+                        a partir de <span className="text-brand-orange font-black">{formatPrice(fromPrice)}</span>
+                      </p>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {selectedFair && selectedMeta && !hasFloorPlan && (
+            <div className="max-w-2xl mx-auto mb-8 flex items-start gap-3 rounded-2xl bg-brand-cyan/10 border border-brand-cyan/20 px-4 py-3">
+              <MapPin className="text-brand-cyan shrink-0 mt-0.5" size={18} />
+              <p className="text-sm text-gray-200 leading-snug">
+                A planta interativa de <span className="font-black text-white">{selectedMeta.label}</span> ainda não está disponível.
+                Escolha o modelo e feche a reserva com um consultor pelo WhatsApp.
+              </p>
+            </div>
+          )}
+
+          {selectedFair && selectedMeta && standOptions.length > 0 ? (
             <div className={`grid gap-8 max-w-4xl mx-auto ${standOptions.length === 1 ? "max-w-md" : "md:grid-cols-2"}`}>
               {standOptions.map((stand, i) => {
                 const has3x3 = standOptions.some((s) => formatStandDimensions(s).toLowerCase().includes("3x3"));
@@ -291,102 +354,16 @@ export default function QueroExporContent() {
                   ? formatStandDimensions(stand).toLowerCase().includes("3x3")
                   : i === standOptions.length - 1;
                 return (
-                  <Link
+                  <StandModelCard
                     key={stand.id || i}
-                    href={`/reservar-stand/${stand.fairId}`}
-                    onClick={() => trackEvent("cta_click", { label: "reservar_stand_mapa" })}
-                    className={`relative flex flex-col rounded-3xl border transition-all group ${
-                      isHighlighted
-                        ? "glass-card border-brand-orange/50 shadow-[0_0_40px_rgba(255,130,0,0.15)] hover:shadow-[0_0_50px_rgba(255,130,0,0.25)] p-5 md:p-8"
-                        : "glass border-white/10 hover:border-brand-orange/30 hover:bg-white/5 p-5 md:p-8"
-                    }`}
-                  >
-                    {isHighlighted && (
-                      <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand-orange text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full whitespace-nowrap">
-                        ⭐ Mais escolhido
-                      </span>
-                    )}
-
-                    <div className="aspect-video bg-white/5 rounded-2xl mb-5 relative overflow-hidden">
-                      <StandImageCarousel
-                        images={getStandImages(formatStandDimensions(stand))}
-                        alt={stand.name}
-                      />
-                      {stand.quantity > 0 && (
-                        <span className="absolute top-3 right-3 flex items-center gap-1 bg-slate-900/80 backdrop-blur text-brand-orange text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border border-brand-orange/30">
-                          <Clock size={12} /> {stand.quantity} disponíveis
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-start justify-between gap-3 mb-1">
-                      <h3 className="text-2xl font-black text-white leading-tight">{stand.name.toUpperCase()}</h3>
-                      {stand.area > 0 && (
-                        <span className="shrink-0 text-xs font-bold text-brand-cyan bg-brand-cyan/10 border border-brand-cyan/20 rounded-full px-3 py-1 mt-1">
-                          {stand.area}m²
-                        </span>
-                      )}
-                    </div>
-                    {stand.description && (
-                      <p className="text-gray-400 mb-3 text-sm">{stand.description}</p>
-                    )}
-
-                    <p className="flex items-center gap-1.5 text-xs text-gray-400 mb-6">
-                      <CheckCircle2 size={14} className="text-brand-cyan shrink-0" />
-                      Montagem, iluminação, tomada e carpete inclusos
-                    </p>
-
-                    {stand.totalPrice > 0 && (() => {
-                      const installmentTotal = stand.totalPrice * (1 + INSTALLMENT_INTEREST_RATE);
-                      const installmentValue = installmentTotal / INSTALLMENTS;
-                      const pixDiscountPct = Math.round(INSTALLMENT_INTEREST_RATE * 100);
-                      return (
-                        <div className="mb-6 space-y-2.5 flex-1">
-                          {stand.anchorPrice != null && stand.anchorPrice > stand.totalPrice && (
-                            <span className="text-gray-500 line-through text-xs">De {formatPrice(stand.anchorPrice)}</span>
-                          )}
-
-                          <div>
-                            <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1">
-                              Parcelado em até {INSTALLMENTS}x
-                            </p>
-                            <p className="text-brand-orange font-black text-3xl leading-none">
-                              {formatPrice(installmentValue)}
-                              <span className="text-sm font-bold text-gray-400">/mês</span>
-                            </p>
-                            <p className="text-gray-500 text-xs mt-1">
-                              Valor cheio {formatPrice(installmentTotal)}
-                            </p>
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-xl px-3 py-2.5">
-                            <span className="shrink-0 text-green-400 text-[10px] font-black uppercase tracking-wide bg-green-500/20 rounded-full px-2 py-1">
-                              {pixDiscountPct}% OFF
-                            </span>
-                            <span className="text-gray-200 text-sm font-bold">
-                              {formatPrice(stand.totalPrice)} <span className="text-gray-400 font-medium">à vista no Pix</span>
-                            </span>
-                          </div>
-
-                          {stand.durationDays && stand.durationDays > 0 && (
-                            <p className="text-[11px] text-gray-500 px-1">
-                              Equivale a {formatPrice(stand.totalPrice / stand.durationDays)}/dia de exposição no Pix
-                            </p>
-                          )}
-                        </div>
-                      );
-                    })()}
-
-                    <div
-                      className={`w-full font-black py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wide pointer-events-none ${
-                        isHighlighted
-                          ? "bg-brand-orange text-white group-hover:scale-105 shadow-lg shadow-brand-orange/20"
-                          : "bg-white/5 group-hover:bg-brand-orange group-hover:text-white text-brand-orange border border-brand-orange/30 group-hover:border-brand-orange"
-                      }`}
-                    >
-                      QUERO ESTE STAND <ArrowRight size={18} />
-                    </div>
-                  </Link>
+                    stand={stand}
+                    isHighlighted={isHighlighted}
+                    hasFloorPlan={hasFloorPlan}
+                    onConsult={() => {
+                      trackEvent("cta_click", { label: "reservar_stand_whatsapp", city: selectedMeta.label });
+                      sendWhatsAppMessage(`Olá! Quero reservar o ${stand.name} na ${selectedFair.name}.`);
+                    }}
+                  />
                 );
               })}
             </div>
@@ -453,7 +430,7 @@ export default function QueroExporContent() {
             const happening = isFairHappening(fair);
             const detail = fairDetails[fair.id];
             const mapUrl = detail ? buildMapEmbedUrl(detail.coordinates, detail.address?.venue, fair.city) : "";
-            const isManaus = normCity(fair.city).startsWith("mana");
+            const isManaus = normalizeCity(fair.city).startsWith("mana");
             return (
               <motion.section
                 key={fair.id}
@@ -487,7 +464,7 @@ export default function QueroExporContent() {
                           <span className={`text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${meta.color} bg-white/5`}>
                             {meta.state}
                           </span>
-                          <h3 className="text-3xl md:text-4xl font-black text-white mt-1">{fair.city.toUpperCase()}</h3>
+                          <h3 className="text-3xl md:text-4xl font-black text-white mt-1">{meta.label.toUpperCase()}</h3>
                         </div>
                       </div>
 
@@ -584,7 +561,7 @@ export default function QueroExporContent() {
                 {active ? (
                   <button
                     type="button"
-                    onClick={scrollToStands}
+                    onClick={() => selectFairAndScroll(fair.id)}
                     className={`w-full py-5 md:py-6 font-black text-sm md:text-base uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
                       happening
                         ? "bg-green-500 text-white hover:bg-green-600"
@@ -751,7 +728,7 @@ export default function QueroExporContent() {
             <div className="flex items-center gap-3">
               <Zap className="text-brand-orange shrink-0" size={20} />
               <p className="text-sm font-black text-white uppercase tracking-wide">
-                Vagas limitadas — {activeFairs.map(f => f.city).join(" e ")} {new Date(activeFairs[0].startDate).getFullYear()}
+                Vagas limitadas — {activeFairs.map(f => getCityMeta(f.city).label).join(" e ")} {new Date(activeFairs[0].startDate).getFullYear()}
               </p>
             </div>
             <button
@@ -822,6 +799,127 @@ export default function QueroExporContent() {
         <VisitModalContent />
       </Modal>
     </main>
+  );
+}
+
+/* ─── Card de modelo de stand ─────────────────────────────────── */
+function StandModelCard({
+  stand, isHighlighted, hasFloorPlan, onConsult,
+}: {
+  stand: StandOptionWithMeta; isHighlighted: boolean; hasFloorPlan: boolean; onConsult: () => void;
+}) {
+  const className = `relative flex flex-col text-left rounded-3xl border transition-all group ${
+    isHighlighted
+      ? "glass-card border-brand-orange/50 shadow-[0_0_40px_rgba(255,130,0,0.15)] hover:shadow-[0_0_50px_rgba(255,130,0,0.25)] p-5 md:p-8"
+      : "glass border-white/10 hover:border-brand-orange/30 hover:bg-white/5 p-5 md:p-8"
+  }`;
+
+  const ctaClassName = `w-full font-black py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wide ${
+    isHighlighted
+      ? "bg-brand-orange text-white group-hover:scale-105 shadow-lg shadow-brand-orange/20"
+      : "bg-white/5 group-hover:bg-brand-orange group-hover:text-white text-brand-orange border border-brand-orange/30 group-hover:border-brand-orange"
+  }`;
+
+  const content = (
+    <>
+      {isHighlighted && (
+        <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand-orange text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full whitespace-nowrap">
+          ⭐ Mais escolhido
+        </span>
+      )}
+
+      <div className="aspect-video bg-white/5 rounded-2xl mb-5 relative overflow-hidden">
+        <StandImageCarousel
+          images={getStandImages(formatStandDimensions(stand))}
+          alt={stand.name}
+        />
+        {stand.quantity > 0 && (
+          <span className="absolute top-3 right-3 flex items-center gap-1 bg-slate-900/80 backdrop-blur text-brand-orange text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border border-brand-orange/30">
+            <Clock size={12} /> {stand.quantity} disponíveis
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-start justify-between gap-3 mb-1">
+        <h3 className="text-2xl font-black text-white leading-tight">{stand.name.toUpperCase()}</h3>
+        {stand.area > 0 && (
+          <span className="shrink-0 text-xs font-bold text-brand-cyan bg-brand-cyan/10 border border-brand-cyan/20 rounded-full px-3 py-1 mt-1">
+            {stand.area}m²
+          </span>
+        )}
+      </div>
+      {stand.description && (
+        <p className="text-gray-400 mb-3 text-sm">{stand.description}</p>
+      )}
+
+      <p className="flex items-center gap-1.5 text-xs text-gray-400 mb-6">
+        <CheckCircle2 size={14} className="text-brand-cyan shrink-0" />
+        Montagem, iluminação, tomada e carpete inclusos
+      </p>
+
+      {stand.totalPrice > 0 && (() => {
+        const installmentTotal = stand.totalPrice * (1 + INSTALLMENT_INTEREST_RATE);
+        const installmentValue = installmentTotal / INSTALLMENTS;
+        const pixDiscountPct = Math.round(INSTALLMENT_INTEREST_RATE * 100);
+        return (
+          <div className="mb-6 space-y-2.5 flex-1">
+            {stand.anchorPrice != null && stand.anchorPrice > stand.totalPrice && (
+              <span className="text-gray-500 line-through text-xs">De {formatPrice(stand.anchorPrice)}</span>
+            )}
+
+            <div>
+              <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1">
+                Parcelado em até {INSTALLMENTS}x
+              </p>
+              <p className="text-brand-orange font-black text-3xl leading-none">
+                {formatPrice(installmentValue)}
+                <span className="text-sm font-bold text-gray-400">/mês</span>
+              </p>
+              <p className="text-gray-500 text-xs mt-1">
+                Valor cheio {formatPrice(installmentTotal)}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-xl px-3 py-2.5">
+              <span className="shrink-0 text-green-400 text-[10px] font-black uppercase tracking-wide bg-green-500/20 rounded-full px-2 py-1">
+                {pixDiscountPct}% OFF
+              </span>
+              <span className="text-gray-200 text-sm font-bold">
+                {formatPrice(stand.totalPrice)} <span className="text-gray-400 font-medium">à vista no Pix</span>
+              </span>
+            </div>
+
+            {stand.durationDays && stand.durationDays > 0 && (
+              <p className="text-[11px] text-gray-500 px-1">
+                Equivale a {formatPrice(stand.totalPrice / stand.durationDays)}/dia de exposição no Pix
+              </p>
+            )}
+          </div>
+        );
+      })()}
+
+      {hasFloorPlan ? (
+        <div className={`${ctaClassName} pointer-events-none`}>
+          QUERO ESTE STAND <ArrowRight size={18} />
+        </div>
+      ) : (
+        <button type="button" onClick={onConsult} className={ctaClassName}>
+          RESERVAR COM CONSULTOR <ArrowRight size={18} />
+        </button>
+      )}
+    </>
+  );
+
+  return hasFloorPlan ? (
+    <Link
+      href={`/reservar-stand/${stand.fairId}`}
+      onClick={() => trackEvent("cta_click", { label: "reservar_stand_mapa" })}
+      className={className}
+    >
+      {content}
+    </Link>
+  ) : (
+    <div className={className}>{content}</div>
   );
 }
 

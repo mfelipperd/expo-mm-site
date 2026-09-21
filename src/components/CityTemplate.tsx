@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { MapPin, Calendar, CheckCircle2, Star, ArrowRight, Users, Building2, Navigation } from "lucide-react";
-import type { TransportLinks, ExhibitorBrand } from "@/lib/fairsApi";
+import { normalizeCity, type TransportLinks, type ExhibitorBrand } from "@/lib/fairsApi";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Modal from "@/components/Modal";
@@ -96,9 +96,11 @@ export default function CityTemplate({
     return () => clearTimeout(t);
   }, [canRegisterAsVisitor]);
 
+  const standsHref = `/quero-expor?cidade=${normalizeCity(cityName)}`;
+
   const handleExposeClick = () => {
     trackEvent("cta_click", { label: "reservar_stand", city: cityName });
-    router.push("/quero-expor?target=stands");
+    router.push(`${standsHref}&target=stands`);
   };
 
   // "QUERO VISITAR" always means visitor intent: if there's a real edition to register for,
@@ -197,7 +199,7 @@ export default function CityTemplate({
             ) : (
               <>
                 <Link
-                  href="/quero-expor"
+                  href={standsHref}
                   className="bg-brand-orange hover:bg-brand-orange/90 text-white px-8 py-4 rounded-full font-bold transition-all hover:scale-105 shadow-lg inline-flex items-center justify-center"
                 >
                   SOU INDÚSTRIA — RESERVAR STAND
@@ -397,7 +399,7 @@ export default function CityTemplate({
           onClick={openRegistrationModal}
         >
           <Link
-            href="/quero-expor"
+            href={standsHref}
             className="inline-block border-b border-white/30 pb-1 text-sm text-gray-300 hover:text-white hover:border-white transition-colors"
           >
             Quero comprar um stand
@@ -410,7 +412,7 @@ export default function CityTemplate({
           subtitle="O credenciamento de visitantes abre mais perto da data do evento. Enquanto isso, garanta seu stand e apresente sua marca para milhares de lojistas da região."
           buttonText="RESERVAR STAND"
           variant={colorVariant}
-          onClick={() => router.push("/quero-expor")}
+          onClick={() => router.push(standsHref)}
         >
           <button
             type="button"
