@@ -18,7 +18,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import {
-  fetchFairs, fetchFair, formatFairDates, formatFairLocation, formatStandDimensions, buildMapEmbedUrl, normalizeCity,
+  fetchFairs, fetchFair, formatFairDates, formatFairLocation, formatStandDimensions, buildMapEmbedUrl, buildMapLinkUrl, normalizeCity,
   type StandOption, type FairListItem, type FairDetail,
 } from "@/lib/fairsApi";
 import LogosCarousel from "@/components/LogosCarousel";
@@ -951,9 +951,9 @@ function FairInfoCard({
       </div>
 
       {(fair.expectedVisitors || fair.expectedExhibitors || (fair.standsAvailable ?? 0) > 0) && (
-        <div className="grid grid-cols-3 gap-2 mb-6">
+        <div className="flex flex-wrap gap-2 mb-6">
           {!!fair.expectedVisitors && (
-            <div className="text-center bg-white/5 rounded-xl py-3">
+            <div className="flex-1 min-w-[92px] max-w-[160px] text-center bg-white/5 rounded-xl py-3">
               <Users size={16} className={`mx-auto mb-1 ${meta.color}`} />
               <p className="text-lg font-black text-white leading-none">
                 <AnimatedNumber value={fair.expectedVisitors} suffix="+" />
@@ -962,7 +962,7 @@ function FairInfoCard({
             </div>
           )}
           {!!fair.expectedExhibitors && (
-            <div className="text-center bg-white/5 rounded-xl py-3">
+            <div className="flex-1 min-w-[92px] max-w-[160px] text-center bg-white/5 rounded-xl py-3">
               <Building2 size={16} className={`mx-auto mb-1 ${meta.color}`} />
               <p className="text-lg font-black text-white leading-none">
                 <AnimatedNumber value={fair.expectedExhibitors} suffix="+" />
@@ -971,7 +971,7 @@ function FairInfoCard({
             </div>
           )}
           {!!fair.standsAvailable && (
-            <div className="text-center bg-white/5 rounded-xl py-3">
+            <div className="flex-1 min-w-[92px] max-w-[160px] text-center bg-white/5 rounded-xl py-3">
               <Store size={16} className={`mx-auto mb-1 ${meta.color}`} />
               <p className="text-lg font-black text-white leading-none">
                 <AnimatedNumber value={fair.standsAvailable} />
@@ -1001,8 +1001,10 @@ function FairInfoCard({
 function FairMapEmbed({ fair, detail }: { fair: FairListItem; detail?: FairDetail | null }) {
   const mapUrl = detail ? buildMapEmbedUrl(detail.coordinates, detail.address?.venue, fair.city) : "";
   if (!mapUrl) return null;
+  const mapLink = detail?.transportLinks?.googleMaps
+    || buildMapLinkUrl(detail?.coordinates, detail?.address?.venue, fair.city);
   return (
-    <div className="relative rounded-2xl overflow-hidden border border-white/10 min-h-55 h-full">
+    <div className="relative rounded-2xl overflow-hidden border border-white/10 min-h-55 h-64 md:h-full">
       <iframe
         src={mapUrl}
         width="100%"
@@ -1010,11 +1012,21 @@ function FairMapEmbed({ fair, detail }: { fair: FairListItem; detail?: FairDetai
         style={{ border: 0 }}
         loading="lazy"
         referrerPolicy="no-referrer-when-downgrade"
-        className="absolute inset-0 grayscale hover:grayscale-0 transition-all duration-500"
+        className="absolute inset-0"
       />
       <span className="absolute top-3 left-3 max-w-[calc(100%-1.5rem)] truncate block bg-slate-900/85 backdrop-blur text-white text-[10px] font-black uppercase tracking-wide px-3 py-1.5 rounded-full border border-white/10 pointer-events-none">
         📍 {detail?.address?.venue || fair.city}
       </span>
+      {mapLink && (
+        <a
+          href={mapLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-slate-900/85 backdrop-blur text-white text-[10px] font-black uppercase tracking-wide px-3 py-1.5 rounded-full border border-white/10 hover:bg-brand-orange hover:border-brand-orange transition-colors"
+        >
+          Abrir no Maps <ArrowRight size={12} />
+        </a>
+      )}
     </div>
   );
 }

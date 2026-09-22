@@ -184,7 +184,8 @@ export function normalizeCity(city: string): string {
 export function formatFairLocation(address: FairAddress): string {
   if (address.venue) return address.venue.toUpperCase();
   const parts = [address.street, address.number].filter(Boolean);
-  return parts.join(", ").toUpperCase();
+  if (parts.length) return parts.join(", ").toUpperCase();
+  return [address.city, address.state].filter(Boolean).join(" — ").toUpperCase();
 }
 
 export function buildMapEmbedUrl(
@@ -198,6 +199,23 @@ export function buildMapEmbedUrl(
   if (venue || city) {
     const query = encodeURIComponent([venue, city].filter(Boolean).join(", "));
     return `https://maps.google.com/maps?q=${query}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+  }
+  return "";
+}
+
+/** Link (not embed) pro Google Maps — usado como saída de escape do iframe, que no
+ * embed gratuito (sem chave de API) às vezes cai num ponto impreciso ou poluído de ícones. */
+export function buildMapLinkUrl(
+  coords?: { lat: number; lng: number },
+  venue?: string,
+  city?: string
+): string {
+  if (coords?.lat && coords?.lng) {
+    return `https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`;
+  }
+  if (venue || city) {
+    const query = encodeURIComponent([venue, city].filter(Boolean).join(", "));
+    return `https://www.google.com/maps/search/?api=1&query=${query}`;
   }
   return "";
 }
