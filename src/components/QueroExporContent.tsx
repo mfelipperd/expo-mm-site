@@ -432,61 +432,29 @@ export default function QueroExporContent() {
           />
         </div>
       ) : (
-        <>
+        <div className="max-w-4xl mx-auto px-6 space-y-4 pb-16">
           {allFairs.map((fair) => {
             const meta = getCityMeta(fair.city);
             const active = isFairActive(fair);
             const happening = isFairHappening(fair);
-            const detail = fairDetails[fair.id];
             return (
-              <motion.section
+              <motion.div
                 key={fair.id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className={`relative border-t-4 border-b border-b-white/5 transition-all group ${meta.borderColor} ${
-                  active ? "bg-black/10" : "bg-white/2 opacity-70"
-                }`}
               >
-                <div className="relative max-w-6xl mx-auto px-6 py-14 md:py-16">
-                  {happening && (
-                    <span className="absolute top-6 right-6 z-10 inline-flex items-center gap-1.5 bg-green-500/15 border border-green-500/30 text-green-400 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> Em andamento
-                    </span>
-                  )}
-                  {!active && (
-                    <span className="absolute top-6 right-6 z-10 text-[10px] font-bold uppercase text-gray-600 border border-white/10 rounded-full px-3 py-1">
-                      Encerrada
-                    </span>
-                  )}
-
-                  <div className="grid md:grid-cols-2 gap-8 md:gap-12">
-                    <FairInfoCard fair={fair} detail={detail} meta={meta} />
-                    <FairMapEmbed fair={fair} detail={detail} />
-                  </div>
-                </div>
-
-                {active ? (
-                  <button
-                    type="button"
-                    onClick={() => selectFairAndScroll(fair.id)}
-                    className={`w-full py-5 md:py-6 font-black text-sm md:text-base uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
-                      happening
-                        ? "bg-green-500 text-white hover:bg-green-600"
-                        : "bg-brand-orange text-white hover:bg-brand-orange/90"
-                    }`}
-                  >
-                    {happening ? "VAGAS ABERTAS — VER STANDS" : "RESERVAR STAND NESTA EDIÇÃO"} <ArrowRight size={18} />
-                  </button>
-                ) : (
-                  <p className="text-center text-xs text-gray-600 font-bold uppercase tracking-widest py-4 border-t border-white/5">
-                    Próxima edição em breve
-                  </p>
-                )}
-              </motion.section>
+                <FairCalendarRow
+                  fair={fair}
+                  meta={meta}
+                  active={active}
+                  happening={happening}
+                  onReserve={() => selectFairAndScroll(fair.id)}
+                />
+              </motion.div>
             );
           })}
-        </>
+        </div>
       )}
 
       {/* Kit 2 cidades — aparece apenas quando há 2+ feiras ativas */}
@@ -1026,6 +994,56 @@ function FairMapEmbed({ fair, detail }: { fair: FairListItem; detail?: FairDetai
         >
           Abrir no Maps <ArrowRight size={12} />
         </a>
+      )}
+    </div>
+  );
+}
+
+/* ─── Linha compacta de uma edição na lista "Calendário" ───────── */
+function FairCalendarRow({
+  fair, meta, active, happening, onReserve,
+}: {
+  fair: FairListItem; meta: ReturnType<typeof getCityMeta>; active: boolean; happening: boolean; onReserve: () => void;
+}) {
+  return (
+    <div className={`flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 rounded-2xl border-l-4 ${meta.borderColor} ${active ? "glass" : "bg-white/2 opacity-70"} p-5 md:p-6`}>
+      <div className="flex items-center gap-4 flex-1 min-w-0">
+        <div className="w-11 h-11 rounded-full bg-white/5 flex items-center justify-center text-lg shrink-0">
+          {meta.icon}
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-0.5">
+            <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${meta.color} bg-white/5`}>
+              {meta.state}
+            </span>
+            {happening && (
+              <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase text-green-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> Em andamento
+              </span>
+            )}
+            {!active && (
+              <span className="text-[9px] font-bold uppercase text-gray-600">Encerrada</span>
+            )}
+          </div>
+          <h3 className="text-xl md:text-2xl font-black text-white leading-tight truncate">{meta.label.toUpperCase()}</h3>
+          <p className="text-xs text-gray-400 font-bold">{formatFairDates(fair.startDate, fair.endDate)}</p>
+        </div>
+      </div>
+
+      {active ? (
+        <button
+          type="button"
+          onClick={onReserve}
+          className={`shrink-0 w-full sm:w-auto px-6 py-3 rounded-xl font-black text-xs md:text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+            happening ? "bg-green-500 text-white hover:bg-green-600" : "bg-brand-orange text-white hover:bg-brand-orange/90"
+          }`}
+        >
+          {happening ? "Ver stands" : "Reservar"} <ArrowRight size={16} />
+        </button>
+      ) : (
+        <span className="shrink-0 text-xs text-gray-600 font-bold uppercase tracking-widest">
+          {fair.expectedVisitors ? `${fair.expectedVisitors.toLocaleString("pt-BR")}+ visitantes` : "Edição anterior"}
+        </span>
       )}
     </div>
   );
